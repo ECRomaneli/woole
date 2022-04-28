@@ -24,12 +24,11 @@ type Record struct {
 
 type Records struct {
 	sync.RWMutex
-	clients    RecordsByClient
-	maxRecords uint
+	clients RecordsByClient
 }
 
-func NewRecords(maxRecords uint) *Records {
-	return &Records{maxRecords: maxRecords, clients: make(RecordsByClient)}
+func NewRecords() *Records {
+	return &Records{clients: make(RecordsByClient)}
 }
 
 func NewRecord(req *Request) *Record {
@@ -40,21 +39,41 @@ func NewRecord(req *Request) *Record {
 	}
 }
 
-func (this *Records) Add(clientID string, rec *Record) {
+func (this *Records) ClientExists(client string) bool {
+	return this.clients[client] != nil
+}
+
+func (this *Records) Add(client string, rec *Record) {
 	this.Lock()
 	defer this.Unlock()
 
-	if this.clients[clientID] == nil {
-		this.clients[clientID] = NewRecordMap()
+	if this.clients[client] == nil {
+		this.clients[client] = NewRecordMap()
 	}
 
-	recordMap := this.clients[clientID]
+	recordMap := this.clients[client]
 
 	recordMap.Put(rec.ID, rec)
+}
 
-	for recordMap.Size() > int(this.maxRecords) {
-		recordMap.Shift()
+func (this *Records) Remove(clientId, id string) *Record {
+	this.Lock()
+	defer this.Unlock()
+
+	client := this.clients[clientId]
+
+	if client == nil {
+		return nil
 	}
+
+	return client.Remove(id)
+}
+
+func (this *Records) RemoveClient(client string) {
+	this.Lock()
+	defer this.Unlock()
+
+	this.clients[client] = nil
 }
 
 func (this *Records) FindByClientAndId(client, id string) *Record {
@@ -112,6 +131,16 @@ func (this *RecordMap) Get(key string) *Record {
 	defer this.mu.RUnlock()
 
 	return this.data[key]
+}
+
+func (this *RecordMap) Remove(key string) *Record {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
+	data := this.data[key]
+	this.data[key] = nil
+
+	return data
 }
 
 func (this *RecordMap) Last() *Record {

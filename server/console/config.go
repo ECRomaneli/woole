@@ -18,7 +18,6 @@ type Config struct {
 	DashboardProto string
 	DashboardHost  string
 	DashboardPort  string
-	MaxRecords     int
 	Timeout        int
 	isRead         bool
 }
@@ -40,7 +39,6 @@ func ReadConfig() Config {
 	serverPort := flag.String("server", ":"+defaultServerURL, "Server Port")
 	tunnelPort := flag.String("tunnel", ":"+defaultTunnelURL, "Tunnel Port")
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardURL, "Dashboard Port")
-	maxRecords := flag.Int("max", 16, "Max Requests to Record")
 	timeout := flag.Int("timeout", 10000, "Timeout for receive a response from Client")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 
@@ -52,7 +50,6 @@ func ReadConfig() Config {
 		ServerPort:    ":" + *serverPort,
 		TunnelPort:    ":" + *tunnelPort,
 		DashboardPort: ":" + *dashboardPort,
-		MaxRecords:    *maxRecords,
 		Timeout:       *timeout,
 		isRead:        true,
 	}
