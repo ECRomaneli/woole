@@ -37,63 +37,8 @@ func serveTunnel() {
 	server := webserver.NewServer()
 
 	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-
-	server.Get("{client}.*.*/request", func(req *webserver.Request, res *webserver.Response) {
-		client := req.Param("client")
-		validateClient(req.Param("client"))
-
-		if client == "" {
-			webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
-		}
-
-		res.Headers(webserver.EventStreamHeader)
-
-		log.Debug(client + " - Connection Established")
-		defer log.Debug(client + " - Connection Finished")
-
-		if records.clients[client] == nil {
-			records.clients[client] = NewRecordMap()
-		}
-
-		tunnel := records.clients[client].Tunnel
-
-		go func() {
-			<-req.Raw.Context().Done()
-
-			select {
-			case tunnel <- nil:
-			default:
-			}
-		}()
-
-		for record := range tunnel {
-			if req.IsDone() {
-				return
-			}
-
-			res.FlushEvent(&webserver.Event{
-				ID:   record.ID,
-				Name: "request",
-				Data: *record.Request,
-			})
-		}
-	})
-
-	server.Post("{client}.*.*/response/{id}", func(req *webserver.Request, res *webserver.Response) {
-		validateClient(req.Param("client"))
-
-		record := records.FindByClientAndId(req.Param("client"), req.Param("id"))
-
-		response := Response{}
-		err := json.Unmarshal(req.Body(), &response)
-
-		if err != nil {
-			webserver.NewHTTPError(http.StatusBadRequest, err).Panic()
-		}
-
-		record.Response = &response
-		record.OnResponse.SendLast()
-	})
+	server.Get("{client}.*.*/request", requestHandler)
+	server.Post("{client}.*.*/response/{id}", responseHandler)
 
 	server.ListenAndServe(config.TunnelPort)
 }
@@ -129,6 +74,63 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	if log.IsDebugEnabled() {
 		log.Debug(record.ToString())
 	}
+}
+
+func requestHandler(req *webserver.Request, res *webserver.Response) {
+	client := req.Param("client")
+	validateClient(req.Param("client"))
+
+	if client == "" {
+		webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
+	}
+
+	res.Headers(webserver.EventStreamHeader)
+
+	log.Debug(client + " - Connection Established")
+	defer log.Debug(client + " - Connection Finished")
+
+	if records.clients[client] == nil {
+		records.clients[client] = NewRecordMap()
+	}
+
+	tunnel := records.clients[client].Tunnel
+
+	go func() {
+		<-req.Raw.Context().Done()
+
+		select {
+		case tunnel <- nil:
+		default:
+		}
+	}()
+
+	for record := range tunnel {
+		if req.IsDone() {
+			return
+		}
+
+		res.FlushEvent(&webserver.Event{
+			ID:   record.ID,
+			Name: "request",
+			Data: *record.Request,
+		})
+	}
+}
+
+func responseHandler(req *webserver.Request, res *webserver.Response) {
+	validateClient(req.Param("client"))
+
+	record := records.FindByClientAndId(req.Param("client"), req.Param("id"))
+
+	response := Response{}
+	err := json.Unmarshal(req.Body(), &response)
+
+	if err != nil {
+		webserver.NewHTTPError(http.StatusBadRequest, err).Panic()
+	}
+
+	record.Response = &response
+	record.OnResponse.SendLast()
 }
 
 func validateClient(client string) {

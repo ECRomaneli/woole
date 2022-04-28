@@ -49,9 +49,9 @@ func ReadConfig() Config {
 	logger.SetLogLevelStr(*logLevel)
 
 	config = Config{
-		ServerPort:    *serverPort,
-		TunnelPort:    *tunnelPort,
-		DashboardPort: *dashboardPort,
+		ServerPort:    ":" + *serverPort,
+		TunnelPort:    ":" + *tunnelPort,
+		DashboardPort: ":" + *dashboardPort,
 		MaxRecords:    *maxRecords,
 		Timeout:       *timeout,
 		isRead:        true,
