@@ -17,14 +17,16 @@ type Config struct {
 	TunnelHost    string
 	TunnelPort    string
 	DashboardPort string
+	CustomHost    string
 	MaxRecords    int
 	isRead        bool
 }
 
 const (
-	defaultProxyURL     = "80"
-	defaultTunnelURL    = "8001"
-	defaultDashboardURL = "8000"
+	defaultProxyPort         = "80"
+	defaultTunnelPort        = "8001"
+	defaultDashboardPort     = "8000"
+	defaultCustomHostMessage = "<scheme>://<url>:<port>"
 )
 
 func (this *Config) ProxyProtoHost() string {
@@ -32,6 +34,10 @@ func (this *Config) ProxyProtoHost() string {
 }
 
 func (this *Config) ProxyURL() string {
+	if len(this.ProxyPort) == 0 {
+		return this.ProxyProtoHost()
+	}
+
 	return this.ProxyProtoHost() + ":" + this.ProxyPort
 }
 
@@ -40,6 +46,10 @@ func (this *Config) TunnelProtoHost() string {
 }
 
 func (this *Config) TunnelURL() string {
+	if len(this.TunnelPort) == 0 {
+		return this.TunnelProtoHost()
+	}
+
 	return this.TunnelProtoHost() + ":" + this.TunnelPort
 }
 
@@ -51,9 +61,10 @@ func ReadConfig() Config {
 		return config
 	}
 
-	proxyURL := flag.String("proxy", ":"+defaultProxyURL, "URL to Proxy")
-	tunnelURL := flag.String("tunnel", ":"+defaultTunnelURL, "Server Tunnel URL. TODO: If no one is set, the sniffer will run locally")
-	dashboardPort := flag.String("dashboard", defaultDashboardURL, "Dashboard Port")
+	proxyURL := flag.String("proxy", ":"+defaultProxyPort, "URL to Proxy")
+	tunnelURL := flag.String("tunnel", ":"+defaultTunnelPort, "Server Tunnel URL. TODO: If no one is set, the sniffer will run locally")
+	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
+	customHost := flag.String("custom-host", defaultCustomHostMessage, "Customize host passed as header for proxy URL")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 
@@ -67,13 +78,18 @@ func ReadConfig() Config {
 	config = Config{
 		ProxyProto:    strOrDefault(proxyProto, "http"),
 		ProxyHost:     strOrDefault(proxyHost, "localhost"),
-		ProxyPort:     strOrDefault(proxyPort, defaultProxyURL),
+		ProxyPort:     proxyPort,
 		TunnelProto:   strOrDefault(tunnelProto, "http"),
 		TunnelHost:    strOrDefault(tunnelHost, "localhost"),
-		TunnelPort:    strOrDefault(tunnelPort, defaultTunnelURL),
+		TunnelPort:    tunnelPort,
 		DashboardPort: *dashboardPort,
+		CustomHost:    *customHost,
 		MaxRecords:    *maxRecords,
 		isRead:        true,
+	}
+
+	if config.CustomHost == defaultCustomHostMessage {
+		config.CustomHost = config.ProxyURL()
 	}
 
 	return config

@@ -52,7 +52,7 @@ func initializeTunnel() {
 		os.Exit(1)
 	}
 
-	proxyHandler = createProxyHandler(config.ProxyProtoHost())
+	proxyHandler = createProxyHandler()
 
 	// Receive events, parse data, do request, record them, and return response
 	for event := range client.Stream {
@@ -112,23 +112,17 @@ func proxyRequest(req *Request) (*Response, time.Duration) {
 
 }
 
-func createProxyHandler(URL string) http.HandlerFunc {
-	url, _ := url.Parse(URL)
+func createProxyHandler() http.HandlerFunc {
+	url, _ := url.Parse(config.CustomHost)
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
-		fmt.Printf("Uh oh | %v | %s %s\n", err, req.Method, req.URL)
+		log.Error(err, ":", req.Method, req.URL)
 		rw.WriteHeader(StatusInternalProxyError)
 		fmt.Fprintf(rw, "%v", err)
 	}
 
-	return func(rw http.ResponseWriter, req *http.Request) {
-		req.Host = url.Host
-		req.URL.Host = url.Host
-		req.URL.Scheme = url.Scheme
-
-		proxy.ServeHTTP(rw, req)
-	}
+	return proxy.ServeHTTP
 }
 
 func panicIfNotNil(err error) {
