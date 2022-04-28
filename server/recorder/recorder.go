@@ -19,7 +19,7 @@ const StatusInternalProxyError = 999
 var config = console.ReadConfig()
 var log = logger.New("recorder")
 
-var records = NewRecords(uint(config.MaxRecords))
+var records = NewRecords()
 
 func ListenAndServe() error {
 	server := webserver.NewServer()
@@ -37,25 +37,21 @@ func serveTunnel() {
 	server := webserver.NewServer()
 
 	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-	server.Get("{client}.*.*/request", requestHandler)
-	server.Post("{client}.*.*/response/{id}", responseHandler)
+	server.Get("{client}.*.*/request", requestSender)
+	server.Post("{client}.*.*/response/{id}", responseReceiver)
 
 	server.ListenAndServe(config.TunnelPort)
 }
 
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	client := req.Param("client")
-	validateClient(req.Param("client"))
-
-	if records.clients[client] == nil {
-		host, _ := splitHostPort(req.Raw.Host)
-		webserver.NewHTTPError(http.StatusServiceUnavailable, "Please, start Woole Client pointing the tunnel to '"+host+config.TunnelPort+"'").Panic()
-	}
+	client := validateClient(req.Param("client"), true)
 
 	record := NewRecord((&Request{}).FromHTTPRequest(req.Raw))
 	records.Add(client, record)
 
 	record.Elapsed = util.Timer(func() {
+		defer records.Remove(client, record.ID)
+
 		select {
 		case <-record.OnResponse.Receive():
 		case <-time.After(time.Duration(config.Timeout) * time.Millisecond):
@@ -65,33 +61,26 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 		}
 	})
 
-	// Save req and rec data
 	rec := record.Response
 
 	// Write response
 	res.Headers(rec.Header).Status(rec.Code).Write(rec.Body)
 
 	if log.IsDebugEnabled() {
-		log.Debug(record.ToString())
+		log.Debug(client, "-", record.ToString())
 	}
 }
 
-func requestHandler(req *webserver.Request, res *webserver.Response) {
-	client := req.Param("client")
-	validateClient(req.Param("client"))
-
-	if client == "" {
-		webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
-	}
+func requestSender(req *webserver.Request, res *webserver.Response) {
+	client := validateClient(req.Param("client"), false)
 
 	res.Headers(webserver.EventStreamHeader)
 
 	log.Debug(client + " - Connection Established")
 	defer log.Debug(client + " - Connection Finished")
+	defer records.RemoveClient(client)
 
-	if records.clients[client] == nil {
-		records.clients[client] = NewRecordMap()
-	}
+	records.clients[client] = NewRecordMap()
 
 	tunnel := records.clients[client].Tunnel
 
@@ -117,10 +106,10 @@ func requestHandler(req *webserver.Request, res *webserver.Response) {
 	}
 }
 
-func responseHandler(req *webserver.Request, res *webserver.Response) {
-	validateClient(req.Param("client"))
+func responseReceiver(req *webserver.Request, res *webserver.Response) {
+	client := validateClient(req.Param("client"), true)
 
-	record := records.FindByClientAndId(req.Param("client"), req.Param("id"))
+	record := records.FindByClientAndId(client, req.Param("id"))
 
 	response := Response{}
 	err := json.Unmarshal(req.Body(), &response)
@@ -133,10 +122,22 @@ func responseHandler(req *webserver.Request, res *webserver.Response) {
 	record.OnResponse.SendLast()
 }
 
-func validateClient(client string) {
-	if client == "" {
+func validateClient(client string, shouldExists bool) string {
+	if len(client) == 0 {
 		webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
 	}
+
+	if records.ClientExists(client) != shouldExists {
+		message := "The subdomain '" + client + "' is already in use"
+
+		if shouldExists {
+			message = "The subdomain '" + client + "' is not in use"
+		}
+
+		webserver.NewHTTPError(http.StatusServiceUnavailable, message).Panic()
+	}
+
+	return client
 }
 
 func splitHostPort(hostPort string) (host, port string) {
