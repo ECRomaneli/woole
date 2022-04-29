@@ -26,7 +26,12 @@ func ListenAndServe() error {
 	go serveTunnel()
 
 	server.All("{client}.*.*/**", recorderHandler)
-	return server.ListenAndServe(config.ServerPort)
+
+	if len(config.TlsFullChain) == 0 || len(config.TlsPrivKey) == 0 {
+		return server.ListenAndServe(config.ServerPort)
+	}
+
+	return server.ListenAndServeTLS(config.ServerPort, config.TlsFullChain, config.TlsPrivKey)
 }
 
 func GetRecords() *Records {
