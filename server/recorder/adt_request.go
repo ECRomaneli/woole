@@ -3,8 +3,9 @@ package recorder
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
+
+	"github.com/ecromaneli-golang/http/webserver"
 )
 
 type Request struct {
@@ -20,30 +21,13 @@ func (this *Request) ToString() string {
 	return "[" + this.Method + "] " + this.Path
 }
 
-/**
-Request{
-	ctx:        ctx,
-	Method:     method,
-	URL:        u,
-	Proto:      "HTTP/1.1",
-	ProtoMajor: 1,
-	ProtoMinor: 1,
-	Header:     make(Header),
-	Body:       rc,
-	Host:       u.Host,
-}
-*/
-
-func (this *Request) FromHTTPRequest(httpReq *http.Request) *Request {
-	body := &bytes.Buffer{}
-	httpReq.Body = ioutil.NopCloser(io.TeeReader(httpReq.Body, body))
-
-	this.Proto = httpReq.Proto
-	this.Method = httpReq.Method
-	this.URL = httpReq.URL.String()
-	this.Path = httpReq.URL.Path
-	this.Header = httpReq.Header
-	this.Body = body.Bytes()
+func (this *Request) FromHTTPRequest(httpReq *webserver.Request) *Request {
+	this.Proto = httpReq.Raw.Proto
+	this.Method = httpReq.Raw.Method
+	this.URL = httpReq.Raw.URL.String()
+	this.Path = httpReq.Raw.URL.Path
+	this.Header = httpReq.Raw.Header
+	this.Body = httpReq.Body()
 
 	return this
 }
