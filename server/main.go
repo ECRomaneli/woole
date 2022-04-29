@@ -25,11 +25,11 @@ func bootstrap() {
 	}()
 
 	fmt.Println()
-	fmt.Println("=========================")
-	fmt.Printf("Server listening on %s\n", cfg.ServerPort)
+	fmt.Println("========================================")
+	fmt.Printf("Server listening on %s%s\n", cfg.HostPattern, cfg.ServerPort)
 	//fmt.Printf("Server dashboard on %s\n", cfg.DashboardPort)
-	fmt.Printf("Tunnel listening on %s\n", cfg.TunnelPort)
-	fmt.Println("=========================")
+	fmt.Printf("Tunnel listening on %s%s\n", cfg.HostPattern, cfg.TunnelPort)
+	fmt.Println("========================================")
 	fmt.Println()
 
 	wg.Wait()
