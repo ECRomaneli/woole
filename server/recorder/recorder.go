@@ -25,7 +25,7 @@ func ListenAndServe() error {
 	server := webserver.NewServer()
 	go serveTunnel()
 
-	server.All("{client}.*.*/**", recorderHandler)
+	server.All(config.HostPattern+"/**", recorderHandler)
 
 	if len(config.TlsFullChain) == 0 || len(config.TlsPrivKey) == 0 {
 		return server.ListenAndServe(config.ServerPort)
@@ -42,8 +42,8 @@ func serveTunnel() {
 	server := webserver.NewServer()
 
 	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-	server.Get("{client}.*.*/request", requestSender)
-	server.Post("{client}.*.*/response/{id}", responseReceiver)
+	server.Get(config.HostPattern+"/request", requestSender)
+	server.Post(config.HostPattern+"/response/{id}", responseReceiver)
 
 	server.ListenAndServe(config.TunnelPort)
 }

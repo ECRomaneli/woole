@@ -9,6 +9,7 @@ import (
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
+	HostPattern   string
 	ServerPort    string
 	TunnelPort    string
 	DashboardPort string
@@ -19,6 +20,7 @@ type Config struct {
 }
 
 const (
+	defaultHostPattern   = "{client}"
 	defaultServerPort    = "80"
 	defaultTunnelPort    = "8001"
 	defaultDashboardPort = "8000"
@@ -32,6 +34,7 @@ func ReadConfig() Config {
 		return config
 	}
 
+	hostPattern := flag.String("pattern", defaultHostPattern, "Set the server host pattern. The '{client}' SHOULD be present to determine where to get client id")
 	serverPort := flag.String("server", defaultServerPort, "Server Port")
 	tunnelPort := flag.String("tunnel", defaultTunnelPort, "Tunnel Port")
 	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
@@ -45,6 +48,7 @@ func ReadConfig() Config {
 	logger.SetLogLevelStr(*logLevel)
 
 	config = Config{
+		HostPattern:   *hostPattern,
 		ServerPort:    ":" + *serverPort,
 		TunnelPort:    ":" + *tunnelPort,
 		DashboardPort: ":" + *dashboardPort,
