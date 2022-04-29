@@ -51,7 +51,7 @@ func serveTunnel() {
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	client := validateClient(req.Param("client"), true)
 
-	record := NewRecord((&Request{}).FromHTTPRequest(req.Raw))
+	record := NewRecord((&Request{}).FromHTTPRequest(req))
 	records.Add(client, record)
 
 	record.Elapsed = util.Timer(func() {
