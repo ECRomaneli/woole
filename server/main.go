@@ -19,13 +19,15 @@ func bootstrap() {
 
 	fmt.Println()
 	fmt.Println(__SEPARATOR__)
-	fmt.Printf("  HTTP listening on %s%s\n", config.HostPattern, config.HttpPort)
+	fmt.Printf("  HTTP listening on http://%s%s\n", config.HostPattern, config.HttpPort)
 
+	tunnelProto := "http"
 	if config.HasTlsFiles() {
-		fmt.Printf(" HTTPS listening on %s%s\n", config.HostPattern, config.HttpsPort)
+		tunnelProto = "https"
+		fmt.Printf(" HTTPS listening on https://%s%s\n", config.HostPattern, config.HttpsPort)
 	}
 	//fmt.Printf("Server dashboard on %s\n", config.DashboardPort)
-	fmt.Printf("Tunnel listening on %s%s\n", config.HostPattern, config.TunnelPort)
+	fmt.Printf("Tunnel listening on %s://%s%s\n", tunnelProto, config.HostPattern, config.TunnelPort)
 	fmt.Println(__SEPARATOR__)
 	fmt.Println()
 
@@ -35,7 +37,7 @@ func bootstrap() {
 func separator() string {
 	hostLength := len(config.HostPattern) + len(config.HttpPort) + 1
 
-	separator := "==================="
+	separator := "==========================="
 
 	for i := 0; i < hostLength; i++ {
 		separator += "="
