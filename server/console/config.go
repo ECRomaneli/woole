@@ -3,6 +3,7 @@ package console
 import (
 	"flag"
 	"fmt"
+	"strconv"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
@@ -10,23 +11,21 @@ import (
 // Config has all the configuration parsed from the command line.
 type Config struct {
 	HostPattern   string
-	ServerPort    string
+	HttpPort      string
+	HttpsPort     string
 	TunnelPort    string
 	DashboardPort string
 	Timeout       int
-	TlsFullChain  string
-	TlsPrivKey    string
+	TlsCert       string
+	TlsKey        string
 	isRead        bool
 }
 
-const (
-	defaultHostPattern   = "{client}"
-	defaultServerPort    = "80"
-	defaultTunnelPort    = "8001"
-	defaultDashboardPort = "8000"
-)
-
 var config Config = Config{isRead: false}
+
+func (this *Config) HasTlsFiles() bool {
+	return len(this.TlsCert) != 0 && len(this.TlsKey) != 0
+}
 
 // ReadConfig reads the arguments from the command line.
 func ReadConfig() Config {
@@ -34,13 +33,14 @@ func ReadConfig() Config {
 		return config
 	}
 
-	hostPattern := flag.String("pattern", defaultHostPattern, "Set the server host pattern. The '{client}' SHOULD be present to determine where to get client id")
-	serverPort := flag.String("server", defaultServerPort, "Server Port")
-	tunnelPort := flag.String("tunnel", defaultTunnelPort, "Tunnel Port")
-	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
+	hostPattern := flag.String("pattern", "{client}", "Set the server host pattern. The '{client}' MUST be present to determine where to get client id")
+	httpPort := flag.Int("http", 80, "HTTP Port")
+	httpsPort := flag.Int("https", 443, "HTTPS Port")
+	tunnelPort := flag.Int("tunnel", 8001, "Tunnel Port")
+	dashboardPort := flag.Int("dashboard", 8000, "Dashboard Port")
 	timeout := flag.Int("timeout", 10000, "Timeout for receive a response from Client")
-	tlsFullChain := flag.String("tls-fullchain", "", "TLS fullchain file path")
-	tlsPrivKey := flag.String("tls-privkey", "", "TLS privkey file path")
+	tlsCert := flag.String("tls-cert", "", "TLS cert/fullchain file path")
+	tlsKey := flag.String("tls-key", "", "TLS key/privkey file path")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 
 	flag.Parse()
@@ -49,11 +49,12 @@ func ReadConfig() Config {
 
 	config = Config{
 		HostPattern:   *hostPattern,
-		ServerPort:    ":" + *serverPort,
-		TunnelPort:    ":" + *tunnelPort,
-		DashboardPort: ":" + *dashboardPort,
-		TlsFullChain:  *tlsFullChain,
-		TlsPrivKey:    *tlsPrivKey,
+		HttpPort:      ":" + strconv.Itoa(*httpPort),
+		HttpsPort:     ":" + strconv.Itoa(*httpsPort),
+		TunnelPort:    ":" + strconv.Itoa(*tunnelPort),
+		DashboardPort: ":" + strconv.Itoa(*dashboardPort),
+		TlsCert:       *tlsCert,
+		TlsKey:        *tlsKey,
 		Timeout:       *timeout,
 		isRead:        true,
 	}
