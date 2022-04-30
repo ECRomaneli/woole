@@ -21,17 +21,19 @@ var log = logger.New("recorder")
 
 var records = NewRecords()
 
-func ListenAndServe() error {
+func ListenAndServe() {
 	server := webserver.NewServer()
 	go serveTunnel()
 
 	server.All(config.HostPattern+"/**", recorderHandler)
 
-	if len(config.TlsFullChain) == 0 || len(config.TlsPrivKey) == 0 {
-		return server.ListenAndServe(config.ServerPort)
+	if config.HasTlsFiles() {
+		go func() {
+			panic(server.ListenAndServeTLS(config.HttpsPort, config.TlsCert, config.TlsKey))
+		}()
 	}
 
-	return server.ListenAndServeTLS(config.ServerPort, config.TlsFullChain, config.TlsPrivKey)
+	panic(server.ListenAndServe(config.HttpPort))
 }
 
 func GetRecords() *Records {
@@ -45,7 +47,11 @@ func serveTunnel() {
 	server.Get(config.HostPattern+"/request", requestSender)
 	server.Post(config.HostPattern+"/response/{id}", responseReceiver)
 
-	server.ListenAndServe(config.TunnelPort)
+	if !config.HasTlsFiles() {
+		panic(server.ListenAndServe(config.TunnelPort))
+	}
+
+	panic(server.ListenAndServeTLS(config.TunnelPort, config.TlsCert, config.TlsKey))
 }
 
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
@@ -81,8 +87,8 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 
 	res.Headers(webserver.EventStreamHeader)
 
-	log.Debug(client + " - Connection Established")
-	defer log.Debug(client + " - Connection Finished")
+	log.Trace(client + " - Connection Established")
+	defer log.Trace(client + " - Connection Finished")
 	defer records.RemoveClient(client)
 
 	records.clients[client] = NewRecordMap()

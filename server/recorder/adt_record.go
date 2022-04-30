@@ -73,6 +73,7 @@ func (this *Records) RemoveClient(client string) {
 	this.Lock()
 	defer this.Unlock()
 
+	close(this.clients[client].Tunnel)
 	this.clients[client] = nil
 }
 
@@ -111,7 +112,7 @@ type RecordMap struct {
 }
 
 func NewRecordMap() *RecordMap {
-	this := &RecordMap{mu: &sync.RWMutex{}, Tunnel: make(chan *Record, 16)}
+	this := &RecordMap{mu: &sync.RWMutex{}, Tunnel: make(chan *Record, 32)}
 	this.data = make(map[string]*Record)
 	return this
 }
