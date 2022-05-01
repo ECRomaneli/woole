@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"woole/console"
 	"woole/dashboard"
 	"woole/recorder"
@@ -15,19 +14,7 @@ func main() {
 func bootstrap() {
 	cfg := console.ReadConfig()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		recorder.Start()
-		wg.Done()
-	}()
-
-	go func() {
-		err := dashboard.ListenAndServe()
-		fmt.Println("Dashboard: ", err)
-		wg.Done()
-	}()
+	go recorder.Start()
 
 	fmt.Println()
 	fmt.Println("===========================================")
@@ -36,5 +23,5 @@ func bootstrap() {
 	fmt.Println("===========================================")
 	fmt.Println()
 
-	wg.Wait()
+	panic(dashboard.ListenAndServe())
 }
