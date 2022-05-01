@@ -1,8 +1,10 @@
 package console
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/ecromaneli-golang/console/logger"
@@ -66,11 +68,17 @@ func ReadConfig() Config {
 	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
 	customHost := flag.String("custom-host", defaultCustomHostMessage, "Customize host passed as header for proxy URL")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
+	insecureTLS := flag.Bool("allow-insecure-tls", false, "Insecure TLS verification")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 
 	flag.Parse()
 
 	logger.SetLogLevelStr(*logLevel)
+
+	// Ignore globally "Insecure TLS Verification"
+	if *insecureTLS {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	proxyProto, proxyHost, proxyPort := splitURL(*proxyURL)
 	tunnelProto, tunnelHost, tunnelPort := splitURL(*tunnelURL)
