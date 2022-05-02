@@ -3,12 +3,12 @@ package recorder
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"woole-server/app"
 	"woole-server/util"
+	"woole-server/util/hash"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"github.com/ecromaneli-golang/http/webserver"
@@ -42,7 +42,7 @@ func serveTunnel() {
 	server := webserver.NewServer()
 
 	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-	server.Get("/request/{clientId}", requestSender)
+	server.Get("/request/{clientId?}", requestSender)
 	server.Post("/response/{clientId}/{recordId}", responseReceiver)
 
 	if !config.HasTlsFiles() {
@@ -90,6 +90,7 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 	defer records.RemoveClient(clientId)
 
 	res.Headers(webserver.EventStreamHeader)
+	res.FlushEvent(&webserver.Event{Name: "auth", Data: auth})
 
 	go func() {
 		<-req.Raw.Context().Done()
@@ -99,8 +100,6 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 		default:
 		}
 	}()
-
-	res.FlushEvent(&webserver.Event{Name: "auth", Data: auth})
 
 	for record := range client.Tunnel {
 		if req.IsDone() {
@@ -135,10 +134,14 @@ func responseReceiver(req *webserver.Request, res *webserver.Response) {
 }
 
 func registerClient(clientId string) (*Client, app.AuthPayload) {
+	if clientId == "" {
+		clientId = string(hash.RandSha1("")[:5])
+	}
+
 	clientId, err := validateClient(clientId, false)
 
-	for count := 2; err != nil; count++ {
-		clientId, err = validateClient(clientId+strconv.Itoa(count), false)
+	for err != nil {
+		clientId, err = validateClient(clientId+"-"+string(hash.RandSha1(clientId))[:5], false)
 	}
 
 	client := records.RegisterClient(clientId)
