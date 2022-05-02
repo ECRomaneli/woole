@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -28,7 +27,6 @@ var recorderHandler http.HandlerFunc
 var proxyHandler http.HandlerFunc
 
 func Start() {
-	registerClient()
 	initializeTunnel()
 }
 
@@ -36,8 +34,8 @@ func Retry(request *Request) {
 	record := NewRecord(request)
 	DoRequestAndStoreResponse(record)
 
-	if log.IsDebugEnabled() {
-		log.Debug(record.ToString())
+	if log.IsInfoEnabled() {
+		log.Info(record.ToString(26))
 	}
 }
 
@@ -45,29 +43,25 @@ func GetRecords() *Records {
 	return records
 }
 
-func registerClient() {
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/register/%s", config.TunnelURL(), config.Name), nil)
-	panicIfNotNil(err)
-
-	res, err := http.DefaultClient.Do(req)
-	panicIfNotNil(err)
-
-	data, err := ioutil.ReadAll(res.Body)
-	panicIfNotNil(err)
-
-	json.Unmarshal(data, &app.Auth)
-}
-
 func initializeTunnel() {
 
-	// Open connection with tunnel/request
-	client, err := eventsource.NewRequest(fmt.Sprintf("%s/request/%s", config.TunnelURL(), app.Auth.Name))
+	// Open connection with tunnel URL
+	client, err := eventsource.NewRequest(app.GetRequestURL())
 	if err != nil {
 		log.Fatal("Failed to connect with tunnel on " + config.TunnelURL())
 		os.Exit(1)
 	}
 
 	proxyHandler = createProxyHandler()
+
+	// First event MUST be "auth", save them to get Bearer for send responses
+	authEvent := <-client.Stream
+	if authEvent.Name != "auth" {
+		log.Fatal("Auth event expected but got: " + authEvent.Name)
+		os.Exit(1)
+	}
+	json.Unmarshal([]byte(authEvent.Data.(string)), &app.Auth)
+	app.Authenticated.SendLast()
 
 	// Receive events, parse data, do request, record them, and return response
 	for event := range client.Stream {
@@ -106,8 +100,8 @@ func sendResponseToServer(record *Record) {
 	_, err = http.DefaultClient.Do(req)
 	panicIfNotNil(err)
 
-	if log.IsDebugEnabled() {
-		log.Debug(record.ToString())
+	if log.IsInfoEnabled() {
+		log.Info(record.ToString(26))
 	}
 }
 

@@ -2,6 +2,7 @@ package recorder
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -107,16 +108,17 @@ func (recs *Records) OnUpdate(onUpdate func()) {
 	onUpdate()
 }
 
-func (this *Record) ToString() string {
+func (this *Record) ToString(maxPathLength int) string {
 	path := []byte(this.Request.Path)
 
-	if len(path) > 25 {
-		path = append([]byte("..."), path[len(path)-26:]...)
+	if len(path) > maxPathLength {
+		path = append([]byte("..."), path[len(path)-maxPathLength:]...)
 	}
 
 	method := "[" + this.Request.Method + "]"
 
-	str := fmt.Sprintf("%8s %30s", method, string(path))
+	strPathLength := strconv.Itoa(maxPathLength + 3)
+	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
 
 	if this.Response == nil {
 		return str

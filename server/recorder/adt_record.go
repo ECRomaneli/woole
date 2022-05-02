@@ -47,10 +47,6 @@ func (this *Records) ClientExists(clientId string) bool {
 	return this.clients[clientId] != nil
 }
 
-func (this *Records) ClientIsLocked(clientId string) bool {
-	return this.clients[clientId] != nil && this.clients[clientId].IsLocked()
-}
-
 func (this *Records) Add(clientId string, rec *Record) (id string) {
 	this.RLock()
 	client := this.clients[clientId]

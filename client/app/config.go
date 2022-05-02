@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"woole/util/signal"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
@@ -63,8 +64,11 @@ func (this *Config) TunnelURL() string {
 	return this.TunnelProtoHost() + ":" + this.TunnelPort
 }
 
-var config Config = Config{isRead: false}
-var Auth AuthPayload = AuthPayload{}
+var (
+	config        Config        = Config{isRead: false}
+	Auth          AuthPayload   = AuthPayload{}
+	Authenticated signal.Signal = *signal.New()
+)
 
 // ReadConfig reads the arguments from the command line.
 func ReadConfig() Config {
@@ -149,10 +153,6 @@ func splitHostPort(hostPort string) (host, port string) {
 	}
 
 	return hostPort[:colon], hostPort[colon+1:]
-}
-
-func GetRegisterURL() string {
-	return fmt.Sprintf("%s/register/%s", config.TunnelURL(), Auth.Name)
 }
 
 func GetRequestURL() string {

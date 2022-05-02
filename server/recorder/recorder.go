@@ -42,7 +42,6 @@ func serveTunnel() {
 	server := webserver.NewServer()
 
 	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-	server.Post("/register/{clientId}", registerClient)
 	server.Get("/request/{clientId}", requestSender)
 	server.Post("/response/{clientId}/{recordId}", responseReceiver)
 
@@ -54,8 +53,8 @@ func serveTunnel() {
 }
 
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	clientId := validateClient(req.Param("client"), true)
-	panicIfClientLockNotMatch(clientId, true)
+	clientId, err := validateClient(req.Param("client"), true)
+	panicIfNotNil(err)
 
 	record := NewRecord((&Request{}).FromHTTPRequest(req))
 	records.Add(clientId, record)
@@ -77,18 +76,14 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	// Write response
 	res.Headers(rec.Header).Status(rec.Code).Write(rec.Body)
 
-	if log.IsDebugEnabled() {
-		log.Debug(clientId, "-", record.ToString(26))
+	if log.IsInfoEnabled() {
+		log.Info(clientId, "-", record.ToString(26))
 	}
 }
 
 func requestSender(req *webserver.Request, res *webserver.Response) {
-	clientId := req.Param("clientId")
-
-	client := validateAndAuthClient(clientId, req.Header("Authorization"))
-	panicIfClientLockNotMatch(clientId, false)
-
-	client.Lock()
+	client, auth := registerClient(req.Param("clientId"))
+	clientId := client.name
 
 	log.Trace(clientId + " - Connection Established")
 	defer log.Trace(clientId + " - Connection Finished")
@@ -104,6 +99,8 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 		default:
 		}
 	}()
+
+	res.FlushEvent(&webserver.Event{Name: "auth", Data: auth})
 
 	for record := range client.Tunnel {
 		if req.IsDone() {
@@ -137,33 +134,32 @@ func responseReceiver(req *webserver.Request, res *webserver.Response) {
 	record.OnResponse.SendLast()
 }
 
-func registerClient(req *webserver.Request, res *webserver.Response) {
-	clientId := req.Param("clientId")
+func registerClient(clientId string) (*Client, app.AuthPayload) {
+	clientId, err := validateClient(clientId, false)
 
-	if records.ClientIsLocked(clientId) {
-		count := 2
-		for ; records.ClientIsLocked(clientId + strconv.Itoa(count)); count++ {
-		}
-		clientId = clientId + strconv.Itoa(count)
+	for count := 2; err != nil; count++ {
+		clientId, err = validateClient(clientId+strconv.Itoa(count), false)
 	}
 
+	client := records.RegisterClient(clientId)
 	url := strings.Replace(config.HostPattern, app.ClientToken, clientId, 1)
 
 	payload := app.AuthPayload{
 		Name:   clientId,
 		Http:   "http://" + url + config.HttpPort,
-		Bearer: string(records.RegisterClient(clientId).bearer),
+		Bearer: string(client.bearer),
 	}
 
 	if config.HasTlsFiles() {
 		payload.Https = "https://" + url + config.HttpsPort
 	}
 
-	res.WriteJSON(payload)
+	return client, payload
 }
 
 func validateAndAuthClient(clientId, bearer string) *Client {
-	clientId = validateClient(clientId, true)
+	clientId, err := validateClient(clientId, true)
+	panicIfNotNil(err)
 
 	client, err := records.Get(clientId, bearer)
 
@@ -174,38 +170,22 @@ func validateAndAuthClient(clientId, bearer string) *Client {
 	return client
 }
 
-func panicIfClientLockNotMatch(clientId string, shouldBeLocked bool) {
+func validateClient(clientId string, shouldExist bool) (string, error) {
 	if len(clientId) == 0 {
-		webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
-	}
-
-	if records.ClientIsLocked(clientId) != shouldBeLocked {
-		message := "The client '" + clientId + "' is already in use"
-
-		if shouldBeLocked {
-			message = "The client '" + clientId + "' is not in use"
-		}
-
-		webserver.NewHTTPError(http.StatusForbidden, message).Panic()
-	}
-}
-
-func validateClient(clientId string, shouldExist bool) string {
-	if len(clientId) == 0 {
-		webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification").Panic()
+		return clientId, webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification")
 	}
 
 	if records.ClientExists(clientId) != shouldExist {
-		message := "The client '" + clientId + "' is already registered"
+		message := "The client '" + clientId + "' is already in use"
 
 		if shouldExist {
-			message = "The client '" + clientId + "' is not registered"
+			message = "The client '" + clientId + "' is not in use"
 		}
 
-		webserver.NewHTTPError(http.StatusForbidden, message).Panic()
+		return clientId, webserver.NewHTTPError(http.StatusForbidden, message)
 	}
 
-	return clientId
+	return clientId, nil
 }
 
 func splitHostPort(hostPort string) (host, port string) {
@@ -217,4 +197,10 @@ func splitHostPort(hostPort string) (host, port string) {
 	}
 
 	return hostPort[:colon], hostPort[colon+1:]
+}
+
+func panicIfNotNil(err any) {
+	if err != nil {
+		panic(err)
+	}
 }
