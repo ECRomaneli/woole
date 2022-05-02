@@ -2,39 +2,42 @@ package main
 
 import (
 	"fmt"
-	"sync"
-	"woole/console"
+	"woole/app"
 	"woole/dashboard"
 	"woole/recorder"
+
+	"github.com/ecromaneli-golang/console/logger"
 )
+
+var config = app.ReadConfig()
 
 func main() {
 	bootstrap()
 }
 
 func bootstrap() {
-	cfg := console.ReadConfig()
+	go printInfo()
+	go func() { panic(dashboard.ListenAndServe()) }()
+	recorder.Start()
+}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		recorder.Start()
-		wg.Done()
-	}()
-
-	go func() {
-		err := dashboard.ListenAndServe()
-		fmt.Println("Dashboard: ", err)
-		wg.Done()
-	}()
+func printInfo() {
+	<-app.Authenticated.Receive()
 
 	fmt.Println()
 	fmt.Println("===========================================")
-	fmt.Printf("Redirecting requests from %s\n", cfg.ProxyURL())
-	fmt.Printf("Serving dashboard on: http://localhost:%s\n", cfg.DashboardPort)
+	fmt.Printf(" HTTP URL: %s\n", app.Auth.Http)
+
+	if len(app.Auth.Https) != 0 {
+		fmt.Printf("HTTPS URL: %s\n", app.Auth.Https)
+	}
+
+	if logger.GetInstance().IsDebugEnabled() {
+		fmt.Printf("   Bearer: %s\n", app.Auth.Bearer)
+	}
+
+	fmt.Printf(" Proxying: %s\n", config.ProxyURL())
+	fmt.Printf("Dashboard: http://localhost:%s\n", config.DashboardPort)
 	fmt.Println("===========================================")
 	fmt.Println()
-
-	wg.Wait()
 }

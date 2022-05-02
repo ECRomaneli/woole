@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"woole/console"
+	"woole/app"
 	"woole/recorder"
 
 	"github.com/ecromaneli-golang/http/webserver"
@@ -20,7 +20,7 @@ import (
 var embeddedFS embed.FS
 
 var records = recorder.GetRecords()
-var config = console.ReadConfig()
+var config = app.ReadConfig()
 
 func ListenAndServe() error {
 	return setupServer().ListenAndServe(":" + config.DashboardPort)

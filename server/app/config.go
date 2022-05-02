@@ -1,12 +1,15 @@
-package console
+package app
 
 import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
+
+const ClientToken = "{client}"
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
@@ -21,6 +24,13 @@ type Config struct {
 	isRead        bool
 }
 
+type AuthPayload struct {
+	Name   string `json:"name"`
+	Http   string `json:"http"`
+	Https  string `json:"https"`
+	Bearer string `json:"bearer"`
+}
+
 var config Config = Config{isRead: false}
 
 func (this *Config) HasTlsFiles() bool {
@@ -33,7 +43,7 @@ func ReadConfig() Config {
 		return config
 	}
 
-	hostPattern := flag.String("pattern", "{client}", "Set the server host pattern. The '{client}' MUST be present to determine where to get client id")
+	hostPattern := flag.String("pattern", "{client}", "Set the server host pattern. The '"+ClientToken+"' MUST be present to determine where to get client id")
 	httpPort := flag.Int("http", 80, "HTTP Port")
 	httpsPort := flag.Int("https", 443, "HTTPS Port")
 	tunnelPort := flag.Int("tunnel", 8001, "Tunnel Port")
@@ -57,6 +67,10 @@ func ReadConfig() Config {
 		TlsKey:        *tlsKey,
 		Timeout:       *timeout,
 		isRead:        true,
+	}
+
+	if strings.Index(config.HostPattern, ClientToken) == -1 {
+		panic("Pattern MUST has " + ClientToken)
 	}
 
 	return config
