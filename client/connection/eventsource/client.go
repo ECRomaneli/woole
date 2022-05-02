@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"woole/app"
 )
 
 type Client struct {
@@ -28,6 +29,8 @@ func NewRequest(eventsourceUrl string) (*Client, error) {
 	for key, value := range _DEFAULT_REQUEST_HEADER_ {
 		req.Header.Set(key, value)
 	}
+
+	app.SetAuthorization(req.Header)
 
 	// Avoid TCP reuse and do request
 	req.Close = true
@@ -74,7 +77,7 @@ func listenEvents(rc io.ReadCloser, stream chan Event) error {
 		case "data":
 			event.Data = string(value)
 		case "id":
-			event.ID = string(value)
+			event.Id = string(value)
 		case "retry":
 			// TODO
 		default:

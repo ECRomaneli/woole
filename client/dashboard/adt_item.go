@@ -6,7 +6,7 @@ import (
 )
 
 type Item struct {
-	ID      string        `json:"id"`
+	Id      string        `json:"id"`
 	Path    string        `json:"path"`
 	Method  string        `json:"method"`
 	Status  int           `json:"status"`
@@ -30,7 +30,7 @@ func (item *Item) FromRecord(rec *recorder.Record) *Item {
 		return nil
 	}
 
-	item.ID = rec.ID
+	item.Id = rec.Id
 	item.Path = rec.Request.Path
 	item.Method = rec.Request.Method
 	item.Status = rec.Response.Code

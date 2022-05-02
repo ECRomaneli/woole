@@ -2,6 +2,7 @@ package recorder
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,10 +10,10 @@ import (
 	"woole/util/signal"
 )
 
-var seqID sequence.Seq
+var seqId sequence.Seq
 
 type Record struct {
-	ID       string
+	Id       string
 	Request  *Request
 	Response *Response
 	Elapsed  time.Duration
@@ -30,11 +31,11 @@ func NewRecords(maxRecords uint) *Records {
 }
 
 func NewRecord(req *Request) *Record {
-	return &Record{ID: seqID.NextString(), Request: req}
+	return &Record{Id: seqId.NextString(), Request: req}
 }
 
-func NewRecordWithID(id string, req *Request) *Record {
-	return &Record{ID: id, Request: req}
+func NewRecordWithId(id string, req *Request) *Record {
+	return &Record{Id: id, Request: req}
 }
 
 func (recs *Records) Add(rec *Record) {
@@ -55,7 +56,7 @@ func (recs *Records) FindById(id string) *Record {
 	defer recs.RUnlock()
 
 	for _, record := range recs.records {
-		if record.ID == id {
+		if record.Id == id {
 			return record
 		}
 	}
@@ -107,16 +108,17 @@ func (recs *Records) OnUpdate(onUpdate func()) {
 	onUpdate()
 }
 
-func (this *Record) ToString() string {
+func (this *Record) ToString(maxPathLength int) string {
 	path := []byte(this.Request.Path)
 
-	if len(path) > 25 {
-		path = append([]byte("..."), path[len(path)-26:]...)
+	if len(path) > maxPathLength {
+		path = append([]byte("..."), path[len(path)-maxPathLength:]...)
 	}
 
 	method := "[" + this.Request.Method + "]"
 
-	str := fmt.Sprintf("%8s %30s", method, string(path))
+	strPathLength := strconv.Itoa(maxPathLength + 3)
+	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
 
 	if this.Response == nil {
 		return str

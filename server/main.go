@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 
-	"woole-server/console"
+	"woole-server/app"
 	"woole-server/recorder"
 )
 
-var config = console.ReadConfig()
+var config = app.ReadConfig()
 
 func main() {
 	bootstrap()

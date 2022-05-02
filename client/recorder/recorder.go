@@ -10,17 +10,16 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"woole/app"
 	"woole/connection/eventsource"
-	"woole/console"
 	"woole/util"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
 
-// StatusInternalProxyError is any unknown proxy error.
-const StatusInternalProxyError = 999
+const StatusInternalProxyError = -1
 
-var config = console.ReadConfig()
+var config = app.ReadConfig()
 var log = logger.New("recorder")
 
 var records = NewRecords(uint(config.MaxRecords))
@@ -35,8 +34,8 @@ func Retry(request *Request) {
 	record := NewRecord(request)
 	DoRequestAndStoreResponse(record)
 
-	if log.IsDebugEnabled() {
-		log.Debug(record.ToString())
+	if log.IsInfoEnabled() {
+		log.Info(record.ToString(26))
 	}
 }
 
@@ -45,8 +44,9 @@ func GetRecords() *Records {
 }
 
 func initializeTunnel() {
-	// Open connection with tunnel/request
-	client, err := eventsource.NewRequest(config.TunnelURL() + "/request")
+
+	// Open connection with tunnel URL
+	client, err := eventsource.NewRequest(app.GetRequestURL())
 	if err != nil {
 		log.Fatal("Failed to connect with tunnel on " + config.TunnelURL())
 		os.Exit(1)
@@ -54,15 +54,24 @@ func initializeTunnel() {
 
 	proxyHandler = createProxyHandler()
 
+	// First event MUST be "auth", save them to get Bearer for send responses
+	authEvent := <-client.Stream
+	if authEvent.Name != "auth" {
+		log.Fatal("Auth event expected but got: " + authEvent.Name)
+		os.Exit(1)
+	}
+	json.Unmarshal([]byte(authEvent.Data.(string)), &app.Auth)
+	app.Authenticated.SendLast()
+
 	// Receive events, parse data, do request, record them, and return response
 	for event := range client.Stream {
-		id := event.ID
+		id := event.Id
 
 		var req Request
 		json.Unmarshal([]byte(event.Data.(string)), &req)
 
 		go func() {
-			record := NewRecordWithID(id, &req)
+			record := NewRecordWithId(id, &req)
 			DoRequestAndStoreResponse(record)
 			sendResponseToServer(record)
 		}()
@@ -82,11 +91,17 @@ func sendResponseToServer(record *Record) {
 	resData, err := json.Marshal(*record.Response)
 	panicIfNotNil(err)
 
-	_, err = http.Post(config.TunnelURL()+"/response/"+record.ID, "application/json", bytes.NewBuffer(resData))
+	req, err := http.NewRequest("POST", app.GetResponseURL(record.Id), bytes.NewBuffer(resData))
 	panicIfNotNil(err)
 
-	if log.IsDebugEnabled() {
-		log.Debug(record.ToString())
+	app.SetAuthorization(req.Header)
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = http.DefaultClient.Do(req)
+	panicIfNotNil(err)
+
+	if log.IsInfoEnabled() {
+		log.Info(record.ToString(26))
 	}
 }
 
@@ -94,7 +109,7 @@ func handleRedirections(record *Record) {
 	location := record.Response.Header.Get("location")
 	if location != "" {
 		record.Response.Header.Del("location")
-		record.Response.Code = 200
+		record.Response.Code = http.StatusOK
 		record.Response.Body = []byte("Trying to redirect to <a href='" + location + "'>" + location + "</a>...")
 	}
 }
