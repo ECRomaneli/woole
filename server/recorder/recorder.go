@@ -134,30 +134,36 @@ func responseReceiver(req *webserver.Request, res *webserver.Response) {
 }
 
 func registerClient(clientId string) (*Client, app.AuthPayload) {
-	if clientId == "" {
-		clientId = string(hash.RandSha1("")[:5])
+	hasClientId := clientId != ""
+
+	if !hasClientId {
+		clientId = string(hash.RandSha1("")[:8])
 	}
 
 	clientId, err := validateClient(clientId, false)
 
 	for err != nil {
-		clientId, err = validateClient(clientId+"-"+string(hash.RandSha1(clientId))[:5], false)
+		if hasClientId {
+			clientId, err = validateClient(clientId+"-"+string(hash.RandSha1(clientId))[:5], false)
+		} else {
+			clientId, err = validateClient(string(hash.RandSha1(""))[:8], false)
+		}
 	}
 
 	client := records.RegisterClient(clientId)
 	url := strings.Replace(config.HostPattern, app.ClientToken, clientId, 1)
 
-	payload := app.AuthPayload{
+	auth := app.AuthPayload{
 		Name:   clientId,
 		Http:   "http://" + url + config.HttpPort,
 		Bearer: string(client.bearer),
 	}
 
 	if config.HasTlsFiles() {
-		payload.Https = "https://" + url + config.HttpsPort
+		auth.Https = "https://" + url + config.HttpsPort
 	}
 
-	return client, payload
+	return client, auth
 }
 
 func validateAndAuthClient(clientId, bearer string) *Client {
