@@ -1,4 +1,4 @@
-package console
+package app
 
 import (
 	"crypto/tls"
@@ -19,9 +19,17 @@ type Config struct {
 	TunnelHost    string
 	TunnelPort    string
 	DashboardPort string
+	Name          string
 	CustomHost    string
 	MaxRecords    int
 	isRead        bool
+}
+
+type AuthPayload struct {
+	Name   string `json:"name"`
+	Http   string `json:"http"`
+	Https  string `json:"https"`
+	Bearer string `json:"bearer"`
 }
 
 const (
@@ -56,6 +64,7 @@ func (this *Config) TunnelURL() string {
 }
 
 var config Config = Config{isRead: false}
+var Auth AuthPayload = AuthPayload{}
 
 // ReadConfig reads the arguments from the command line.
 func ReadConfig() Config {
@@ -66,6 +75,7 @@ func ReadConfig() Config {
 	proxyURL := flag.String("proxy", ":"+defaultProxyPort, "URL to Proxy")
 	tunnelURL := flag.String("tunnel", ":"+defaultTunnelPort, "Server Tunnel URL. TODO: If no one is set, the sniffer will run locally")
 	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
+	name := flag.String("name", "", "Name is an unique key used to identify the client on server")
 	customHost := flag.String("custom-host", defaultCustomHostMessage, "Customize host passed as header for proxy URL")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
 	insecureTLS := flag.Bool("allow-insecure-tls", false, "Insecure TLS verification")
@@ -91,10 +101,17 @@ func ReadConfig() Config {
 		TunnelHost:    strOrDefault(tunnelHost, "localhost"),
 		TunnelPort:    tunnelPort,
 		DashboardPort: *dashboardPort,
+		Name:          *name,
 		CustomHost:    *customHost,
 		MaxRecords:    *maxRecords,
 		isRead:        true,
 	}
+
+	if len(config.Name) == 0 {
+		panic("A name MUST be provided to be registered on server")
+	}
+
+	Auth.Name = config.Name
 
 	if config.CustomHost == defaultCustomHostMessage {
 		config.CustomHost = config.ProxyURL()
@@ -132,6 +149,22 @@ func splitHostPort(hostPort string) (host, port string) {
 	}
 
 	return hostPort[:colon], hostPort[colon+1:]
+}
+
+func GetRegisterURL() string {
+	return fmt.Sprintf("%s/register/%s", config.TunnelURL(), Auth.Name)
+}
+
+func GetRequestURL() string {
+	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), Auth.Name)
+}
+
+func GetResponseURL(recordId any) string {
+	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), Auth.Name, recordId)
+}
+
+func SetAuthorization(header http.Header) {
+	header.Set("Authorization", "Bearer "+string(Auth.Bearer))
 }
 
 func PrintConfig() {

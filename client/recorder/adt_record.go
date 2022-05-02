@@ -9,10 +9,10 @@ import (
 	"woole/util/signal"
 )
 
-var seqID sequence.Seq
+var seqId sequence.Seq
 
 type Record struct {
-	ID       string
+	Id       string
 	Request  *Request
 	Response *Response
 	Elapsed  time.Duration
@@ -30,11 +30,11 @@ func NewRecords(maxRecords uint) *Records {
 }
 
 func NewRecord(req *Request) *Record {
-	return &Record{ID: seqID.NextString(), Request: req}
+	return &Record{Id: seqId.NextString(), Request: req}
 }
 
-func NewRecordWithID(id string, req *Request) *Record {
-	return &Record{ID: id, Request: req}
+func NewRecordWithId(id string, req *Request) *Record {
+	return &Record{Id: id, Request: req}
 }
 
 func (recs *Records) Add(rec *Record) {
@@ -55,7 +55,7 @@ func (recs *Records) FindById(id string) *Record {
 	defer recs.RUnlock()
 
 	for _, record := range recs.records {
-		if record.ID == id {
+		if record.Id == id {
 			return record
 		}
 	}
