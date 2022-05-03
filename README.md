@@ -1,26 +1,30 @@
 <p align='center'>
-    <img src="https://i.postimg.cc/XJs1WfVc/logo.png" alt='logo' />
+    <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
+        <img src="https://i.postimg.cc/XJs1WfVc/logo.png" alt='Woole'>
+    </a>
 </p>
 <p align='center'>
     The Wormhole (or just Woole) is an Open-Source reverse-proxy, sniffing, and tunneling tool developed in Go
 </p>
 <p align='center'>
-    <a href="https://github.com/ECRomaneli/woole/tags">
+    <a href="https://github.com/ECRomaneli/woole/tags" style='text-decoration:none'>
         <img src="https://img.shields.io/github/v/tag/ecromaneli/woole?label=version&sort=semver&style=for-the-badge" alt="Version">
     </a>
     &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/commits/master">
+    <a href="https://github.com/ECRomaneli/woole/commits/master" style='text-decoration:none'>
         <img src="https://img.shields.io/github/last-commit/ecromaneli/woole?style=for-the-badge" alt="Last Commit">
     </a>
     &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/blob/master/LICENSE">
+    <a href="https://github.com/ECRomaneli/woole/blob/master/LICENSE" style='text-decoration:none'>
         <img src="https://img.shields.io/github/license/ecromaneli/woole?style=for-the-badge" alt="License">
     </a>
     &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/issues">
+    <a href="https://github.com/ECRomaneli/woole/issues" style='text-decoration:none'>
         <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge" alt="Contributions Welcome">
     </a>
 </p>
+
+
 
 ## Summary
 
@@ -34,6 +38,14 @@
 
 The Woole provide two modules, the server and the client. The server is responsible to setup a HTTP Tunnel and send requests to the client and wait for his response. The client get the request using the configured tunnel, use reverse-proxy to perform the request, store the information and send back the response to the server. Also, the client provides a dashboard using the configured port where the requests can be analysed.
 
+&nbsp;
+
+<p align='center'>
+    <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
+        <img src="https://i.postimg.cc/VkkFygg7/diagram.png" alt='Diagram'>
+    </a>
+</p>
+
 ## Client
 
 ### Basic Usage
@@ -43,7 +55,7 @@ The Woole provide two modules, the server and the client. The server is responsi
 
 
     ===============
-    HTTP URL: http://ceceae98.woole.me
+    HTTP URL: http://x5ck9p8e.woole.me
     Proxying: http://localhost:80
     Dashboard: http://localhost:8000
     ===============
@@ -141,12 +153,12 @@ Manually:
     git clone --depth 1 https://github.com/ecromaneli/woole.git
 
     # to build the client
-    cd woole/client
+    cd woole/cmd/client
     go build
     chmod +x woole
 
     # to build the server
-    cd woole/server
+    cd woole/cmd/server
     go build
     chmod +x woole-server
 
