@@ -14,11 +14,8 @@ func main() {
 }
 
 func bootstrap() {
-
-	__SEPARATOR__ := separator()
-
 	fmt.Println()
-	fmt.Println(__SEPARATOR__)
+	fmt.Println("===============")
 	fmt.Printf("  HTTP listening on http://%s%s\n", config.HostPattern, config.HttpPort)
 
 	tunnelProto := "http"
@@ -28,20 +25,8 @@ func bootstrap() {
 	}
 	//fmt.Printf("Server dashboard on %s\n", config.DashboardPort)
 	fmt.Printf("Tunnel listening on %s://%s%s\n", tunnelProto, config.HostPattern, config.TunnelPort)
-	fmt.Println(__SEPARATOR__)
+	fmt.Println("===============")
 	fmt.Println()
 
 	recorder.ListenAndServe()
-}
-
-func separator() string {
-	hostLength := len(config.HostPattern) + len(config.HttpPort) + 1
-
-	separator := "==========================="
-
-	for i := 0; i < hostLength; i++ {
-		separator += "="
-	}
-
-	return separator
 }

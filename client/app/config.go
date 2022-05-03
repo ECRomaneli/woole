@@ -20,7 +20,6 @@ type Config struct {
 	TunnelHost    string
 	TunnelPort    string
 	DashboardPort string
-	Name          string
 	CustomHost    string
 	MaxRecords    int
 	isRead        bool
@@ -105,17 +104,12 @@ func ReadConfig() Config {
 		TunnelHost:    strOrDefault(tunnelHost, "localhost"),
 		TunnelPort:    tunnelPort,
 		DashboardPort: *dashboardPort,
-		Name:          *name,
 		CustomHost:    *customHost,
 		MaxRecords:    *maxRecords,
 		isRead:        true,
 	}
 
-	if len(config.Name) == 0 {
-		panic("A name MUST be provided to be registered on server")
-	}
-
-	Auth.Name = config.Name
+	Auth.Name = *name
 
 	if config.CustomHost == defaultCustomHostMessage {
 		config.CustomHost = config.ProxyURL()
