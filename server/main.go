@@ -15,7 +15,7 @@ func main() {
 
 func bootstrap() {
 	fmt.Println()
-	fmt.Println("===============================================")
+	fmt.Println("===============")
 	fmt.Printf("  HTTP listening on http://%s%s\n", config.HostPattern, config.HttpPort)
 
 	tunnelProto := "http"
@@ -25,7 +25,7 @@ func bootstrap() {
 	}
 	//fmt.Printf("Server dashboard on %s\n", config.DashboardPort)
 	fmt.Printf("Tunnel listening on %s://%s%s\n", tunnelProto, config.HostPattern, config.TunnelPort)
-	fmt.Println("===============================================")
+	fmt.Println("===============")
 	fmt.Println()
 
 	recorder.ListenAndServe()

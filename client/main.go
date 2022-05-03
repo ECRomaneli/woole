@@ -25,7 +25,7 @@ func printInfo() {
 	<-app.Authenticated.Receive()
 
 	fmt.Println()
-	fmt.Println("===============================================")
+	fmt.Println("===============")
 	fmt.Printf(" HTTP URL: %s\n", app.Auth.Http)
 
 	if len(app.Auth.Https) != 0 {
@@ -38,6 +38,6 @@ func printInfo() {
 	if logger.GetInstance().IsDebugEnabled() {
 		fmt.Printf("   Bearer: %s\n", app.Auth.Bearer)
 	}
-	fmt.Println("===============================================")
+	fmt.Println("===============")
 	fmt.Println()
 }
