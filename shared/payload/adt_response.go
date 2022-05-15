@@ -6,11 +6,11 @@ import (
 )
 
 type Response struct {
-	Proto  string
-	Status string
-	Code   int
-	Header http.Header
-	Body   []byte
+	Proto  string      `json:"proto"`
+	Status string      `json:"status"`
+	Code   int         `json:"code"`
+	Header http.Header `json:"header"`
+	Body   []byte      `json:"body"`
 }
 
 func (this *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder) *Response {

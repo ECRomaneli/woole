@@ -2,19 +2,21 @@ package dashboard
 
 import (
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"strings"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder"
 	"woole/shared/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
+	"github.com/google/brotli/go/cbrotli"
 )
 
 //go:embed static
@@ -32,10 +34,10 @@ func setupServer() *webserver.Server {
 	server := webserver.NewServerWithFS(http.FS(staticFolder))
 
 	server.FileServer("/")
-	server.Get("/conn", connHandler)
-	server.Get("/info/{id}", infoHandler)
-	server.Get("/clear", clearHandler)
-	server.Get("/retry/{id}", retryHandler)
+	server.Get("/record/stream", connHandler)
+	server.Get("/record/{id}/response/body", responseBodyHandler)
+	server.Get("/record/{id}/retry", retryHandler)
+	server.Get("/record/clear", clearHandler)
 
 	return server
 }
@@ -44,13 +46,13 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	res.Headers(webserver.EventStreamHeader)
 
 	res.FlushEvent(&webserver.Event{
-		Name: "config",
-		Data: config,
+		Name: "info",
+		Data: *(&Info{}).FromConfig(),
 	})
 
 	res.FlushEvent(&webserver.Event{
 		Name: "records",
-		Data: (&Items{}).FromRecords(records),
+		Data: records.ThinClone(),
 	})
 
 	var lastRecord *recorder.Record
@@ -60,7 +62,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 		res.FlushEvent(&webserver.Event{
 			Name: "record",
-			Data: (&Item{}).FromRecord(lastRecord),
+			Data: lastRecord.ThinClone(),
 		})
 	}
 }
@@ -75,48 +77,48 @@ func retryHandler(req *webserver.Request, res *webserver.Response) {
 	recorder.Retry(record.Request)
 }
 
-func infoHandler(req *webserver.Request, res *webserver.Response) {
+func responseBodyHandler(req *webserver.Request, res *webserver.Response) {
 	record := records.FindById(req.Param("id"))
-	res.WriteJSON(dump(record))
+	body := record.Response.Body
+	res.WriteJSON(decompress(record.Response.Header.Get("Content-Encoding"), body))
 }
 
-func dump(rec *recorder.Record) map[string]string {
-	req := rec.Request
-	res := rec.Response
-	return map[string]string{
-		"request":  dumpContent(req.Header, req.Body, "%s %s %s\n\n", req.Method, req.Path, req.Proto),
-		"response": dumpContent(res.Header, res.Body, "%s %s\n\n", res.Proto, res.Status),
-		"curl":     dumpCurl(req),
-	}
-}
+func decompress(contentEncoding string, data []byte) []byte {
 
-func dumpContent(header http.Header, body []byte, format string, args ...interface{}) string {
-	b := strings.Builder{}
-	fmt.Fprintf(&b, format, args...)
-	dumpHeader(&b, header)
-	b.WriteString("\n")
-	dumpBody(&b, header, body)
-	return b.String()
-}
+	// "compress" content encoding is not supported yet
+	if data == nil || contentEncoding == "" || contentEncoding == "identity" || contentEncoding == "compress" {
+		return data
+	}
 
-func dumpHeader(dst *strings.Builder, header http.Header) {
-	var headers []string
-	for k, v := range header {
-		headers = append(headers, fmt.Sprintf("%s: %s\n", k, strings.Join(v, " ")))
-	}
-	sort.Strings(headers)
-	for _, v := range headers {
-		dst.WriteString(v)
-	}
-}
+	var reader io.ReadCloser
+	var err error
 
-func dumpBody(dst *strings.Builder, header http.Header, body []byte) {
-	reqBody := body
-	if header.Get("Content-Encoding") == "gzip" {
-		reader, _ := gzip.NewReader(bytes.NewReader(body))
-		reqBody, _ = ioutil.ReadAll(reader)
+	defer func() {
+		if reader != nil {
+			err = reader.Close()
+			panicIfNotNil(err)
+		}
+	}()
+
+	if contentEncoding == "gzip" {
+
+		reader, err = gzip.NewReader(bytes.NewReader(data))
+		panicIfNotNil(err)
+
+	} else if contentEncoding == "br" {
+
+		reader = cbrotli.NewReader(bytes.NewReader(data))
+
+	} else if contentEncoding == "deflate" {
+
+		reader = flate.NewReader(bytes.NewReader(data))
+
 	}
-	dst.Write(reqBody)
+
+	data, err = ioutil.ReadAll(reader)
+	panicIfNotNil(err)
+
+	return data
 }
 
 func dumpCurl(req *payload.Request) string {
@@ -132,4 +134,10 @@ func dumpCurl(req *payload.Request) string {
 		fmt.Fprintf(&b, " \\\n  -d '%s'", req.Body)
 	}
 	return b.String()
+}
+
+func panicIfNotNil(err any) {
+	if err != nil {
+		panic(err)
+	}
 }

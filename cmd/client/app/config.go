@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
+	"woole/shared/payload"
 	"woole/shared/util/signal"
 
 	"github.com/ecromaneli-golang/console/logger"
@@ -22,14 +24,8 @@ type Config struct {
 	DashboardPort string
 	CustomHost    string
 	MaxRecords    int
+	mu            sync.RWMutex
 	isRead        bool
-}
-
-type AuthPayload struct {
-	Name   string `json:"name"`
-	Http   string `json:"http"`
-	Https  string `json:"https"`
-	Bearer string `json:"bearer"`
 }
 
 const (
@@ -63,14 +59,36 @@ func (this *Config) TunnelURL() string {
 	return this.TunnelProtoHost() + ":" + this.TunnelPort
 }
 
+func (this *Config) DashboardURL() string {
+	return "http://localhost:" + this.DashboardPort
+}
+
 var (
-	config        Config        = Config{isRead: false}
-	Auth          AuthPayload   = AuthPayload{}
-	Authenticated signal.Signal = *signal.New()
+	config        *Config       = &Config{isRead: false}
+	auth          *payload.Auth = &payload.Auth{}
+	authenticated signal.Signal = *signal.New()
 )
 
-// ReadConfig reads the arguments from the command line.
-func ReadConfig() Config {
+// If no auth was provided yet, the routine will wait for an authentication
+func GetAuth() *payload.Auth {
+	<-authenticated.Receive()
+	return auth
+}
+
+func Authenticate(authentication *payload.Auth) {
+	auth = authentication
+	if auth.Bearer == "" {
+		panic("No bearer was provided")
+	}
+	authenticated.SendLast()
+}
+
+func ReadConfig() *Config {
+	if !config.isRead {
+		config.mu.Lock()
+		defer config.mu.Unlock()
+	}
+
 	if config.isRead {
 		return config
 	}
@@ -78,7 +96,7 @@ func ReadConfig() Config {
 	proxyURL := flag.String("proxy", ":"+defaultProxyPort, "URL to Proxy")
 	tunnelURL := flag.String("tunnel", ":"+defaultTunnelPort, "Server Tunnel URL. TODO: If no one is set, the sniffer will run locally")
 	dashboardPort := flag.String("dashboard", defaultDashboardPort, "Dashboard Port")
-	name := flag.String("name", "", "Name is an unique key used to identify the client on server")
+	client := flag.String("client", "", "Client is an unique key used to identify the client on server")
 	customHost := flag.String("custom-host", defaultCustomHostMessage, "Customize host passed as header for proxy URL")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
 	insecureTLS := flag.Bool("allow-insecure-tls", false, "Insecure TLS verification")
@@ -96,7 +114,7 @@ func ReadConfig() Config {
 	proxyProto, proxyHost, proxyPort := splitURL(*proxyURL)
 	tunnelProto, tunnelHost, tunnelPort := splitURL(*tunnelURL)
 
-	config = Config{
+	config = &Config{
 		ProxyProto:    strOrDefault(proxyProto, "http"),
 		ProxyHost:     strOrDefault(proxyHost, "localhost"),
 		ProxyPort:     proxyPort,
@@ -109,7 +127,7 @@ func ReadConfig() Config {
 		isRead:        true,
 	}
 
-	Auth.Name = *name
+	auth.ClientID = *client
 
 	if config.CustomHost == defaultCustomHostMessage {
 		config.CustomHost = config.ProxyURL()
@@ -150,15 +168,15 @@ func splitHostPort(hostPort string) (host, port string) {
 }
 
 func GetRequestURL() string {
-	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), Auth.Name)
+	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), auth.ClientID)
 }
 
 func GetResponseURL(recordId any) string {
-	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), Auth.Name, recordId)
+	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), auth.ClientID, recordId)
 }
 
 func SetAuthorization(header http.Header) {
-	header.Set("Authorization", "Bearer "+string(Auth.Bearer))
+	header.Set("Authorization", "Bearer "+string(auth.Bearer))
 }
 
 func PrintConfig() {

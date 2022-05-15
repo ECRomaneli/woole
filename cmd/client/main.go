@@ -22,21 +22,21 @@ func bootstrap() {
 }
 
 func printInfo() {
-	<-app.Authenticated.Receive()
+	auth := app.GetAuth()
 
 	fmt.Println()
 	fmt.Println("===============")
-	fmt.Printf(" HTTP URL: %s\n", app.Auth.Http)
+	fmt.Printf(" HTTP URL: %s\n", auth.HTTPUrl())
 
-	if len(app.Auth.Https) != 0 {
-		fmt.Printf("HTTPS URL: %s\n", app.Auth.Https)
+	if auth.HttpsPort != "" {
+		fmt.Printf("HTTPS URL: %s\n", auth.HTTPSUrl())
 	}
 
 	fmt.Printf(" Proxying: %s\n", config.ProxyURL())
-	fmt.Printf("Dashboard: http://localhost:%s\n", config.DashboardPort)
+	fmt.Printf("Dashboard: %s\n", config.DashboardURL())
 
 	if logger.GetInstance().IsDebugEnabled() {
-		fmt.Printf("   Bearer: %s\n", app.Auth.Bearer)
+		fmt.Printf("   Bearer: %s\n", auth.Bearer)
 	}
 	fmt.Println("===============")
 	fmt.Println()

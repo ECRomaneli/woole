@@ -9,25 +9,27 @@ import (
 )
 
 type Request struct {
-	Proto  string
-	Method string
-	URL    string
-	Path   string
-	Header http.Header
-	Body   []byte
+	Proto      string      `json:"proto"`
+	Method     string      `json:"method"`
+	URL        string      `json:"url"`
+	Path       string      `json:"path"`
+	Header     http.Header `json:"header"`
+	Body       []byte      `json:"body"`
+	RemoteAddr string      `json:"remoteAddr"`
 }
 
 func (this *Request) ToString() string {
 	return "[" + this.Method + "] " + this.Path
 }
 
-func (this *Request) FromHTTPRequest(httpReq *webserver.Request) *Request {
-	this.Proto = httpReq.Raw.Proto
-	this.Method = httpReq.Raw.Method
-	this.URL = httpReq.Raw.URL.String()
-	this.Path = httpReq.Raw.URL.Path
-	this.Header = httpReq.Raw.Header
-	this.Body = httpReq.Body()
+func (this *Request) FromHTTPRequest(req *webserver.Request) *Request {
+	this.Proto = req.Raw.Proto
+	this.Method = req.Raw.Method
+	this.URL = req.Raw.URL.String()
+	this.Path = req.Raw.URL.Path
+	this.Header = req.Raw.Header
+	this.Body = req.Body()
+	this.setUserIP(req)
 
 	return this
 }
@@ -49,4 +51,17 @@ func (this *Request) ToHTTPRequest() *http.Request {
 	httpReq.Header = this.Header
 
 	return httpReq
+}
+
+func (this *Request) setUserIP(req *webserver.Request) {
+	ipAddress := req.Raw.Header.Get("X-Real-Ip")
+
+	if ipAddress == "" {
+		ipAddress = req.Raw.Header.Get("X-Forwarded-For")
+	}
+	if ipAddress == "" {
+		ipAddress = req.Raw.RemoteAddr
+	}
+
+	this.RemoteAddr = ipAddress
 }

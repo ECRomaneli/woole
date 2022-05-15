@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
@@ -21,17 +22,23 @@ type Config struct {
 	Timeout       int
 	TlsCert       string
 	TlsKey        string
+	mu            sync.RWMutex
 	isRead        bool
 }
 
-var config Config = Config{isRead: false}
+var config *Config = &Config{isRead: false}
 
 func (this *Config) HasTlsFiles() bool {
-	return len(this.TlsCert) != 0 && len(this.TlsKey) != 0
+	return this.TlsCert != "" && this.TlsKey != ""
 }
 
 // ReadConfig reads the arguments from the command line.
-func ReadConfig() Config {
+func ReadConfig() *Config {
+	if !config.isRead {
+		config.mu.Lock()
+		defer config.mu.Unlock()
+	}
+
 	if config.isRead {
 		return config
 	}
@@ -50,12 +57,12 @@ func ReadConfig() Config {
 
 	logger.SetLogLevelStr(*logLevel)
 
-	config = Config{
+	config = &Config{
 		HostPattern:   *hostPattern,
-		HttpPort:      ":" + strconv.Itoa(*httpPort),
-		HttpsPort:     ":" + strconv.Itoa(*httpsPort),
-		TunnelPort:    ":" + strconv.Itoa(*tunnelPort),
-		DashboardPort: ":" + strconv.Itoa(*dashboardPort),
+		HttpPort:      strconv.Itoa(*httpPort),
+		HttpsPort:     strconv.Itoa(*httpsPort),
+		TunnelPort:    strconv.Itoa(*tunnelPort),
+		DashboardPort: strconv.Itoa(*dashboardPort),
 		TlsCert:       *tlsCert,
 		TlsKey:        *tlsKey,
 		Timeout:       *timeout,

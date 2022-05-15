@@ -1,69 +1,54 @@
-<!DOCTYPE html>
-<html ng-app="app">
+<!doctype html>
+<html lang="en">
 
 <head>
-	<meta charset="utf-8">
-	<link rel="icon" href="data:;base64,iVBORw0KGgo=">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<link href="https://fonts.googleapis.com/css?family=Inconsolata:400,700" rel="stylesheet">
-	<link href="/assets/app.css" rel="stylesheet">
-	
-	<title>Dashboard</title>
+    <link rel="icon" href="assets/images/dashboard.svg" type="image/svg+xml">
+
+    <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+    <title>Dashboard</title>
+
+    <link href="assets/styles/app.css" rel="stylesheet">
 </head>
 
 <body>
+    <main id="app">
+        <div id="sidebar" class="d-flex flex-column flex-shrink-0">
+            <div class="d-flex p-3 card-shadow dashboard-button" :class="{ active: !selectedRecord }" @click="selectedRecord = null">
+                <img class="bi me-2" src="assets/images/dashboard.svg" alt="dashboard" />
+                <span class="fs-5 fw-semibold">Dashboard</span>
+            </div>
+            <div id="records" class="card-shadow" :class="{ loading: recordList.length === 0 }">
+                <div class="list-group list-group-flush scrollarea">
+                    <sidebar-item
+                        v-for="record in recordList"
+                        :record="record"
+                        :key="record.id"
+                        :class="{ active: isSelectedRecord(record) }"
+                        @click="show(record)"
+                    ></sidebar-item>
+                </div>
+            </div>
+        </div>
+        <div id="body">
+            <dashboard v-show="!selectedRecord" :info="info"></dashboard>
+            <record-viewer id="record-viewer" v-if="selectedRecord" :record="selectedRecord"></record-viewer>
+        </div>
+    </main>
 
-	<div class="dashboard" id="app" v-cloak>
+    <script src="assets/vendor/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="assets/vendor/vue/vue.global.prod.js"></script>
 
-		<div class="list">
-			<div class="controls">
-				<button :disabled="items.length == 0" @click="clearDashboard">clear</button>
-			</div>
-			<div class="list-inner">
-				<div class="list-item" v-for="item in items" :key="item.id" @click="show(item)"
-					:class="{selected: selectedItem.id == item.id}">
-					<span class="method" :class="item.method">{{item.method}}</span>
-					<span class="path">&lrm;{{item.path}}&lrm;</span>
-					<span class="time">{{item.elapsed}}ms</span>
-					<span class="status" :class="statusColor(item)">{{item.status == 999 ? 'failed' :
-						item.status}}</span>
-				</div>
-			</div>
-		</div>
+    <script src="assets/scripts/app.js"></script>
 
-		<div class="req">
-			<div class="controls">
-				<button :disabled="!canPrettifyBody('request')" @click="prettifyBody('request')">prettify</button>
-				<button :disabled="selectedItem.id == null" @click="copyCurl($event)" data-text="curl">curl</button>
-				<button :disabled="selectedItem.id == null" @click="retry">retry</button>
-			</div>
-			<div class="req-inner">
-				<div class="corner">req</div>
-				<pre>{{selectedItem.request}}</pre>
-			</div>
-		</div>
+    <script src="components/SidebarItem.js"></script>
+    <script src="components/Dashboard.js"></script>
+    <script src="components/RecordViewer.js"></script>
 
-		<div class="res">
-			<div class="controls">
-				<button :disabled="!canPrettifyBody('response')" @click="prettifyBody('response')">prettify</button>
-			</div>
-			<div class="res-inner">
-				<div class="corner">res</div>
-				<pre :class="{error: selectedItem.status == 999}">{{selectedItem.response}}</pre>
-			</div>
-		</div>
-
-		<div class="welcome" v-show="items.length == 0">
-			<p>Waiting for requests on http://localhost:{{proxyPort}}/<br>
-				<span>Proxying {{targetURL}}</span>
-			</p>
-		</div>
-
-	</div>
-
-	<script src="/assets/vendor/vue.min.js"></script>
-	<script src="/assets/app.js"></script>
+    <script>app.vue.mount('#app')</script>
 </body>
 
 </html>

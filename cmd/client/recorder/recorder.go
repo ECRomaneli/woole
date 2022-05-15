@@ -9,6 +9,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 	"woole/cmd/client/app"
 	"woole/cmd/client/connection/eventsource"
@@ -18,7 +19,7 @@ import (
 	"github.com/ecromaneli-golang/console/logger"
 )
 
-const StatusInternalProxyError = -1
+const StatusInternalProxyError = 999
 
 var config = app.ReadConfig()
 var log = logger.New("recorder")
@@ -61,8 +62,10 @@ func initializeTunnel() {
 		log.Fatal("Auth event expected but got: " + authEvent.Name)
 		os.Exit(1)
 	}
-	json.Unmarshal([]byte(authEvent.Data.(string)), &app.Auth)
-	app.Authenticated.SendLast()
+
+	auth := payload.Auth{}
+	json.Unmarshal([]byte(authEvent.Data.(string)), &auth)
+	app.Authenticate(&auth)
 
 	// Receive events, parse data, do request, record them, and return response
 	for event := range client.Stream {
@@ -111,7 +114,9 @@ func handleRedirections(record *Record) {
 	if location != "" {
 		record.Response.Header.Del("location")
 		record.Response.Code = http.StatusOK
-		record.Response.Body = []byte("Trying to redirect to <a href='" + location + "'>" + location + "</a>...")
+		record.Response.Body = []byte("<!doctype html><html><body>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</body></html>")
+		record.Response.Header.Set("Content-Type", "text/html")
+		record.Response.Header.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
 	}
 }
 

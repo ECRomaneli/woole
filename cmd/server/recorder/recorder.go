@@ -28,11 +28,11 @@ func ListenAndServe() {
 
 	if config.HasTlsFiles() {
 		go func() {
-			panic(server.ListenAndServeTLS(config.HttpsPort, config.TlsCert, config.TlsKey))
+			panic(server.ListenAndServeTLS(":"+config.HttpsPort, config.TlsCert, config.TlsKey))
 		}()
 	}
 
-	panic(server.ListenAndServe(config.HttpPort))
+	panic(server.ListenAndServe(":" + config.HttpPort))
 }
 
 func GetRecords() *Records {
@@ -47,10 +47,10 @@ func serveTunnel() {
 	server.Post("/response/{clientId}/{recordId}", responseReceiver)
 
 	if !config.HasTlsFiles() {
-		panic(server.ListenAndServe(config.TunnelPort))
+		panic(server.ListenAndServe(":" + config.TunnelPort))
 	}
 
-	panic(server.ListenAndServeTLS(config.TunnelPort, config.TlsCert, config.TlsKey))
+	panic(server.ListenAndServeTLS(":"+config.TunnelPort, config.TlsCert, config.TlsKey))
 }
 
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
@@ -86,8 +86,8 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 	client, auth := registerClient(req.Param("clientId"))
 	clientId := client.name
 
-	log.Trace(clientId + " - Connection Established")
-	defer log.Trace(clientId + " - Connection Finished")
+	log.Info(clientId + " - Connection Established")
+	defer log.Info(clientId + " - Connection Finished")
 	defer records.RemoveClient(clientId)
 
 	res.Headers(webserver.EventStreamHeader)
@@ -155,13 +155,15 @@ func registerClient(clientId string) (*Client, payload.Auth) {
 	url := strings.Replace(config.HostPattern, app.ClientToken, clientId, 1)
 
 	auth := payload.Auth{
-		Name:   clientId,
-		Http:   "http://" + url + config.HttpPort,
-		Bearer: string(client.bearer),
+		ClientID:   clientId,
+		URL:        url,
+		HttpPort:   config.HttpPort,
+		TunnelPort: config.TunnelPort,
+		Bearer:     string(client.bearer),
 	}
 
 	if config.HasTlsFiles() {
-		auth.Https = "https://" + url + config.HttpsPort
+		auth.HttpsPort = config.HttpsPort
 	}
 
 	return client, auth
