@@ -69,7 +69,7 @@ To log on console every request and response handled, set the `-log-level` to `I
 |--------------|-------------
 | `-proxy`       | URL to Proxy (Internal or External Network) (default `:80`)
 | `-tunnel`      | Server Tunnel URL. TODO: If no one is set, the sniffer will run locally (default `:8001`)
-| `-name`        | An unique key used to identify the client on server
+| `-client`      | An unique key used to identify the client on server
 | `-dashboard`   | Dashboard Port (default `8000`)
 | `-records`     | Max Requests to Record (default `16`)
 | `-log-level`   | Log Level (default `OFF`)
@@ -86,15 +86,15 @@ The `-proxy` and the `-tunnel` can be defined using:
 
 Note that if the server has configured the TLS, the tunnel URL **MUST** be explicitly `HTTPS`. The `HTTP` tunnel is only available on servers where the TLS is not used.
 
-### Name
+### Client ID
 
-The `-name` is optional, but note that when creating the URL, the provided name will be prioritized. The `name` will be used for the first attached tunnel and the subsequents will be appended with a 5 digits hash. The name will become available again once the tunnel dettach.
+The `-client` is optional, but note that when creating the URL, the provided client ID will be prioritized. The ID will be used for the first attached tunnel and the subsequents will be appended with a 5 digits hash. The ID will become available again once the tunnel dettach.
 
 If no name is provided, an 8 digits hash will be returned instead.
 
 #### Example
 
-On the server called https://woole.me, if the name `test` is used the server will return:
+On the server called https://woole.me using the ID `test`, the server will return:
 - https://test.woole.me, if the name test is not in use right now OR
 - https://test-3ld8f.woole.me, with a 5 digits hash.
 

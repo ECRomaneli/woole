@@ -48,7 +48,7 @@ func GetRecords() *Records {
 func initializeTunnel() {
 
 	// Open connection with tunnel URL
-	client, err := eventsource.NewRequest(app.GetRequestURL())
+	client, err := eventsource.NewWithHeader(app.GetRequestURL(), *app.AuthorizationHeader())
 	if err != nil {
 		log.Fatal("Failed to connect with tunnel on " + config.TunnelURL())
 		os.Exit(1)
@@ -57,7 +57,7 @@ func initializeTunnel() {
 	proxyHandler = createProxyHandler()
 
 	// First event MUST be "auth", save them to get Bearer for send responses
-	authEvent := <-client.Stream
+	authEvent := <-client.Listen()
 	if authEvent.Name != "auth" {
 		log.Fatal("Auth event expected but got: " + authEvent.Name)
 		os.Exit(1)
@@ -68,8 +68,8 @@ func initializeTunnel() {
 	app.Authenticate(&auth)
 
 	// Receive events, parse data, do request, record them, and return response
-	for event := range client.Stream {
-		id := event.Id
+	for event := range client.Listen() {
+		id := event.ID
 
 		var req payload.Request
 		json.Unmarshal([]byte(event.Data.(string)), &req)
@@ -110,13 +110,13 @@ func sendResponseToServer(record *Record) {
 }
 
 func handleRedirections(record *Record) {
-	location := record.Response.Header.Get("location")
+	location := record.Response.GetHttpHeader().Get("location")
 	if location != "" {
-		record.Response.Header.Del("location")
+		record.Response.GetHttpHeader().Del("location")
 		record.Response.Code = http.StatusOK
 		record.Response.Body = []byte("<!doctype html><html><body>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</body></html>")
-		record.Response.Header.Set("Content-Type", "text/html")
-		record.Response.Header.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
+		record.Response.GetHttpHeader().Set("Content-Type", "text/html")
+		record.Response.GetHttpHeader().Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
 	}
 }
 

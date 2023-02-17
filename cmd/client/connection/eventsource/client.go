@@ -3,14 +3,25 @@ package eventsource
 import (
 	"bufio"
 	"bytes"
-	"io"
+	"errors"
 	"net/http"
-	"woole/cmd/client/app"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/ecromaneli-golang/http/webserver"
 )
 
-type Client struct {
-	Stream <-chan Event
-	Err    error
+type EventSource struct {
+	url          string
+	header       http.Header
+	lastEventId  string
+	retryTimeout int
+	request      *http.Request
+	response     *http.Response
+	stream       chan *webserver.Event
+	err          chan error
+	closed       chan any
 }
 
 var _DEFAULT_REQUEST_HEADER_ = map[string]string{
@@ -19,53 +30,129 @@ var _DEFAULT_REQUEST_HEADER_ = map[string]string{
 	// "Connection":    "keep-alive",
 }
 
-func NewRequest(eventsourceUrl string) (*Client, error) {
-	req, err := http.NewRequest("GET", eventsourceUrl, nil)
+func (this *EventSource) Listen() <-chan *webserver.Event {
+	return this.stream
+}
+
+func (this *EventSource) Error() <-chan error {
+	return this.err
+}
+
+func (this *EventSource) sendErrorIfNotNil(err error) {
+	if err != nil {
+		select {
+		case this.err <- err:
+		default:
+		}
+	}
+}
+
+func (this *EventSource) Closed() bool {
+	select {
+	case <-this.closed:
+		return true
+	default:
+		return false
+	}
+}
+
+func (this *EventSource) Close() {
+	if !this.Closed() {
+		close(this.closed)
+	}
+}
+
+func New(url string) (*EventSource, error) {
+	return NewWithHeader(url, nil)
+}
+
+func NewWithHeader(url string, header http.Header) (*EventSource, error) {
+	client := &EventSource{
+		url:    url,
+		header: header,
+		stream: make(chan *webserver.Event, 32),
+		closed: make(chan any),
+	}
+
+	go func() {
+		for !client.Closed() {
+			statusCode, err := client.connect()
+
+			client.sendErrorIfNotNil(err)
+
+			// 204 represents that no more content will be sent
+			if statusCode == http.StatusNoContent {
+				client.Close()
+				continue
+			}
+
+			client.startListening()
+			<-time.After(time.Duration(client.retryTimeout) * time.Millisecond)
+		}
+	}()
+
+	return client, nil
+}
+
+func (this *EventSource) connect() (statusCode int, err error) {
+	req, err := http.NewRequest("GET", this.url, nil)
 
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, err
 	}
+
+	this.request = req
 
 	for key, value := range _DEFAULT_REQUEST_HEADER_ {
 		req.Header.Set(key, value)
 	}
 
-	app.SetAuthorization(req.Header)
+	if this.header != nil {
+		for key, values := range this.header {
+			for _, value := range values {
+				req.Header.Add(key, value)
+			}
+		}
+	}
+
+	if this.lastEventId != "" {
+		req.Header.Set("Last-Event-ID", this.lastEventId)
+	}
 
 	// Avoid TCP reuse and do request
 	req.Close = true
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, err
 	}
 
-	// TODO configurable size?
-	stream := make(chan Event, 128)
-	client := &Client{Stream: stream}
+	this.response = resp
 
-	go func() {
-		defer resp.Body.Close()
-		defer close(stream)
+	if strings.Index(resp.Header.Get("Content-Type"), _DEFAULT_REQUEST_HEADER_["Accept"]) == -1 {
+		return resp.StatusCode, errors.New("Content-Type not accepted")
+	}
 
-		client.Err = listenEvents(resp.Body, stream)
-	}()
-
-	return client, nil
+	return resp.StatusCode, nil
 }
 
-func listenEvents(rc io.ReadCloser, stream chan Event) error {
-	s := bufio.NewScanner(rc)
-	s.Split(scanLines)
+func (this *EventSource) startListening() {
+	defer this.response.Body.Close()
+	this.sendErrorIfNotNil(this.scanEvents())
+}
 
-	var event Event
+func (this *EventSource) scanEvents() error {
+	scanner := bufio.NewScanner(this.response.Body)
+	scanner.Split(scanLines)
 
-	for s.Scan() {
-		line := s.Bytes()
+	event := &webserver.Event{}
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
 
 		if len(line) == 0 {
-			stream <- event
-			event = Event{}
+			this.stream <- event
+			event = &webserver.Event{}
 			continue
 		}
 
@@ -77,15 +164,27 @@ func listenEvents(rc io.ReadCloser, stream chan Event) error {
 		case "data":
 			event.Data = string(value)
 		case "id":
-			event.Id = string(value)
+			event.ID = string(value)
+			this.lastEventId = event.ID
 		case "retry":
-			// TODO
+			retry, err := strconv.Atoi(string(value))
+
+			if err != nil {
+				return err
+			}
+
+			if retry < 1 {
+				return errors.New("Invalid retry timeout '" + string(value) + "'")
+			}
+
+			this.retryTimeout = retry
+
 		default:
-			panic("Invalid token '" + key + "'")
+			return errors.New("Invalid token '" + key + "'")
 		}
 	}
 
-	return s.Err()
+	return scanner.Err()
 }
 
 func tokenize(line []byte) (string, []byte) {
@@ -140,4 +239,10 @@ func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	}
 	// Request more data.
 	return 0, nil, nil
+}
+
+func panicIfNotNil(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

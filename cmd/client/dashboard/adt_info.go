@@ -19,7 +19,7 @@ func (this *Info) FromConfig() *Info {
 	config := app.ReadConfig()
 	auth := app.GetAuth()
 
-	this.ClientID = auth.ClientID
+	this.ClientID = auth.ClientId
 	this.HTTP = auth.HTTPUrl()
 	this.HTTPS = auth.HTTPSUrl()
 	this.Proxying = config.CustomHost

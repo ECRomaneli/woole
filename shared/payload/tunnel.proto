@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "woole/payload";
+
+package payload;
+
+service Tunnel {
+  rpc Chat(stream Response) returns (stream Request) {}
+}
+
+message Auth {
+    string clientId = 1;
+    string url = 2;
+    string httpPort = 3;
+    string httpsPort = 4;
+    string tunnelPort = 5;
+    string bearer = 6;
+}
+
+message Request {
+    string proto = 1;
+    string method = 2;
+    string url = 3;
+    string path = 4;
+    map<string, StringList> header = 5;
+    bytes body = 6;
+    string remoteAddr = 7;
+}
+
+message Response {
+    string proto = 1;
+    string status = 2;
+    int32 code = 3;
+    map<string, StringList> header = 4;
+    bytes body = 5;
+    string bearer = 6;
+}
+
+message StringList {
+    repeated string Val = 1;
+}

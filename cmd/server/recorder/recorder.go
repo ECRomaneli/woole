@@ -72,10 +72,10 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 		}
 	})
 
-	rec := record.Response
+	recRes := record.Response
 
 	// Write response
-	res.Headers(rec.Header).Status(rec.Code).Write(rec.Body)
+	res.Headers(recRes.GetHttpHeader()).Status(int(recRes.Code)).Write(recRes.Body)
 
 	if log.IsInfoEnabled() {
 		log.Info(clientId, "-", record.ToString(26))
@@ -110,7 +110,7 @@ func requestSender(req *webserver.Request, res *webserver.Response) {
 		res.FlushEvent(&webserver.Event{
 			ID:   record.Id,
 			Name: "request",
-			Data: *record.Request,
+			Data: record.Request,
 		})
 	}
 }
@@ -134,7 +134,7 @@ func responseReceiver(req *webserver.Request, res *webserver.Response) {
 	record.OnResponse.SendLast()
 }
 
-func registerClient(clientId string) (*Client, payload.Auth) {
+func registerClient(clientId string) (*Client, *payload.Auth) {
 	hasClientId := clientId != ""
 
 	if !hasClientId {
@@ -154,9 +154,9 @@ func registerClient(clientId string) (*Client, payload.Auth) {
 	client := records.RegisterClient(clientId)
 	url := strings.Replace(config.HostPattern, app.ClientToken, clientId, 1)
 
-	auth := payload.Auth{
-		ClientID:   clientId,
-		URL:        url,
+	auth := &payload.Auth{
+		ClientId:   clientId,
+		Url:        url,
 		HttpPort:   config.HttpPort,
 		TunnelPort: config.TunnelPort,
 		Bearer:     string(client.bearer),
@@ -198,17 +198,6 @@ func validateClient(clientId string, shouldExist bool) (string, error) {
 	}
 
 	return clientId, nil
-}
-
-func splitHostPort(hostPort string) (host, port string) {
-	host = hostPort
-
-	colon := strings.LastIndexByte(host, ':')
-	if colon == -1 {
-		return host, ""
-	}
-
-	return hostPort[:colon], hostPort[colon+1:]
 }
 
 func panicIfNotNil(err any) {

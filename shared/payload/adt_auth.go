@@ -1,29 +1,20 @@
 package payload
 
-type Auth struct {
-	ClientID   string
-	URL        string
-	HttpPort   string
-	HttpsPort  string
-	TunnelPort string
-	Bearer     string
+func (auth *Auth) HTTPUrl() string {
+	return "http://" + auth.Url + ":" + auth.HttpPort
 }
 
-func (this *Auth) HTTPUrl() string {
-	return "http://" + this.URL + ":" + this.HttpPort
-}
-
-func (this *Auth) HTTPSUrl() string {
-	if this.HttpsPort == "" {
+func (auth *Auth) HTTPSUrl() string {
+	if auth.HttpsPort == "" {
 		return ""
 	}
-	return "https://" + this.URL + ":" + this.HttpsPort
+	return "https://" + auth.Url + ":" + auth.HttpsPort
 }
 
-func (this *Auth) TunnelUrl() string {
-	if this.HttpsPort == "" {
-		return "http://" + this.URL + ":" + this.TunnelPort
+func (auth *Auth) TunnelUrl() string {
+	if auth.HttpsPort == "" {
+		return "http://" + auth.Url + ":" + auth.TunnelPort
 	}
 
-	return "https://" + this.URL + ":" + this.TunnelPort
+	return "https://" + auth.Url + ":" + auth.TunnelPort
 }

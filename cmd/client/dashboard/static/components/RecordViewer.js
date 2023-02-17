@@ -116,7 +116,7 @@ app.vue.component('RecordItem', {
 
             if (!this.item || !this.item.header) { return }
 
-            let contentType = this.item.header['Content-Type']
+            let contentType = this.item.header['Content-Type'].Val
             if (contentType === void 0 || contentType === '' || contentType.length === 0) { return }
 
             let tokens = contentType.join(";").toLowerCase().split(";").map(str => str.trim())
@@ -150,7 +150,7 @@ app.vue.component('HeaderGrid', {
             <tbody>
                 <tr v-for="(value, name) in header">
                     <th scope="name">{{ name }}</th>
-                    <td>{{ value.join(";") }}</td>
+                    <td>{{ value.Val.join(";") }}</td>
                 </tr>
             </tbody>
         </table>

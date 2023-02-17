@@ -43,6 +43,10 @@ func setupServer() *webserver.Server {
 }
 
 func connHandler(req *webserver.Request, res *webserver.Response) {
+	listener, err := records.Broker.Subscribe()
+	panicIfNotNil(err)
+	defer records.Broker.Unsubscribe(listener)
+
 	res.Headers(webserver.EventStreamHeader)
 
 	res.FlushEvent(&webserver.Event{
@@ -55,14 +59,19 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 		Data: records.ThinClone(),
 	})
 
-	var lastRecord *recorder.Record
+	go func() {
+		<-req.Raw.Context().Done()
+		listener <- nil
+	}()
 
-	for !req.IsDone() {
-		records.OnUpdate(func() { lastRecord = records.GetLast() })
+	for msg := range listener {
+		if msg == nil {
+			break
+		}
 
 		res.FlushEvent(&webserver.Event{
 			Name: "record",
-			Data: lastRecord.ThinClone(),
+			Data: msg.(*recorder.Record).ThinClone(),
 		})
 	}
 }
@@ -80,7 +89,7 @@ func retryHandler(req *webserver.Request, res *webserver.Response) {
 func responseBodyHandler(req *webserver.Request, res *webserver.Response) {
 	record := records.FindById(req.Param("id"))
 	body := record.Response.Body
-	res.WriteJSON(decompress(record.Response.Header.Get("Content-Encoding"), body))
+	res.WriteJSON(decompress(record.Response.GetHttpHeader().Get("Content-Encoding"), body))
 }
 
 func decompress(contentEncoding string, data []byte) []byte {
@@ -124,9 +133,9 @@ func decompress(contentEncoding string, data []byte) []byte {
 func dumpCurl(req *payload.Request) string {
 	var b strings.Builder
 	// Build cmd.
-	fmt.Fprintf(&b, "curl -X %s %s", req.Method, req.URL)
+	fmt.Fprintf(&b, "curl -X %s %s", req.Method, req.Url)
 	// Build headers.
-	for k, v := range req.Header {
+	for k, v := range req.GetHttpHeader() {
 		fmt.Fprintf(&b, " \\\n  -H '%s: %s'", k, strings.Join(v, " "))
 	}
 	// Build body.

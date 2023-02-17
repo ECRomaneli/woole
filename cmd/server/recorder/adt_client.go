@@ -27,39 +27,39 @@ func NewClient(name string) *Client {
 	return this
 }
 
-func (this *Client) NextId() string {
-	return this.seq.NextString()
+func (cl *Client) NextId() string {
+	return cl.seq.NextString()
 }
 
-func (this *Client) Add(rec *Record) (id string) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
+func (cl *Client) Add(rec *Record) (id string) {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 
-	rec.Id = this.seq.NextString()
+	rec.Id = cl.seq.NextString()
 
-	this.data[rec.Id] = rec
-	this.Tunnel <- rec
+	cl.data[rec.Id] = rec
+	cl.Tunnel <- rec
 
 	return rec.Id
 }
 
-func (this *Client) Get(key string) *Record {
-	this.mu.RLock()
-	defer this.mu.RUnlock()
+func (cl *Client) Get(key string) *Record {
+	cl.mu.RLock()
+	defer cl.mu.RUnlock()
 
-	return this.data[key]
+	return cl.data[key]
 }
 
-func (this *Client) Remove(key string) *Record {
-	this.mu.Lock()
-	defer this.mu.Unlock()
+func (cl *Client) Remove(key string) *Record {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 
-	data := this.data[key]
-	this.data[key] = nil
+	data := cl.data[key]
+	cl.data[key] = nil
 
 	return data
 }
 
-func (this *Client) Authorize(bearer string) bool {
-	return bytes.Compare(this.bearer, []byte(bearer)[7:]) == 0
+func (cl *Client) Authorize(bearer string) bool {
+	return bytes.Equal(cl.bearer, []byte(bearer)[7:])
 }

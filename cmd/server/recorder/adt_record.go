@@ -35,31 +35,31 @@ func NewRecord(req *payload.Request) *Record {
 	}
 }
 
-func (this *Records) RegisterClient(clientId string) *Client {
-	if this.ClientExists(clientId) {
-		this.RemoveClient(clientId)
+func (recs *Records) RegisterClient(clientId string) *Client {
+	if recs.ClientExists(clientId) {
+		recs.RemoveClient(clientId)
 	}
 
-	this.clients[clientId] = NewClient(clientId)
-	return this.clients[clientId]
+	recs.clients[clientId] = NewClient(clientId)
+	return recs.clients[clientId]
 }
 
-func (this *Records) ClientExists(clientId string) bool {
-	return this.clients[clientId] != nil
+func (recs *Records) ClientExists(clientId string) bool {
+	return recs.clients[clientId] != nil
 }
 
-func (this *Records) Add(clientId string, rec *Record) (id string) {
-	this.RLock()
-	client := this.clients[clientId]
-	this.RUnlock()
+func (recs *Records) Add(clientId string, rec *Record) (id string) {
+	recs.RLock()
+	client := recs.clients[clientId]
+	recs.RUnlock()
 
 	return client.Add(rec)
 }
 
-func (this *Records) Remove(clientId, recordId string) *Record {
-	this.RLock()
-	client := this.clients[clientId]
-	this.RUnlock()
+func (recs *Records) Remove(clientId, recordId string) *Record {
+	recs.RLock()
+	client := recs.clients[clientId]
+	recs.RUnlock()
 
 	if client == nil {
 		return nil
@@ -68,19 +68,19 @@ func (this *Records) Remove(clientId, recordId string) *Record {
 	return client.Remove(recordId)
 }
 
-func (this *Records) RemoveClient(clientId string) {
-	this.Lock()
-	defer this.Unlock()
+func (recs *Records) RemoveClient(clientId string) {
+	recs.Lock()
+	defer recs.Unlock()
 
-	close(this.clients[clientId].Tunnel)
-	this.clients[clientId] = nil
+	close(recs.clients[clientId].Tunnel)
+	recs.clients[clientId] = nil
 }
 
-func (this *Records) Get(clientId string, bearer string) (*Client, error) {
-	this.RLock()
-	defer this.RUnlock()
+func (recs *Records) Get(clientId string, bearer string) (*Client, error) {
+	recs.RLock()
+	defer recs.RUnlock()
 
-	client := this.clients[clientId]
+	client := recs.clients[clientId]
 
 	if client.Authorize(bearer) {
 		return client, nil
@@ -89,21 +89,21 @@ func (this *Records) Get(clientId string, bearer string) (*Client, error) {
 	return nil, errors.New("Authentication failed for client '" + clientId + "'")
 }
 
-func (this *Record) ToString(maxPathLength int) string {
-	path := []byte(this.Request.Path)
+func (recs *Record) ToString(maxPathLength int) string {
+	path := []byte(recs.Request.Path)
 
 	if len(path) > maxPathLength {
 		path = append([]byte("..."), path[len(path)-maxPathLength:]...)
 	}
 
-	method := "[" + this.Request.Method + "]"
+	method := "[" + recs.Request.Method + "]"
 
 	strPathLength := strconv.Itoa(maxPathLength + 3)
 	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
 
-	if this.Response == nil {
+	if recs.Response == nil {
 		return str
 	}
 
-	return str + fmt.Sprintf(" %d - %dms", this.Response.Code, this.Elapsed)
+	return str + fmt.Sprintf(" %d - %dms", recs.Response.Code, recs.Elapsed)
 }

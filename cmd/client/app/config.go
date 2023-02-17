@@ -35,32 +35,32 @@ const (
 	defaultCustomHostMessage = "<scheme>://<url>:<port>"
 )
 
-func (this *Config) ProxyProtoHost() string {
-	return this.ProxyProto + "://" + this.ProxyHost
+func (cfg *Config) ProxyProtoHost() string {
+	return cfg.ProxyProto + "://" + cfg.ProxyHost
 }
 
-func (this *Config) ProxyURL() string {
-	if len(this.ProxyPort) == 0 {
-		return this.ProxyProtoHost()
+func (cfg *Config) ProxyURL() string {
+	if len(cfg.ProxyPort) == 0 {
+		return cfg.ProxyProtoHost()
 	}
 
-	return this.ProxyProtoHost() + ":" + this.ProxyPort
+	return cfg.ProxyProtoHost() + ":" + cfg.ProxyPort
 }
 
-func (this *Config) TunnelProtoHost() string {
-	return this.TunnelProto + "://" + this.TunnelHost
+func (cfg *Config) TunnelProtoHost() string {
+	return cfg.TunnelProto + "://" + cfg.TunnelHost
 }
 
-func (this *Config) TunnelURL() string {
-	if len(this.TunnelPort) == 0 {
-		return this.TunnelProtoHost()
+func (cfg *Config) TunnelURL() string {
+	if len(cfg.TunnelPort) == 0 {
+		return cfg.TunnelProtoHost()
 	}
 
-	return this.TunnelProtoHost() + ":" + this.TunnelPort
+	return cfg.TunnelProtoHost() + ":" + cfg.TunnelPort
 }
 
-func (this *Config) DashboardURL() string {
-	return "http://localhost:" + this.DashboardPort
+func (cfg *Config) DashboardURL() string {
+	return "http://localhost:" + cfg.DashboardPort
 }
 
 var (
@@ -127,7 +127,7 @@ func ReadConfig() *Config {
 		isRead:        true,
 	}
 
-	auth.ClientID = *client
+	auth.ClientId = *client
 
 	if config.CustomHost == defaultCustomHostMessage {
 		config.CustomHost = config.ProxyURL()
@@ -168,11 +168,17 @@ func splitHostPort(hostPort string) (host, port string) {
 }
 
 func GetRequestURL() string {
-	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), auth.ClientID)
+	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), auth.ClientId)
 }
 
 func GetResponseURL(recordId any) string {
-	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), auth.ClientID, recordId)
+	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), auth.ClientId, recordId)
+}
+
+func AuthorizationHeader() *http.Header {
+	header := &http.Header{}
+	header.Set("Authorization", "Bearer "+string(auth.Bearer))
+	return header
 }
 
 func SetAuthorization(header http.Header) {

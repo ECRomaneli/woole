@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"woole/shared/payload"
+	"woole/shared/util/channel"
 	"woole/shared/util/sequence"
 	"woole/shared/util/signal"
 )
@@ -21,14 +22,17 @@ type Record struct {
 }
 
 type Records struct {
-	sync.RWMutex
+	mu         sync.RWMutex
 	records    []*Record
 	maxRecords uint
 	signal     *signal.Signal
+	Broker     *channel.Broker
 }
 
 func NewRecords(maxRecords uint) *Records {
-	return &Records{maxRecords: maxRecords, signal: signal.New()}
+	records := &Records{maxRecords: maxRecords, signal: signal.New(), Broker: channel.NewBroker()}
+	records.Broker.Start()
+	return records
 }
 
 func NewRecord(req *payload.Request) *Record {
@@ -40,8 +44,8 @@ func NewRecordWithId(id string, req *payload.Request) *Record {
 }
 
 func (recs *Records) Add(rec *Record) {
-	recs.Lock()
-	defer recs.Unlock()
+	recs.mu.Lock()
+	defer recs.mu.Unlock()
 
 	recs.records = append(recs.records, rec)
 
@@ -49,12 +53,12 @@ func (recs *Records) Add(rec *Record) {
 		recs.records = recs.records[1:]
 	}
 
-	recs.signal.Send()
+	recs.Broker.Publish(rec)
 }
 
 func (recs *Records) FindById(id string) *Record {
-	recs.RLock()
-	defer recs.RUnlock()
+	recs.mu.RLock()
+	defer recs.mu.RUnlock()
 
 	for _, record := range recs.records {
 		if record.Id == id {
@@ -66,8 +70,8 @@ func (recs *Records) FindById(id string) *Record {
 }
 
 func (recs *Records) GetLast() *Record {
-	recs.RLock()
-	defer recs.RUnlock()
+	recs.mu.RLock()
+	defer recs.mu.RUnlock()
 
 	lastIndex := len(recs.records) - 1
 
@@ -79,16 +83,16 @@ func (recs *Records) GetLast() *Record {
 }
 
 func (recs *Records) RemoveAll() {
-	recs.Lock()
-	defer recs.Unlock()
+	recs.mu.Lock()
+	defer recs.mu.Unlock()
 
 	recs.records = nil
 	recs.signal.Send()
 }
 
 func (recs *Records) Each(iterator func(rec *Record)) {
-	recs.RLock()
-	defer recs.RUnlock()
+	recs.mu.RLock()
+	defer recs.mu.RUnlock()
 
 	for _, rec := range recs.records {
 		iterator(rec)
@@ -103,8 +107,8 @@ func (recs *Records) Updated() bool {
 func (recs *Records) OnUpdate(onUpdate func()) {
 	recs.Updated()
 
-	recs.RLock()
-	defer recs.RUnlock()
+	recs.mu.RLock()
+	defer recs.mu.RUnlock()
 
 	onUpdate()
 }
@@ -132,7 +136,7 @@ func (this *Record) ThinClone() *Record {
 	clone := &Record{Request: &payload.Request{}, Response: &payload.Response{}}
 
 	clone.Id = this.Id
-	clone.Request.URL = this.Request.URL
+	clone.Request.Url = this.Request.Url
 	clone.Request.Path = this.Request.Path
 	clone.Request.Method = this.Request.Method
 	clone.Request.Proto = this.Request.Proto

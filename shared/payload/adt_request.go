@@ -8,60 +8,73 @@ import (
 	"github.com/ecromaneli-golang/http/webserver"
 )
 
-type Request struct {
-	Proto      string      `json:"proto"`
-	Method     string      `json:"method"`
-	URL        string      `json:"url"`
-	Path       string      `json:"path"`
-	Header     http.Header `json:"header"`
-	Body       []byte      `json:"body"`
-	RemoteAddr string      `json:"remoteAddr"`
+func (req *Request) ToString() string {
+	return "[" + req.Method + "] " + req.Path
 }
 
-func (this *Request) ToString() string {
-	return "[" + this.Method + "] " + this.Path
+func (req *Request) FromHTTPRequest(wsReq *webserver.Request) *Request {
+	req.Proto = wsReq.Raw.Proto
+	req.Method = wsReq.Raw.Method
+	req.Url = wsReq.Raw.URL.String()
+	req.Path = wsReq.Raw.URL.Path
+	req.Body = wsReq.Body()
+	req.setHttpHeader(wsReq.Raw.Header)
+	req.setUserIP(wsReq)
+
+	return req
 }
 
-func (this *Request) FromHTTPRequest(req *webserver.Request) *Request {
-	this.Proto = req.Raw.Proto
-	this.Method = req.Raw.Method
-	this.URL = req.Raw.URL.String()
-	this.Path = req.Raw.URL.Path
-	this.Header = req.Raw.Header
-	this.Body = req.Body()
-	this.setUserIP(req)
-
-	return this
-}
-
-func (this *Request) ToHTTPRequest() *http.Request {
+func (req *Request) ToHTTPRequest() *http.Request {
 	var data io.Reader = nil
 
-	if this.Body != nil {
-		data = bytes.NewReader(this.Body)
+	if req.Body != nil {
+		data = bytes.NewReader(req.Body)
 	}
 
-	httpReq, err := http.NewRequest(this.Method, this.URL, data)
+	httpReq, err := http.NewRequest(req.Method, req.Url, data)
 
 	if err != nil {
 		panic(err)
 	}
 
-	httpReq.Proto = this.Proto
-	httpReq.Header = this.Header
+	httpReq.Proto = req.Proto
+	httpReq.Header = req.GetHttpHeader()
 
 	return httpReq
 }
 
-func (this *Request) setUserIP(req *webserver.Request) {
-	ipAddress := req.Raw.Header.Get("X-Real-Ip")
+func (req *Request) setUserIP(wsReq *webserver.Request) {
+	ipAddress := wsReq.Raw.Header.Get("X-Real-Ip")
 
 	if ipAddress == "" {
-		ipAddress = req.Raw.Header.Get("X-Forwarded-For")
+		ipAddress = wsReq.Raw.Header.Get("X-Forwarded-For")
 	}
 	if ipAddress == "" {
-		ipAddress = req.Raw.RemoteAddr
+		ipAddress = wsReq.Raw.RemoteAddr
 	}
 
-	this.RemoteAddr = ipAddress
+	req.RemoteAddr = ipAddress
+}
+
+func (req *Request) GetHttpHeader() http.Header {
+	httpHeader := http.Header{}
+
+	for key, stringList := range req.Header {
+		if stringList == nil {
+			httpHeader[key] = []string{}
+			continue
+		}
+		// if null > req.Header[key] = &StringList{}
+		httpHeader[key] = stringList.Val
+	}
+
+	return httpHeader
+}
+
+func (req *Request) setHttpHeader(header http.Header) {
+	req.Header = map[string]*StringList{}
+
+	for key, values := range header {
+		req.Header[key] = &StringList{Val: values}
+	}
 }
