@@ -51,7 +51,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 	res.FlushEvent(&webserver.Event{
 		Name: "info",
-		Data: *(&Info{}).FromConfig(),
+		Data: *(&Info{}).FromConfig(config),
 	})
 
 	res.FlushEvent(&webserver.Event{
@@ -60,20 +60,15 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	})
 
 	go func() {
-		<-req.Raw.Context().Done()
-		listener <- nil
+		for msg := range listener {
+			res.FlushEvent(&webserver.Event{
+				Name: "record",
+				Data: msg.(*recorder.Record).ThinClone(),
+			})
+		}
 	}()
 
-	for msg := range listener {
-		if msg == nil {
-			break
-		}
-
-		res.FlushEvent(&webserver.Event{
-			Name: "record",
-			Data: msg.(*recorder.Record).ThinClone(),
-		})
-	}
+	<-req.Raw.Context().Done()
 }
 
 func clearHandler(req *webserver.Request, res *webserver.Response) {

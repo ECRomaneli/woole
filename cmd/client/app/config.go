@@ -15,6 +15,7 @@ import (
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
+	ClientId      string
 	ProxyProto    string
 	ProxyHost     string
 	ProxyPort     string
@@ -24,7 +25,7 @@ type Config struct {
 	DashboardPort string
 	CustomHost    string
 	MaxRecords    int
-	mu            sync.RWMutex
+	mu            sync.Mutex
 	isRead        bool
 }
 
@@ -57,6 +58,14 @@ func (cfg *Config) TunnelURL() string {
 	}
 
 	return cfg.TunnelProtoHost() + ":" + cfg.TunnelPort
+}
+
+func (cfg *Config) TunnelHostPort() string {
+	if len(cfg.TunnelPort) == 0 {
+		return cfg.TunnelHost
+	}
+
+	return cfg.TunnelHost + ":" + cfg.TunnelPort
 }
 
 func (cfg *Config) DashboardURL() string {
@@ -115,6 +124,7 @@ func ReadConfig() *Config {
 	tunnelProto, tunnelHost, tunnelPort := splitURL(*tunnelURL)
 
 	config = &Config{
+		ClientId:      *client,
 		ProxyProto:    strOrDefault(proxyProto, "http"),
 		ProxyHost:     strOrDefault(proxyHost, "localhost"),
 		ProxyPort:     proxyPort,
@@ -165,24 +175,6 @@ func splitHostPort(hostPort string) (host, port string) {
 	}
 
 	return hostPort[:colon], hostPort[colon+1:]
-}
-
-func GetRequestURL() string {
-	return fmt.Sprintf("%s/request/%s", config.TunnelURL(), auth.ClientId)
-}
-
-func GetResponseURL(recordId any) string {
-	return fmt.Sprintf("%s/response/%s/%s", config.TunnelURL(), auth.ClientId, recordId)
-}
-
-func AuthorizationHeader() *http.Header {
-	header := &http.Header{}
-	header.Set("Authorization", "Bearer "+string(auth.Bearer))
-	return header
-}
-
-func SetAuthorization(header http.Header) {
-	header.Set("Authorization", "Bearer "+string(auth.Bearer))
 }
 
 func PrintConfig() {

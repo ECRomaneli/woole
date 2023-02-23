@@ -1,10 +1,8 @@
 package recorder
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"woole/shared/payload"
@@ -19,74 +17,11 @@ type Record struct {
 	OnResponse *signal.Signal
 }
 
-type Records struct {
-	sync.RWMutex
-	clients map[string]*Client
-}
-
-func NewRecords() *Records {
-	return &Records{clients: make(map[string]*Client)}
-}
-
 func NewRecord(req *payload.Request) *Record {
 	return &Record{
 		Request:    req,
 		OnResponse: signal.New(),
 	}
-}
-
-func (recs *Records) RegisterClient(clientId string) *Client {
-	if recs.ClientExists(clientId) {
-		recs.RemoveClient(clientId)
-	}
-
-	recs.clients[clientId] = NewClient(clientId)
-	return recs.clients[clientId]
-}
-
-func (recs *Records) ClientExists(clientId string) bool {
-	return recs.clients[clientId] != nil
-}
-
-func (recs *Records) Add(clientId string, rec *Record) (id string) {
-	recs.RLock()
-	client := recs.clients[clientId]
-	recs.RUnlock()
-
-	return client.Add(rec)
-}
-
-func (recs *Records) Remove(clientId, recordId string) *Record {
-	recs.RLock()
-	client := recs.clients[clientId]
-	recs.RUnlock()
-
-	if client == nil {
-		return nil
-	}
-
-	return client.Remove(recordId)
-}
-
-func (recs *Records) RemoveClient(clientId string) {
-	recs.Lock()
-	defer recs.Unlock()
-
-	close(recs.clients[clientId].Tunnel)
-	recs.clients[clientId] = nil
-}
-
-func (recs *Records) Get(clientId string, bearer string) (*Client, error) {
-	recs.RLock()
-	defer recs.RUnlock()
-
-	client := recs.clients[clientId]
-
-	if client.Authorize(bearer) {
-		return client, nil
-	}
-
-	return nil, errors.New("Authentication failed for client '" + clientId + "'")
 }
 
 func (recs *Record) ToString(maxPathLength int) string {
@@ -102,8 +37,8 @@ func (recs *Record) ToString(maxPathLength int) string {
 	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
 
 	if recs.Response == nil {
-		return str
+		return str + fmt.Sprintf(" N/A - %dms", recs.Elapsed)
 	}
 
-	return str + fmt.Sprintf(" %d - %dms", recs.Response.Code, recs.Elapsed)
+	return str + fmt.Sprintf(" %3d - %dms", recs.Response.Code, recs.Elapsed)
 }

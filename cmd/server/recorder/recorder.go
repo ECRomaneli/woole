@@ -1,28 +1,39 @@
 package recorder
 
 import (
-	"encoding/json"
+	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"woole/cmd/server/app"
-	"woole/shared/payload"
 	"woole/shared/util"
-	"woole/shared/util/hash"
+
+	pb "woole/shared/payload"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"github.com/ecromaneli-golang/http/webserver"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-var config = app.ReadConfig()
-var log = logger.New("recorder")
+var (
+	config        = app.ReadConfig()
+	log           = logger.New("recorder")
+	clientManager = NewClientManager()
+)
 
-var records = NewRecords()
+type Tunnel struct{ pb.UnimplementedTunnelServer }
 
-func ListenAndServe() {
+func Start() {
+	serveTunnel()
+	serveWebServer()
+}
+
+func serveWebServer() {
 	server := webserver.NewServer()
-	go serveTunnel()
 
 	server.All(config.HostPattern+"/**", recorderHandler)
 
@@ -35,169 +46,187 @@ func ListenAndServe() {
 	panic(server.ListenAndServe(":" + config.HttpPort))
 }
 
-func GetRecords() *Records {
-	return records
-}
-
 func serveTunnel() {
-	server := webserver.NewServer()
-
-	server.WriteText("/", "<h1>Shh! We are listening here...</h1>")
-	server.Get("/request/{clientId?}", requestSender)
-	server.Post("/response/{clientId}/{recordId}", responseReceiver)
-
-	if !config.HasTlsFiles() {
-		panic(server.ListenAndServe(":" + config.TunnelPort))
-	}
-
-	panic(server.ListenAndServeTLS(":"+config.TunnelPort, config.TlsCert, config.TlsKey))
-}
-
-func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	clientId, err := validateClient(req.Param("client"), true)
+	lis, err := net.Listen("tcp", ":"+config.TunnelPort)
 	panicIfNotNil(err)
 
-	record := NewRecord((&payload.Request{}).FromHTTPRequest(req))
-	records.Add(clientId, record)
+	// Opts
+	var opts []grpc.ServerOption
+	opts = append(opts, grpc.MaxRecvMsgSize(config.MaxResponseSize))
+	opts = append(opts, grpc.MaxSendMsgSize(config.MaxRequestSize))
 
-	record.Elapsed = util.Timer(func() {
-		defer records.Remove(clientId, record.Id)
-
-		select {
-		case <-record.OnResponse.Receive():
-		case <-time.After(time.Duration(config.Timeout) * time.Millisecond):
-			webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" ["+record.Id+"] - Server timeout reached").Panic()
-		case <-req.Raw.Context().Done():
-			webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" ["+record.Id+"] - The request is no longer available").Panic()
+	if config.HasTlsFiles() {
+		tlsCred, err := config.GetTransportCredentials()
+		if err == nil {
+			opts = append(opts, grpc.Creds(tlsCred))
+		} else {
+			log.Error("Failed to create Transport Credentials.", err)
+			panic(err)
 		}
-	})
+	}
 
-	recRes := record.Response
+	s := grpc.NewServer(opts...)
 
-	// Write response
-	res.Headers(recRes.GetHttpHeader()).Status(int(recRes.Code)).Write(recRes.Body)
+	pb.RegisterTunnelServer(s, &Tunnel{})
 
-	if log.IsInfoEnabled() {
-		log.Info(clientId, "-", record.ToString(26))
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatal("Failed to serve Tunnel. Reason: ", err)
+			os.Exit(1)
+		}
+	}()
+}
+
+func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
+	// Receive the client ACK
+	ack, err := stream.Recv()
+
+	if !handleGRPCErrors(err) {
+		return err
+	}
+
+	// Register the new client
+	client := clientManager.Register(ack.GetClientId())
+
+	// Schedule the client to deregister after the tunnel finishes
+	log.Info(client.id + " - Connection Established")
+	defer log.Info(client.id + " - Connection Finished")
+	defer clientManager.Deregister(client.id)
+
+	// Send the authentication data
+	err = stream.Send(&pb.TunnelRequest{Auth: createAuth(client)})
+
+	if !handleGRPCErrors(err) {
+		return err
+	}
+
+	// Listen for HTTP responses from client
+	go receiveResponses(stream, client)
+
+	// Send new HTTP requests to client
+	go sendRequests(stream, client)
+
+	// Wait the end-of-stream
+	<-stream.Context().Done()
+	return nil
+}
+
+func sendRequests(stream pb.Tunnel_TunnelServer, client *Client) {
+	for record := range client.Tunnel {
+		err := stream.Send(&pb.TunnelRequest{
+			RecordId: record.Id,
+			Request:  record.Request,
+		})
+
+		if !handleGRPCErrors(err) {
+			return
+		}
 	}
 }
 
-func requestSender(req *webserver.Request, res *webserver.Response) {
-	client, auth := registerClient(req.Param("clientId"))
-	clientId := client.name
+func receiveResponses(stream pb.Tunnel_TunnelServer, client *Client) {
+	for {
+		tunnelRes, err := stream.Recv()
 
-	log.Info(clientId + " - Connection Established")
-	defer log.Info(clientId + " - Connection Finished")
-	defer records.RemoveClient(clientId)
-
-	res.Headers(webserver.EventStreamHeader)
-	res.FlushEvent(&webserver.Event{Name: "auth", Data: auth})
-
-	go func() {
-		<-req.Raw.Context().Done()
-
-		select {
-		case client.Tunnel <- nil:
-		default:
-		}
-	}()
-
-	for record := range client.Tunnel {
-		if req.IsDone() {
+		if !handleGRPCErrors(err) {
 			return
 		}
 
-		res.FlushEvent(&webserver.Event{
-			ID:   record.Id,
-			Name: "request",
-			Data: record.Request,
-		})
-	}
-}
-
-func responseReceiver(req *webserver.Request, res *webserver.Response) {
-	client := validateAndAuthClient(req.Param("clientId"), req.Header("Authorization"))
-	record := client.Get(req.Param("recordId"))
-
-	if record == nil {
-		return
-	}
-
-	response := payload.Response{}
-	err := json.Unmarshal(req.Body(), &response)
-
-	if err != nil {
-		webserver.NewHTTPError(http.StatusBadRequest, err).Panic()
-	}
-
-	record.Response = &response
-	record.OnResponse.SendLast()
-}
-
-func registerClient(clientId string) (*Client, *payload.Auth) {
-	hasClientId := clientId != ""
-
-	if !hasClientId {
-		clientId = string(hash.RandSha1("")[:8])
-	}
-
-	clientId, err := validateClient(clientId, false)
-
-	for err != nil {
-		if hasClientId {
-			clientId, err = validateClient(clientId+"-"+string(hash.RandSha1(clientId))[:5], false)
-		} else {
-			clientId, err = validateClient(string(hash.RandSha1(""))[:8], false)
+		if err == nil {
+			client.SetRecordResponse(tunnelRes.RecordId, tunnelRes.Response)
 		}
+
+	}
+}
+
+// handle gRPC errors and return if the error was or not handled
+func handleGRPCErrors(err error) bool {
+	if err == nil {
+		return true
 	}
 
-	client := records.RegisterClient(clientId)
-	url := strings.Replace(config.HostPattern, app.ClientToken, clientId, 1)
+	switch status.Code(err) {
+	case codes.ResourceExhausted:
+		log.Warn("Request discarded. Reason: Max size exceeded")
+		return true
+	case codes.Unavailable, codes.Canceled:
+		return false
+	default:
+		log.Error(err)
+		return false
+	}
+}
 
-	auth := &payload.Auth{
-		ClientId:   clientId,
-		Url:        url,
-		HttpPort:   config.HttpPort,
-		TunnelPort: config.TunnelPort,
-		Bearer:     string(client.bearer),
+func createAuth(client *Client) *pb.Auth {
+	url := strings.Replace(config.HostPattern, app.ClientToken, client.id, 1)
+
+	auth := &pb.Auth{
+		ClientId:        client.id,
+		Url:             url,
+		HttpPort:        config.HttpPort,
+		TunnelPort:      config.TunnelPort,
+		MaxRequestSize:  int32(config.MaxRequestSize),
+		MaxResponseSize: int32(config.MaxResponseSize),
+		Bearer:          string(client.bearer),
 	}
 
 	if config.HasTlsFiles() {
 		auth.HttpsPort = config.HttpsPort
 	}
 
-	return client, auth
+	return auth
 }
 
-func validateAndAuthClient(clientId, bearer string) *Client {
-	clientId, err := validateClient(clientId, true)
+func recorderHandler(req *webserver.Request, res *webserver.Response) {
+	clientId, err := hasClient(req.Param("client"))
 	panicIfNotNil(err)
 
-	client, err := records.Get(clientId, bearer)
+	client := clientManager.Get(clientId)
+
+	record := NewRecord((&pb.Request{}).FromHTTPRequest(req))
+	client.AddRecord(record)
+
+	record.Elapsed = util.Timer(func() {
+		defer client.RemoveRecord(record.Id)
+
+		select {
+		case <-record.OnResponse.Receive():
+		case <-time.After(time.Duration(config.Timeout) * time.Millisecond):
+			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - Server timeout reached")
+		case <-req.Raw.Context().Done():
+			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - The request is no longer available")
+		}
+	})
 
 	if err != nil {
-		webserver.NewHTTPError(http.StatusUnauthorized, err).Panic()
+		record.Response = &pb.Response{Code: http.StatusGatewayTimeout}
+		logRecord(clientId, record)
+		panic(err)
 	}
 
-	return client
+	// Write response
+	recRes := record.Response
+	res.Headers(recRes.GetHttpHeader()).Status(int(recRes.Code)).Write(recRes.Body)
+	logRecord(clientId, record)
 }
 
-func validateClient(clientId string, shouldExist bool) (string, error) {
+func hasClient(clientId string) (string, error) {
 	if len(clientId) == 0 {
 		return clientId, webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification")
 	}
 
-	if records.ClientExists(clientId) != shouldExist {
-		message := "The client '" + clientId + "' is already in use"
-
-		if shouldExist {
-			message = "The client '" + clientId + "' is not in use"
-		}
-
+	if !clientManager.Exists(clientId) {
+		message := "The client '" + clientId + "' is not in use"
 		return clientId, webserver.NewHTTPError(http.StatusForbidden, message)
 	}
 
 	return clientId, nil
+}
+
+func logRecord(clientId string, record *Record) {
+	if log.IsInfoEnabled() {
+		log.Info(clientId, "-", record.ToString(26))
+	}
 }
 
 func panicIfNotNil(err any) {

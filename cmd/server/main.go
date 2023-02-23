@@ -28,5 +28,5 @@ func bootstrap() {
 	fmt.Println("===============")
 	fmt.Println()
 
-	recorder.ListenAndServe()
+	recorder.Start()
 }

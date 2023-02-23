@@ -1,9 +1,10 @@
 package recorder
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -12,11 +13,15 @@ import (
 	"strconv"
 	"time"
 	"woole/cmd/client/app"
-	"woole/cmd/client/connection/eventsource"
 	"woole/shared/payload"
+	pb "woole/shared/payload"
 	"woole/shared/util"
 
 	"github.com/ecromaneli-golang/console/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 const StatusInternalProxyError = 999
@@ -25,16 +30,16 @@ var config = app.ReadConfig()
 var log = logger.New("recorder")
 
 var records = NewRecords(uint(config.MaxRecords))
-var recorderHandler http.HandlerFunc
 var proxyHandler http.HandlerFunc
 
 func Start() {
-	initializeTunnel()
+	proxyHandler = createProxyHandler()
+	startTunnel()
 }
 
 func Retry(request *payload.Request) {
 	record := NewRecord(request)
-	DoRequestAndStoreResponse(record)
+	DoRequest(record)
 
 	if log.IsInfoEnabled() {
 		log.Info(record.ToString(26))
@@ -45,78 +50,113 @@ func GetRecords() *Records {
 	return records
 }
 
-func initializeTunnel() {
+func startTunnel() {
+	// Establish tunnel connection and retrieve request/response stream
+	stream, cancelFunc := connectTunnel()
+	defer cancelFunc()
 
-	// Open connection with tunnel URL
-	client, err := eventsource.NewWithHeader(app.GetRequestURL(), *app.AuthorizationHeader())
-	if err != nil {
-		log.Fatal("Failed to connect with tunnel on " + config.TunnelURL())
-		os.Exit(1)
+	// Send ack with client id (if exists)
+	stream.Send(&pb.TunnelResponse{ClientId: config.ClientId})
+
+	// Retrieve the authentication data and store
+	tunnelReq, err := stream.Recv()
+	panicIfNotNil(err)
+
+	if tunnelReq.Auth == nil {
+		exitIfNotNil("Failed to authenticate with tunnel on "+config.TunnelHostPort(), errors.New("authencation not sent"))
 	}
 
-	proxyHandler = createProxyHandler()
+	app.Authenticate(tunnelReq.Auth)
 
-	// First event MUST be "auth", save them to get Bearer for send responses
-	authEvent := <-client.Listen()
-	if authEvent.Name != "auth" {
-		log.Fatal("Auth event expected but got: " + authEvent.Name)
-		os.Exit(1)
-	}
+	// Listen for requests and send responses asynchronously
+	for {
+		tunnelReq, err := stream.Recv()
 
-	auth := payload.Auth{}
-	json.Unmarshal([]byte(authEvent.Data.(string)), &auth)
-	app.Authenticate(&auth)
+		if err != nil {
+			if !handleGRPCErrors(err) {
+				panic(err)
+			}
+			continue
+		}
 
-	// Receive events, parse data, do request, record them, and return response
-	for event := range client.Listen() {
-		id := event.ID
-
-		var req payload.Request
-		json.Unmarshal([]byte(event.Data.(string)), &req)
-
-		go func() {
-			record := NewRecordWithId(id, &req)
-			DoRequestAndStoreResponse(record)
-			sendResponseToServer(record)
-		}()
+		go handleTunnelRequest(stream, tunnelReq)
 	}
 }
 
-func DoRequestAndStoreResponse(record *Record) {
+func connectTunnel() (pb.Tunnel_TunnelClient, context.CancelFunc) {
+	// Opts
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt32)))
+
+	// Dial tunnel
+	conn, err := grpc.Dial(config.TunnelHostPort(), opts...)
+	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelHostPort(), err)
+
+	// Create a cancelable context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start the tunnel stream
+	client := pb.NewTunnelClient(conn)
+	stream, err := client.Tunnel(ctx)
+	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelHostPort(), err)
+
+	return stream, func() {
+		cancel()
+		conn.Close()
+	}
+}
+
+func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequest) {
+	record := NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
+	DoRequest(record)
+	handleRedirections(record)
+
+	err := stream.Send(&pb.TunnelResponse{
+		RecordId: record.Id,
+		Response: record.Response,
+	})
+
+	if log.IsInfoEnabled() {
+		log.Info(record.ToString(26))
+	}
+
+	if !handleGRPCErrors(err) {
+		panic(err)
+	}
+}
+
+func handleGRPCErrors(err error) bool {
+	if err == nil {
+		return true
+	}
+
+	switch status.Code(err) {
+	case codes.ResourceExhausted:
+		log.Warn("Request discarded. Reason: Max size exceeded")
+		return true
+	default:
+		return false
+	}
+}
+
+func DoRequest(record *Record) {
 	res, elapsed := proxyRequest(record.Request)
 	record.Response = res
 	record.Elapsed = elapsed
 	records.Add(record)
 }
 
-func sendResponseToServer(record *Record) {
-	handleRedirections(record)
-
-	resData, err := json.Marshal(*record.Response)
-	panicIfNotNil(err)
-
-	req, err := http.NewRequest("POST", app.GetResponseURL(record.Id), bytes.NewBuffer(resData))
-	panicIfNotNil(err)
-
-	app.SetAuthorization(req.Header)
-	req.Header.Set("Content-Type", "application/json")
-
-	_, err = http.DefaultClient.Do(req)
-	panicIfNotNil(err)
-
-	if log.IsInfoEnabled() {
-		log.Info(record.ToString(26))
-	}
-}
-
 func handleRedirections(record *Record) {
 	location := record.Response.GetHttpHeader().Get("location")
 	if location != "" {
-		record.Response.GetHttpHeader().Del("location")
-		record.Response.Code = http.StatusOK
+		httpHeader := record.Response.GetHttpHeader()
+		httpHeader.Set("Content-Type", "text/html")
+		httpHeader.Del("location")
 		record.Response.Body = []byte("<!doctype html><html><body>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</body></html>")
-		record.Response.GetHttpHeader().Set("Content-Type", "text/html")
-		record.Response.GetHttpHeader().Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
+		record.Response.Code = http.StatusOK
+		httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
 	}
 }
 
@@ -149,5 +189,13 @@ func createProxyHandler() http.HandlerFunc {
 func panicIfNotNil(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+func exitIfNotNil(msg string, err error) {
+	if err != nil {
+		fmt.Println(msg)
+		log.Fatal(msg + ". Reason: " + err.Error())
+		os.Exit(1)
 	}
 }

@@ -64,7 +64,6 @@ func (req *Request) GetHttpHeader() http.Header {
 			httpHeader[key] = []string{}
 			continue
 		}
-		// if null > req.Header[key] = &StringList{}
 		httpHeader[key] = stringList.Val
 	}
 

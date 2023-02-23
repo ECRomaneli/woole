@@ -36,7 +36,7 @@ func NewRecords(maxRecords uint) *Records {
 }
 
 func NewRecord(req *payload.Request) *Record {
-	return &Record{Id: seqId.NextString(), Request: req}
+	return &Record{Id: "R" + seqId.NextString(), Request: req}
 }
 
 func NewRecordWithId(id string, req *payload.Request) *Record {
@@ -104,58 +104,49 @@ func (recs *Records) Updated() bool {
 	return true
 }
 
-func (recs *Records) OnUpdate(onUpdate func()) {
-	recs.Updated()
+func (recs *Records) ThinClone() *[]Record {
+	slice := []Record{}
 
-	recs.mu.RLock()
-	defer recs.mu.RUnlock()
+	recs.Each(func(r *Record) {
+		slice = append(slice, *r.ThinClone())
+	})
 
-	onUpdate()
+	return &slice
 }
 
-func (this *Record) ToString(maxPathLength int) string {
-	path := []byte(this.Request.Path)
+func (rec *Record) ThinClone() *Record {
+	clone := &Record{Request: &payload.Request{}, Response: &payload.Response{}}
+
+	clone.Id = rec.Id
+	clone.Request.Url = rec.Request.Url
+	clone.Request.Path = rec.Request.Path
+	clone.Request.Method = rec.Request.Method
+	clone.Request.Proto = rec.Request.Proto
+	clone.Request.Header = rec.Request.Header
+	clone.Request.Body = rec.Request.Body
+	clone.Response.Code = rec.Response.Code
+	clone.Response.Proto = rec.Response.Proto
+	clone.Response.Header = rec.Response.Header
+	clone.Elapsed = rec.Elapsed
+
+	return clone
+}
+
+func (rec *Record) ToString(maxPathLength int) string {
+	path := []byte(rec.Request.Path)
 
 	if len(path) > maxPathLength {
 		path = append([]byte("..."), path[len(path)-maxPathLength:]...)
 	}
 
-	method := "[" + this.Request.Method + "]"
+	method := "[" + rec.Request.Method + "]"
 
 	strPathLength := strconv.Itoa(maxPathLength + 3)
 	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
 
-	if this.Response == nil {
+	if rec.Response == nil {
 		return str
 	}
 
-	return str + fmt.Sprintf(" %d - %dms", this.Response.Code, this.Elapsed)
-}
-
-func (this *Record) ThinClone() *Record {
-	clone := &Record{Request: &payload.Request{}, Response: &payload.Response{}}
-
-	clone.Id = this.Id
-	clone.Request.Url = this.Request.Url
-	clone.Request.Path = this.Request.Path
-	clone.Request.Method = this.Request.Method
-	clone.Request.Proto = this.Request.Proto
-	clone.Request.Header = this.Request.Header
-	clone.Request.Body = this.Request.Body
-	clone.Response.Code = this.Response.Code
-	clone.Response.Proto = this.Response.Proto
-	clone.Response.Header = this.Response.Header
-	clone.Elapsed = this.Elapsed
-
-	return clone
-}
-
-func (this *Records) ThinClone() *[]Record {
-	slice := []Record{}
-
-	this.Each(func(rec *Record) {
-		slice = append(slice, *rec.ThinClone())
-	})
-
-	return &slice
+	return str + fmt.Sprintf(" %d - %dms", rec.Response.Code, rec.Elapsed)
 }

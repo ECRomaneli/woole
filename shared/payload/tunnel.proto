@@ -5,7 +5,22 @@ option go_package = "woole/payload";
 package payload;
 
 service Tunnel {
-  rpc Chat(stream Response) returns (stream Request) {}
+  rpc Tunnel(stream TunnelResponse) returns (stream TunnelRequest) {}
+}
+
+message TunnelRequest {
+    Auth auth = 1;
+
+    string recordId = 2;
+    Request request = 3;
+}
+
+message TunnelResponse {
+    string clientId = 1;
+
+    string recordId = 2;
+    string bearer = 3;
+    Response response = 4;
 }
 
 message Auth {
@@ -15,6 +30,8 @@ message Auth {
     string httpsPort = 4;
     string tunnelPort = 5;
     string bearer = 6;
+    int32 maxRequestSize = 7;
+    int32 maxResponseSize = 8;
 }
 
 message Request {

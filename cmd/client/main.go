@@ -17,8 +17,12 @@ func main() {
 
 func bootstrap() {
 	go printInfo()
-	go func() { panic(dashboard.ListenAndServe()) }()
+	go startDashboard()
 	recorder.Start()
+}
+
+func startDashboard() {
+	panic(dashboard.ListenAndServe())
 }
 
 func printInfo() {

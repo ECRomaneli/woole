@@ -15,8 +15,7 @@ type Info struct {
 	Bearer     string `json:"bearer"`
 }
 
-func (this *Info) FromConfig() *Info {
-	config := app.ReadConfig()
+func (this *Info) FromConfig(config *app.Config) *Info {
 	auth := app.GetAuth()
 
 	this.ClientID = auth.ClientId
