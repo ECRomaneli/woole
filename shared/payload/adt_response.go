@@ -11,7 +11,7 @@ func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder) *R
 	res.Status = httpRes.Result().Status
 	res.Code = int32(httpRes.Code)
 	res.Body = httpRes.Body.Bytes()
-	res.setHttpHeader(httpRes.Header())
+	res.SetHttpHeader(httpRes.Header())
 
 	return res
 }
@@ -31,7 +31,7 @@ func (res *Response) GetHttpHeader() http.Header {
 	return httpHeader
 }
 
-func (res *Response) setHttpHeader(header http.Header) {
+func (res *Response) SetHttpHeader(header http.Header) {
 	res.Header = map[string]*StringList{}
 
 	for key, values := range header {

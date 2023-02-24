@@ -16,7 +16,18 @@ main {
     overflow-x: auto;
     overflow-y: hidden;
     /* background-color: #fafafa; */
-    background-color: #eee;
+    background-color: #0d1117;
+    color: #c9d1d9;
+}
+
+.nav-tabs .nav-link.active {
+    color: #c9d1d9;
+    border-bottom: 2px solid #f78166;
+    font-weight: bold;
+}
+
+.nav-tabs {
+    border-bottom: 1px solid #21262d;
 }
 
 .bi {
@@ -229,9 +240,46 @@ main {
 .card {
     margin: 5px;
     padding: 0 10px;
-    background-color: #fefefe;
-    border-radius: 4px;
-    overflow: hidden;
+    background-color: #0d1117;
+    border-color: #30363d;
+    border-radius: 6px;
+    transition: .3s cubic-bezier(0, 1, 0.3, 1) margin;
+}
+
+.card .btn-toolbar {
+    margin-top: -10px;
+}
+
+.card.maximized {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    border-radius: 0;
+    z-index: 1000;
+}
+
+.search-group {
+    position: relative;
+    width: 100%;
+    z-index: 1000000;
+}
+
+.search-group>input {
+    width: 100%;
+    background: none;
+    color: #808992;
+    font-size: 14px !important;
+    border: none;
+    outline-width: 0;
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace !important;
+}
+
+.maximize-btn {
+    margin-top: 3px;
+    cursor: pointer;
 }
 
 .input-group>input {

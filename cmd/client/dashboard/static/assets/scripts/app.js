@@ -6,14 +6,16 @@ app.vue = Vue.createApp({
             recordList: [],
             selectedRecord: null,
             config: {},
-            auth: {}
+            auth: {},
+            onUpdateList: []
         }
     },
     created() { this.setupStream() },
+
     methods: {
-        async retry() {
-            await fetch('/record/' + this.selectedRecord.id + '/retry', { headers: { 'Cache-Control': 'no-cache' } })
-            this.show(this.recordList[0]);
+        async replay(record) {
+            this.onceOnUpdate((rec) => this.show(rec));
+            await fetch('/record/' + record.id + '/replay');
         },
 
         setupStream() {
@@ -21,7 +23,7 @@ app.vue = Vue.createApp({
 
             es.addEventListener('info', event => {
                 const data = JSON.parse(event.data);
-                this.info = data
+                this.info = data;
             });
 
             es.addEventListener('records', event => {
@@ -38,10 +40,11 @@ app.vue = Vue.createApp({
                     while (this.recordList.length > this.info.maxRecords) {
                         this.recordList.pop();
                     }
+                    this.onUpdateList.forEach(fn => fn(data));
                 }
             });
 
-            es.onerror = () => console.error("Failed to retrieve data from event stream")
+            es.onerror = (err) => console.error(err)
         },
 
         isSelectedRecord(record) {
@@ -57,8 +60,21 @@ app.vue = Vue.createApp({
                 record.response.body = data
                 record.isFetched = true
             }
-            
+
             this.selectedRecord = record
+        },
+
+        onceOnUpdate(fn) {
+            let onceFn = (record) => {
+                const index = this.onUpdateList.indexOf(onceFn);
+                this.onUpdateList.splice(index, 1);
+                fn(record);
+            };
+            this.onUpdateList.push(onceFn);
+        },
+
+        onUpdate(fn) {
+            this.onUpdateList.push(fn);
         }
     }
 })

@@ -3,17 +3,17 @@ app.vue.component('RecordViewer', {
         <div class="container-fluid">
             <div class="row row-custom">
                 <div class="col-md-12 col-custom-6">
-                    <div class="card card-shadow">
+                    <div class="card card-shadow" :class="{ maximized: maximized === 'request' }">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <span class="h4">Request</span>
-                            <div class="btn-toolbar mb-2 mb-md-0">
-                                <div class="btn-group me-2">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary">Prettify</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                            <span class="h5">Request</span>
+                            <div class="btn-toolbar">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">Replay</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">w/ Changes</button>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
-                                    Replay
-                                </button>
+                                <div class="maximize-btn ms-3 me-2" @click="maximize('request')">
+                                    <img :src="maximizeSvg" alt="maximize" />
+                                </div>
                             </div>
                         </div>
                         <record-item 
@@ -23,9 +23,14 @@ app.vue.component('RecordViewer', {
                     </div>
                 </div>
                 <div class="col-md-12 col-custom-6">
-                    <div class="card card-shadow">
+                    <div class="card card-shadow" :class="{ maximized: maximized === 'response' }">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <span class="h4">Response</span>
+                            <span class="h5">Response</span>
+                            <div class="btn-toolbar">
+                                <div class="maximize-btn ms-3 me-2" @click="maximize('response')">
+                                    <img :src="maximizeSvg" alt="maximize" />
+                                </div>
+                            </div>
                         </div>
                         <record-item 
                             :titleGroup="[record.response.code, httpStatusMessage[record.response.code], record.response.proto]" 
@@ -36,7 +41,9 @@ app.vue.component('RecordViewer', {
             </div>
         </div>
     `,
-    props: { record: Object },
+    props: {
+        record: Object
+    },
     data() {
         return {
             httpStatusMessage: {
@@ -46,7 +53,26 @@ app.vue.component('RecordViewer', {
                 407: 'Proxy Authentication Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed',
                 413: 'Request Entity Too Large', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed',
                 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported'
+            },
+            maximizeSvg: "assets/images/maximize.svg",
+            maximized: ""
+        }
+    },
+    methods: { 
+        async replay(record) {
+            this.$parent.replay(record);            
+        },
+
+        maximize(card) {
+            if (this.maximized === "") {
+                this.maximized = card;
+                this.maximizeSvg = "assets/images/minimize.svg";
+            } else {
+                this.maximized = "";
+                this.maximizeSvg = "assets/images/maximize.svg";
             }
+            // Workaround to make ACE Editor re-wrap lines
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 10)
         }
     }
 })
@@ -116,10 +142,10 @@ app.vue.component('RecordItem', {
 
             if (!this.item || !this.item.header) { return }
 
-            let contentType = this.item.header['Content-Type'].Val
+            let contentType = this.item.header['Content-Type']
             if (contentType === void 0 || contentType === '' || contentType.length === 0) { return }
 
-            let tokens = contentType.join(";").toLowerCase().split(";").map(str => str.trim())
+            let tokens = contentType.Val.join(";").toLowerCase().split(";").map(str => str.trim())
 
             // Parse the xxxx/yyyyy content-type
             let categoryAndType = tokens.shift().split('/')
@@ -198,7 +224,7 @@ app.vue.component('ContentEditor', {
         createEditor() {
             this.editor = ace.edit(this.id, {
                 useWorker: false,
-                theme: "ace/theme/chrome",
+                theme: "ace/theme/twilight",
                 readOnly: this.readOnly,
                 autoScrollEditorIntoView: true,
                 minLines: 2,

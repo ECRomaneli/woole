@@ -36,7 +36,7 @@ func setupServer() *webserver.Server {
 	server.FileServer("/")
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
-	server.Get("/record/{id}/retry", retryHandler)
+	server.Get("/record/{id}/replay", replayHandler)
 	server.Get("/record/clear", clearHandler)
 
 	return server
@@ -76,9 +76,9 @@ func clearHandler(req *webserver.Request, res *webserver.Response) {
 	res.Status(http.StatusOK).NoBody()
 }
 
-func retryHandler(req *webserver.Request, res *webserver.Response) {
+func replayHandler(req *webserver.Request, res *webserver.Response) {
 	record := records.FindById(req.Param("id"))
-	recorder.Retry(record.Request)
+	recorder.Replay(record.Request)
 }
 
 func responseBodyHandler(req *webserver.Request, res *webserver.Response) {

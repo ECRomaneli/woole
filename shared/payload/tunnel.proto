@@ -5,7 +5,7 @@ option go_package = "woole/payload";
 package payload;
 
 service Tunnel {
-  rpc Tunnel(stream TunnelResponse) returns (stream TunnelRequest) {}
+    rpc Tunnel(stream TunnelResponse) returns (stream TunnelRequest) {}
 }
 
 message TunnelRequest {
@@ -19,8 +19,9 @@ message TunnelResponse {
     string clientId = 1;
 
     string recordId = 2;
-    string bearer = 3;
-    Response response = 4;
+    Response response = 3;
+    
+    string bearer = 4;
 }
 
 message Auth {

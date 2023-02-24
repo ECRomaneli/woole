@@ -37,7 +37,7 @@ func Start() {
 	startTunnel()
 }
 
-func Retry(request *payload.Request) {
+func Replay(request *payload.Request) {
 	record := NewRecord(request)
 	DoRequest(record)
 
@@ -154,9 +154,10 @@ func handleRedirections(record *Record) {
 		httpHeader := record.Response.GetHttpHeader()
 		httpHeader.Set("Content-Type", "text/html")
 		httpHeader.Del("location")
-		record.Response.Body = []byte("<!doctype html><html><body>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</body></html>")
+		record.Response.Body = []byte("<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><title>Woole - Redirecting</title><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><span>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</span></body></html>")
 		record.Response.Code = http.StatusOK
 		httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
+		record.Response.SetHttpHeader(httpHeader)
 	}
 }
 

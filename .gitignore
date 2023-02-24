@@ -13,4 +13,4 @@
 .vscode/
 .DS_Store
 
-*.pb.go
+# *.pb.go
