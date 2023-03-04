@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -34,7 +33,7 @@ var proxyHandler http.HandlerFunc
 
 func Start() {
 	proxyHandler = createProxyHandler()
-	startTunnel()
+	startTunnelStream()
 }
 
 func Replay(request *payload.Request) {
@@ -50,7 +49,7 @@ func GetRecords() *Records {
 	return records
 }
 
-func startTunnel() {
+func startTunnelStream() {
 	// Establish tunnel connection and retrieve request/response stream
 	stream, cancelFunc := connectTunnel()
 	defer cancelFunc()
@@ -63,7 +62,7 @@ func startTunnel() {
 	panicIfNotNil(err)
 
 	if tunnelReq.Auth == nil {
-		exitIfNotNil("Failed to authenticate with tunnel on "+config.TunnelHostPort(), errors.New("authencation not sent"))
+		exitIfNotNil("Failed to authenticate with tunnel on "+config.TunnelUrl.String(), errors.New("authencation not sent"))
 	}
 
 	app.Authenticate(tunnelReq.Auth)
@@ -83,31 +82,6 @@ func startTunnel() {
 	}
 }
 
-func connectTunnel() (pb.Tunnel_TunnelClient, context.CancelFunc) {
-	// Opts
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt32)))
-
-	// Dial tunnel
-	conn, err := grpc.Dial(config.TunnelHostPort(), opts...)
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelHostPort(), err)
-
-	// Create a cancelable context
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// Start the tunnel stream
-	client := pb.NewTunnelClient(conn)
-	stream, err := client.Tunnel(ctx)
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelHostPort(), err)
-
-	return stream, func() {
-		cancel()
-		conn.Close()
-	}
-}
-
 func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequest) {
 	record := NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
 	DoRequest(record)
@@ -124,6 +98,31 @@ func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequ
 
 	if !handleGRPCErrors(err) {
 		panic(err)
+	}
+}
+
+func connectTunnel() (pb.Tunnel_TunnelClient, context.CancelFunc) {
+	// Opts
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt32)))
+
+	// Dial tunnel
+	conn, err := grpc.Dial(config.TunnelUrl.Host, opts...)
+	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
+
+	// Create a cancelable context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start the tunnel stream
+	client := pb.NewTunnelClient(conn)
+	stream, err := client.Tunnel(ctx)
+	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
+
+	return stream, func() {
+		cancel()
+		conn.Close()
 	}
 }
 
@@ -175,8 +174,7 @@ func proxyRequest(req *payload.Request) (*payload.Response, time.Duration) {
 }
 
 func createProxyHandler() http.HandlerFunc {
-	url, _ := url.Parse(config.CustomHost)
-	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
 
 	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
 		log.Error(err, ":", req.Method, req.URL)
@@ -184,7 +182,12 @@ func createProxyHandler() http.HandlerFunc {
 		fmt.Fprintf(rw, "%v", err)
 	}
 
-	return proxy.ServeHTTP
+	return func(rw http.ResponseWriter, req *http.Request) {
+		req.Host = config.CustomUrl.Host
+		req.URL.Host = config.CustomUrl.Host
+		req.URL.Scheme = config.CustomUrl.Scheme
+		proxy.ServeHTTP(rw, req)
+	}
 }
 
 func panicIfNotNil(err error) {

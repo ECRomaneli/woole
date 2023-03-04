@@ -13,7 +13,7 @@ app.vue.component('InfoCard', {
     template: `
         <div class="p-0">
             <div class="card card-shadow" style="padding: 10px 20px">
-                <div class="d-flex pt-3 pb-2"><span class="h2">Info</span></div>
+                <div class="d-flex pt-3 pb-2"><span class="h2">Session Details</span></div>
                 <table class="table table-striped table-hover info-grid" aria-label="info">
                     <tbody>
                         <tr v-for="(value, key) in info">

@@ -1,20 +1,29 @@
 package payload
 
-func (auth *Auth) HTTPUrl() string {
-	return "http://" + auth.Url + ":" + auth.HttpPort
+import (
+	"woole/shared/util"
+)
+
+func (auth *Auth) HttpUrl() string {
+	var port string
+
+	if util.GetDefaultPortStr("http") != auth.GetHttpPort() {
+		port = ":" + auth.GetHttpPort()
+	}
+
+	return "http://" + auth.GetHostname() + port
 }
 
-func (auth *Auth) HTTPSUrl() string {
+func (auth *Auth) HttpsUrl() string {
 	if auth.HttpsPort == "" {
 		return ""
 	}
-	return "https://" + auth.Url + ":" + auth.HttpsPort
-}
 
-func (auth *Auth) TunnelUrl() string {
-	if auth.HttpsPort == "" {
-		return "http://" + auth.Url + ":" + auth.TunnelPort
+	var port string
+
+	if util.GetDefaultPortStr("https") != auth.GetHttpsPort() {
+		port = ":" + auth.GetHttpsPort()
 	}
 
-	return "https://" + auth.Url + ":" + auth.TunnelPort
+	return "https://" + auth.GetHostname() + port
 }

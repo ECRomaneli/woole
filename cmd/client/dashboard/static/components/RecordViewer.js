@@ -9,7 +9,7 @@ app.vue.component('RecordViewer', {
                             <div class="btn-toolbar">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">Replay</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">w/ Changes</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#request-submitter" @mouseover="requestSubmitterEnabled = true">w/ Changes</button>
                                 </div>
                                 <div class="maximize-btn ms-3 me-2" @click="maximize('request')">
                                     <img :src="maximizeSvg" alt="maximize" />
@@ -39,6 +39,7 @@ app.vue.component('RecordViewer', {
                     </div>
                 </div>
             </div>
+            <request-submitter v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request"></request-submitter>
         </div>
     `,
     props: {
@@ -55,9 +56,11 @@ app.vue.component('RecordViewer', {
                 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported'
             },
             maximizeSvg: "assets/images/maximize.svg",
-            maximized: ""
+            maximized: "",
+            requestSubmitterEnabled: false
         }
     },
+
     methods: { 
         async replay(record) {
             this.$parent.replay(record);            
@@ -105,7 +108,7 @@ app.vue.component('RecordItem', {
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 1 }">
-                    <content-editor :content="content" :readOnly="true" :updated="bodyFlag"></content-editor>
+                    <content-editor :content="content" :readOnly="true" :minLines="2" :maxLines="40" :updated="bodyFlag"></content-editor>
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 2 }">
@@ -205,7 +208,7 @@ app.vue.component('ContentPreview', {
 
 app.vue.component('ContentEditor', {
     template: `<div :id="id"></div>`,
-    props: { content: Object, readOnly: Boolean },
+    props: { content: Object, readOnly: Boolean, minLines: Number, maxLines: Number, onChangeCallback: Function },
     data() {
         return {
             id: "ace-editor-" + app.nextInt(),
@@ -227,8 +230,8 @@ app.vue.component('ContentEditor', {
                 theme: "ace/theme/twilight",
                 readOnly: this.readOnly,
                 autoScrollEditorIntoView: true,
-                minLines: 2,
-                maxLines: 40,
+                minLines: this.minLines,
+                maxLines: this.maxLines,
                 wrap: true
             });
             if (this.readOnly) {
@@ -258,6 +261,10 @@ app.vue.component('ContentEditor', {
                 }                
             }
             this.editor.session.setMode('')
+        },
+
+        getValue() {
+            return this.editor.getValue();
         }
     }
 })

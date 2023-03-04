@@ -30,14 +30,14 @@ func printInfo() {
 
 	fmt.Println()
 	fmt.Println("===============")
-	fmt.Printf(" HTTP URL: %s\n", auth.HTTPUrl())
+	fmt.Printf(" HTTP URL: %s\n", auth.HttpUrl())
 
 	if auth.HttpsPort != "" {
-		fmt.Printf("HTTPS URL: %s\n", auth.HTTPSUrl())
+		fmt.Printf("HTTPS URL: %s\n", auth.HttpsUrl())
 	}
 
-	fmt.Printf(" Proxying: %s\n", config.ProxyURL())
-	fmt.Printf("Dashboard: %s\n", config.DashboardURL())
+	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
+	fmt.Printf("Dashboard: %s\n", config.DashboardUrl.String())
 
 	if logger.GetInstance().IsDebugEnabled() {
 		fmt.Printf("   Bearer: %s\n", auth.Bearer)

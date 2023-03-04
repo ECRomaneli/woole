@@ -26,13 +26,12 @@ message TunnelResponse {
 
 message Auth {
     string clientId = 1;
-    string url = 2;
+    string hostname = 2;
     string httpPort = 3;
     string httpsPort = 4;
-    string tunnelPort = 5;
-    string bearer = 6;
-    int32 maxRequestSize = 7;
-    int32 maxResponseSize = 8;
+    string bearer = 5;
+    int32 maxRequestSize = 6;
+    int32 maxResponseSize = 7;
 }
 
 message Request {

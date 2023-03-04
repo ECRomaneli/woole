@@ -22,15 +22,14 @@
                 <div class="d-flex p-3 me-2 card-shadow dashboard-button" :class="{ active: !selectedRecord }" @click="selectedRecord = null">
                     <img class="bi" src="assets/images/dashboard.svg" alt="dashboard" style="width: 24px">
                 </div>
-                <div class="d-flex p-3 card-shadow search-group">
-                    <input class="fs-5 fw-semibold" placeholder="Search..." type="text">
-                    <img class="bi ms-2" src="assets/images/search.svg" alt="search" style="width: 24px">
+                <div class="d-flex" style="width: 100%;">
+                    <input class="p-3 card-shadow input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Search..." type="search" spellcheck="false">
                 </div>
             </div>
             <div id="records" class="card-shadow" :class="{ loading: recordList.length === 0 }">
                 <div class="list-group list-group-flush scrollarea">
                     <sidebar-item
-                        v-for="record in recordList"
+                        v-for="record in filteredRecordList"
                         :record="record"
                         :key="record.id"
                         :class="{ active: isSelectedRecord(record) }"
@@ -44,17 +43,24 @@
             <record-viewer id="record-viewer" v-if="selectedRecord" :record="selectedRecord"></record-viewer>
         </div>
     </main>
+    <script>
 
+    </script>
     <script src="assets/vendor/ace/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="assets/vendor/vue/vue.global.prod.js"></script>
+    <script src="assets/vendor/fuse/fuse.min.js"></script>
 
+    <script src="assets/vendor/bootstrap/bootstrap.min.js"></script>
     <script src="assets/scripts/app.js"></script>
 
     <script src="components/SidebarItem.js"></script>
     <script src="components/Dashboard.js"></script>
+    <script src="components/RequestSubmitter.js"></script>
     <script src="components/RecordViewer.js"></script>
 
-    <script>app.vue.mount('#app')</script>
+    <script>
+        app.vue.mount('#app')
+    </script>
 </body>
 
 </html>

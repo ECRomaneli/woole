@@ -16,15 +16,13 @@ func main() {
 func bootstrap() {
 	fmt.Println()
 	fmt.Println("===============")
-	fmt.Printf("  HTTP listening on http://%s:%s\n", config.HostPattern, config.HttpPort)
+	fmt.Printf("  HTTP listening on http://%s:%s\n", config.HostnamePattern, config.HttpPort)
 
-	tunnelProto := "http"
 	if config.HasTlsFiles() {
-		tunnelProto = "https"
-		fmt.Printf(" HTTPS listening on https://%s:%s\n", config.HostPattern, config.HttpsPort)
+		fmt.Printf(" HTTPS listening on https://%s:%s\n", config.HostnamePattern, config.HttpsPort)
 	}
-	//fmt.Printf("Server dashboard on %s\n", config.DashboardPort)
-	fmt.Printf("Tunnel listening on %s://%s:%s\n", tunnelProto, config.HostPattern, config.TunnelPort)
+
+	fmt.Printf("Tunnel listening on grpc://%s:%s\n", config.HostnamePattern, config.TunnelPort)
 	fmt.Println("===============")
 	fmt.Println()
 

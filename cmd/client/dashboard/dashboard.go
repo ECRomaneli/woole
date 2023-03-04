@@ -26,7 +26,7 @@ var records = recorder.GetRecords()
 var config = app.ReadConfig()
 
 func ListenAndServe() error {
-	return setupServer().ListenAndServe(":" + config.DashboardPort)
+	return setupServer().ListenAndServe(":" + config.DashboardUrl.Port())
 }
 
 func setupServer() *webserver.Server {
@@ -51,7 +51,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 	res.FlushEvent(&webserver.Event{
 		Name: "info",
-		Data: *(&Info{}).FromConfig(config),
+		Data: *(&SessionDetails{}).FromConfig(config),
 	})
 
 	res.FlushEvent(&webserver.Event{

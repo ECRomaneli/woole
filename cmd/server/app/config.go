@@ -9,32 +9,35 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"woole/shared/constants"
+	"woole/shared/util"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
 )
 
+// Config has all the configuration parsed from the command line.
+type Config struct {
+	HostnamePattern    string
+	HttpPort           string
+	HttpsPort          string
+	TunnelPort         string
+	Timeout            int
+	TlsCert            string
+	TlsKey             string
+	TunnelRequestSize  int
+	TunnelResponseSize int
+	isRead             bool
+}
+
 const (
 	ClientToken = "{client}"
 )
 
-// Config has all the configuration parsed from the command line.
-type Config struct {
-	HostPattern     string
-	HttpPort        string
-	HttpsPort       string
-	TunnelPort      string
-	DashboardPort   string
-	Timeout         int
-	TlsCert         string
-	TlsKey          string
-	MaxRequestSize  int
-	MaxResponseSize int
-	mu              sync.Mutex
-	isRead          bool
-}
-
-var config *Config = &Config{isRead: false}
+var (
+	config        *Config = &Config{isRead: false}
+	writingConfig sync.Mutex
+)
 
 func (cfg *Config) HasTlsFiles() bool {
 	return cfg.TlsCert != "" && cfg.TlsKey != ""
@@ -43,54 +46,52 @@ func (cfg *Config) HasTlsFiles() bool {
 // ReadConfig reads the arguments from the command line.
 func ReadConfig() *Config {
 	if !config.isRead {
-		config.mu.Lock()
-		defer config.mu.Unlock()
+		writingConfig.Lock()
+		defer writingConfig.Unlock()
 	}
 
 	if config.isRead {
 		return config
 	}
 
-	hostPattern := flag.String("pattern", "{client}", "Set the server host pattern. The '"+ClientToken+"' MUST be present to determine where to get client id")
-	httpPort := flag.Int("http", 80, "HTTP Port")
-	httpsPort := flag.Int("https", 443, "HTTPS Port")
-	tunnelPort := flag.Int("tunnel", 8001, "Tunnel Port")
-	dashboardPort := flag.Int("dashboard", 8000, "Dashboard Port")
-	timeout := flag.Int("timeout", 10000, "Timeout for receive a response from Client")
+	httpPort := flag.Int("http", util.GetDefaultPort("http"), "HTTP Port")
+	httpsPort := flag.Int("https", util.GetDefaultPort("https"), "HTTPS Port")
+	logLevel := flag.String("log-level", "OFF", "Log Level")
+	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: Use "+ClientToken+".mysite.com to vary the subdomain as client ID")
+	timeout := flag.Int("timeout", 10000, "Timeout to receive a response from Client")
 	tlsCert := flag.String("tls-cert", "", "TLS cert/fullchain file path")
 	tlsKey := flag.String("tls-key", "", "TLS key/privkey file path")
-	logLevel := flag.String("log-level", "OFF", "Log Level")
-	maxRequestSize := flag.Int("max-request-size", math.MaxInt32, "Maximum request size in bytes. 0 = max value")
-	maxResponseSize := flag.Int("max-response-size", 4*1024*1024, "Maximum response size in bytes. 0 = max value")
+	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Tunnel Port")
+	tunnelRequestSize := flag.Int("tunnel-request-size", math.MaxInt32, "Tunnel maximum request size in bytes. 0 = max value")
+	tunnelResponseSize := flag.Int("tunnel-response-size", 4*1024*1024, "Tunnel maximum response size in bytes. 0 = max value")
 
 	flag.Parse()
 
 	logger.SetLogLevelStr(*logLevel)
 
 	config = &Config{
-		HostPattern:     *hostPattern,
-		HttpPort:        strconv.Itoa(*httpPort),
-		HttpsPort:       strconv.Itoa(*httpsPort),
-		TunnelPort:      strconv.Itoa(*tunnelPort),
-		DashboardPort:   strconv.Itoa(*dashboardPort),
-		TlsCert:         *tlsCert,
-		TlsKey:          *tlsKey,
-		Timeout:         *timeout,
-		MaxRequestSize:  *maxRequestSize,
-		MaxResponseSize: *maxResponseSize,
-		isRead:          true,
+		HttpPort:           strconv.Itoa(*httpPort),
+		HttpsPort:          strconv.Itoa(*httpsPort),
+		HostnamePattern:    *hostnamePattern,
+		Timeout:            *timeout,
+		TlsCert:            *tlsCert,
+		TlsKey:             *tlsKey,
+		TunnelPort:         strconv.Itoa(*tunnelPort),
+		TunnelRequestSize:  *tunnelRequestSize,
+		TunnelResponseSize: *tunnelResponseSize,
+		isRead:             true,
 	}
 
-	if !strings.Contains(config.HostPattern, ClientToken) {
-		panic("Pattern MUST has " + ClientToken)
+	if !strings.Contains(config.HostnamePattern, ClientToken) {
+		panic("Hostname pattern MUST has " + ClientToken)
 	}
 
-	if config.MaxRequestSize == 0 {
-		config.MaxRequestSize = math.MaxInt32
+	if config.TunnelRequestSize == 0 {
+		config.TunnelRequestSize = math.MaxInt32
 	}
 
-	if config.MaxResponseSize == 0 {
-		config.MaxResponseSize = math.MaxInt32
+	if config.TunnelResponseSize == 0 {
+		config.TunnelResponseSize = math.MaxInt32
 	}
 
 	return config

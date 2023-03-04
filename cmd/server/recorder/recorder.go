@@ -1,9 +1,7 @@
 package recorder
 
 import (
-	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -14,7 +12,6 @@ import (
 
 	"github.com/ecromaneli-golang/console/logger"
 	"github.com/ecromaneli-golang/http/webserver"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -25,59 +22,41 @@ var (
 	clientManager = NewClientManager()
 )
 
-type Tunnel struct{ pb.UnimplementedTunnelServer }
-
-func Start() {
-	serveTunnel()
-	serveWebServer()
-}
-
-func serveWebServer() {
-	server := webserver.NewServer()
-
-	server.All(config.HostPattern+"/**", recorderHandler)
-
-	if config.HasTlsFiles() {
-		go func() {
-			panic(server.ListenAndServeTLS(":"+config.HttpsPort, config.TlsCert, config.TlsKey))
-		}()
-	}
-
-	panic(server.ListenAndServe(":" + config.HttpPort))
-}
-
-func serveTunnel() {
-	lis, err := net.Listen("tcp", ":"+config.TunnelPort)
+// REST = [ALL] /**
+func recorderHandler(req *webserver.Request, res *webserver.Response) {
+	clientId, err := hasClient(req.Param("client"))
 	panicIfNotNil(err)
 
-	// Opts
-	var opts []grpc.ServerOption
-	opts = append(opts, grpc.MaxRecvMsgSize(config.MaxResponseSize))
-	opts = append(opts, grpc.MaxSendMsgSize(config.MaxRequestSize))
+	client := clientManager.Get(clientId)
 
-	// TODO: Implement TLS CA on Client side
-	// if config.HasTlsFiles() {
-	// 	tlsCred, err := config.GetTransportCredentials()
-	// 	if err == nil {
-	// 		opts = append(opts, grpc.Creds(tlsCred))
-	// 	} else {
-	// 		log.Error("Failed to create Transport Credentials.", err)
-	// 		panic(err)
-	// 	}
-	// }
+	record := NewRecord((&pb.Request{}).FromHTTPRequest(req))
+	client.AddRecord(record)
 
-	s := grpc.NewServer(opts...)
+	record.Elapsed = util.Timer(func() {
+		defer client.RemoveRecord(record.Id)
 
-	pb.RegisterTunnelServer(s, &Tunnel{})
-
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			log.Fatal("Failed to serve Tunnel. Reason: ", err)
-			os.Exit(1)
+		select {
+		case <-record.OnResponse.Receive():
+		case <-time.After(time.Duration(config.Timeout) * time.Millisecond):
+			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - Server timeout reached")
+		case <-req.Raw.Context().Done():
+			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - The request is no longer available")
 		}
-	}()
+	})
+
+	if err != nil {
+		record.Response = &pb.Response{Code: http.StatusGatewayTimeout}
+		logRecord(clientId, record)
+		panic(err)
+	}
+
+	// Write response
+	recRes := record.Response
+	res.Headers(recRes.GetHttpHeader()).Status(int(recRes.Code)).Write(recRes.Body)
+	logRecord(clientId, record)
 }
 
+// gRPC = Tunnel(stream *TunnelServer)
 func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
 	// Receive the client ACK
 	ack, err := stream.Recv()
@@ -159,15 +138,14 @@ func handleGRPCErrors(err error) bool {
 }
 
 func createAuth(client *Client) *pb.Auth {
-	url := strings.Replace(config.HostPattern, app.ClientToken, client.id, 1)
+	hostname := strings.Replace(config.HostnamePattern, app.ClientToken, client.id, 1)
 
 	auth := &pb.Auth{
 		ClientId:        client.id,
-		Url:             url,
+		Hostname:        hostname,
 		HttpPort:        config.HttpPort,
-		TunnelPort:      config.TunnelPort,
-		MaxRequestSize:  int32(config.MaxRequestSize),
-		MaxResponseSize: int32(config.MaxResponseSize),
+		MaxRequestSize:  int32(config.TunnelRequestSize),
+		MaxResponseSize: int32(config.TunnelResponseSize),
 		Bearer:          string(client.bearer),
 	}
 
@@ -176,39 +154,6 @@ func createAuth(client *Client) *pb.Auth {
 	}
 
 	return auth
-}
-
-func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	clientId, err := hasClient(req.Param("client"))
-	panicIfNotNil(err)
-
-	client := clientManager.Get(clientId)
-
-	record := NewRecord((&pb.Request{}).FromHTTPRequest(req))
-	client.AddRecord(record)
-
-	record.Elapsed = util.Timer(func() {
-		defer client.RemoveRecord(record.Id)
-
-		select {
-		case <-record.OnResponse.Receive():
-		case <-time.After(time.Duration(config.Timeout) * time.Millisecond):
-			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - Server timeout reached")
-		case <-req.Raw.Context().Done():
-			err = webserver.NewHTTPError(http.StatusGatewayTimeout, clientId+" Record("+record.Id+") - The request is no longer available")
-		}
-	})
-
-	if err != nil {
-		record.Response = &pb.Response{Code: http.StatusGatewayTimeout}
-		logRecord(clientId, record)
-		panic(err)
-	}
-
-	// Write response
-	recRes := record.Response
-	res.Headers(recRes.GetHttpHeader()).Status(int(recRes.Code)).Write(recRes.Body)
-	logRecord(clientId, record)
 }
 
 func hasClient(clientId string) (string, error) {

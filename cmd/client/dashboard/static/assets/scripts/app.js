@@ -4,47 +4,78 @@ app.vue = Vue.createApp({
     data() {
         return {
             recordList: [],
+            filteredRecordList: [],
             selectedRecord: null,
             config: {},
             auth: {},
-            onUpdateList: []
+            events: [],
+            inputSearch: ""
         }
     },
-    created() { this.setupStream() },
+    created() {
+        this.setupStream();
+        this.once('init', (recs) => {
+            recs.reverse();
+            this.recordList = recs;
+            this.filteredRecordList = this.recordList.slice();
+        });
+
+        this.on('update', rec => {
+            this.recordList.unshift(rec);
+            while (this.recordList.length > this.info.maxRecords) {
+                this.recordList.pop();
+            }
+
+            if (this.matchRequest(rec)) {
+                this.filteredRecordList.unshift(rec);
+            }
+        });
+    },
+
+    watch: {
+        inputSearch: function (val, oldVal) {
+            if (val === "") {
+                this.filteredRecordList = this.recordList;
+                return;
+            }
+
+            if (val.indexOf(oldVal) === -1) {
+                this.filteredRecordList = this.recordList.filter(this.matchRequest);
+                return;
+            }
+
+            this.filteredRecordList = this.filteredRecordList.filter(this.matchRequest);
+        }
+    },
 
     methods: {
-        async replay(record) {
-            this.onceOnUpdate((rec) => this.show(rec));
-            await fetch('/record/' + record.id + '/replay');
-        },
-
         setupStream() {
             let es = new EventSource('record/stream');
 
             es.addEventListener('info', event => {
                 const data = JSON.parse(event.data);
                 this.info = data;
+                this.$forceUpdate();
             });
 
             es.addEventListener('records', event => {
                 if (event.data) {
                     let data = JSON.parse(event.data);
-                    this.recordList = data.reverse();
+                    this.trigger('init', data);
                 }
             });
 
             es.addEventListener('record', event => {
                 let data = JSON.parse(event.data);
-                if (data !== null) {
-                    this.recordList.unshift(data);
-                    while (this.recordList.length > this.info.maxRecords) {
-                        this.recordList.pop();
-                    }
-                    this.onUpdateList.forEach(fn => fn(data));
-                }
+                if (data !== null) { this.trigger('update', data); }
             });
 
-            es.onerror = (err) => console.error(err)
+            es.onerror = (err) => console.error(err);
+        },
+
+        async replay(record) {
+            this.once('update', (rec) => this.show(rec));
+            await fetch('/record/' + record.id + '/replay');
         },
 
         isSelectedRecord(record) {
@@ -64,17 +95,40 @@ app.vue = Vue.createApp({
             this.selectedRecord = record
         },
 
-        onceOnUpdate(fn) {
-            let onceFn = (record) => {
-                const index = this.onUpdateList.indexOf(onceFn);
-                this.onUpdateList.splice(index, 1);
-                fn(record);
-            };
-            this.onUpdateList.push(onceFn);
+        matchRequest(rec) {
+            if (this.inputSearch === "") { return true; }
+
+            let tokens = this.inputSearch.split(" ");
+            
+            let recClone = JSON.parse(JSON.stringify(rec));
+            recClone.response.body = null;
+            let recJson = JSON.stringify(recClone);
+
+            // TODO: Search all tokens simultaneously
+            return tokens.every(token => recJson.indexOf(token) !== -1);
         },
 
-        onUpdate(fn) {
-            this.onUpdateList.push(fn);
+        trigger(eventName, data) {
+            if (this.events[eventName] !== void 0) {
+                this.events[eventName].forEach(fn => fn(data));
+            }
+        },
+
+        once(eventName, fn) {
+            let onceFn = (record) => {
+                const index = this.events[eventName].indexOf(onceFn);
+                this.events[eventName].splice(index, 1);
+                fn(record);
+            };
+            this.on(eventName, onceFn);
+        },
+
+        on(eventName, fn) {
+            if (this.events[eventName] === void 0) {
+                this.events[eventName] = [];
+            }
+
+            this.events[eventName].push(fn);
         }
     }
 })
