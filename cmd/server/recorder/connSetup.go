@@ -38,16 +38,9 @@ func serveTunnel() {
 	opts = append(opts, grpc.MaxRecvMsgSize(config.TunnelResponseSize))
 	opts = append(opts, grpc.MaxSendMsgSize(config.TunnelRequestSize))
 
-	// TODO: Implement TLS CA on Client side
-	// if config.HasTlsFiles() {
-	// 	tlsCred, err := config.GetTransportCredentials()
-	// 	if err == nil {
-	// 		opts = append(opts, grpc.Creds(tlsCred))
-	// 	} else {
-	// 		log.Error("Failed to create Transport Credentials.", err)
-	// 		panic(err)
-	// 	}
-	// }
+	if config.HasTlsFiles() {
+		opts = append(opts, grpc.Creds(config.GetTransportCredentials()))
+	}
 
 	s := grpc.NewServer(opts...)
 

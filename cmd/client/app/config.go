@@ -2,9 +2,10 @@ package app
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
-	"net/http"
+	"io/ioutil"
 	"net/url"
 	"sync"
 	"woole/shared/constants"
@@ -13,17 +14,20 @@ import (
 	"woole/shared/util/signal"
 
 	"github.com/ecromaneli-golang/console/logger"
+	"google.golang.org/grpc/credentials"
 )
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
-	ClientId     string
-	ProxyUrl     *url.URL
-	TunnelUrl    *url.URL
-	CustomUrl    *url.URL
-	DashboardUrl *url.URL
-	MaxRecords   int
-	isRead       bool
+	ClientId      string
+	ProxyUrl      *url.URL
+	TunnelUrl     *url.URL
+	CustomUrl     *url.URL
+	DashboardUrl  *url.URL
+	MaxRecords    int
+	tlsSkipVerify bool
+	tlsCa         string
+	isRead        bool
 }
 
 const (
@@ -69,34 +73,55 @@ func ReadConfig() *Config {
 	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Provide a customized URL when proxying URL")
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Dashboard Port")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
-	insecureTLS := flag.Bool("allow-insecure-tls", false, "Insecure TLS verification")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
+	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Do not validate the integrity of the Server's certificate")
+	tlsCa := flag.String("tls-ca", "", "TLS CA file path. Only for self-signed certificates")
 
 	flag.Parse()
 
 	logger.SetLogLevelStr(*logLevel)
 
-	// Ignore globally "Insecure TLS Verification"
-	if *insecureTLS {
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
+	// Deprecated: To be removed in the first stable release
+	// http.DefaultTransport.(*http.Transport).TLSClientConfig = tlsConfig
 
 	if *customUrl == defaultCustomUrlMessage {
 		customUrl = proxyUrl
 	}
 
 	config = &Config{
-		ClientId:     *clientId,
-		ProxyUrl:     util.RawUrlToUrl(*proxyUrl, "http", ""),
-		TunnelUrl:    util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
-		CustomUrl:    util.RawUrlToUrl(*customUrl, "http", ""),
-		DashboardUrl: util.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
-		MaxRecords:   *maxRecords,
-		isRead:       true,
+		ClientId:      *clientId,
+		ProxyUrl:      util.RawUrlToUrl(*proxyUrl, "http", ""),
+		TunnelUrl:     util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
+		CustomUrl:     util.RawUrlToUrl(*customUrl, "http", ""),
+		DashboardUrl:  util.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
+		MaxRecords:    *maxRecords,
+		tlsSkipVerify: *tlsSkipVerify,
+		tlsCa:         *tlsCa,
+		isRead:        true,
 	}
 
 	auth.ClientId = *clientId
 	return config
+}
+
+func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
+	tlsConfig := &tls.Config{InsecureSkipVerify: cfg.tlsSkipVerify}
+
+	if tlsConfig.InsecureSkipVerify || cfg.tlsCa == "" {
+		return credentials.NewTLS(tlsConfig)
+	}
+
+	caBytes, err := ioutil.ReadFile(cfg.tlsCa)
+	if err != nil {
+		panic("Failed to load TLS CA File on: " + cfg.tlsCa + ". Reason: " + err.Error())
+	}
+
+	cp := x509.NewCertPool()
+	if !cp.AppendCertsFromPEM(caBytes) {
+		panic("Failed to append certificate")
+	}
+
+	return credentials.NewTLS(tlsConfig)
 }
 
 func PrintConfig() {

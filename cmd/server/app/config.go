@@ -2,7 +2,6 @@ package app
 
 import (
 	"crypto/tls"
-	"errors"
 	"flag"
 	"fmt"
 	"math"
@@ -101,15 +100,15 @@ func PrintConfig() {
 	fmt.Println(ReadConfig())
 }
 
-func (cfg *Config) GetTransportCredentials() (credentials.TransportCredentials, error) {
+func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	if !cfg.HasTlsFiles() {
-		return nil, errors.New("TLS Files not provided")
+		panic("TLS certificate and/or private key not provided")
 	}
 
 	// Load certificate and private key
 	serverCert, err := tls.LoadX509KeyPair(cfg.TlsCert, cfg.TlsKey)
 	if err != nil {
-		return nil, err
+		panic("Failed to load TLS certificate and/or private key. Reason: " + err.Error())
 	}
 
 	// Create the credentials and return it
@@ -118,5 +117,5 @@ func (cfg *Config) GetTransportCredentials() (credentials.TransportCredentials, 
 		ClientAuth:   tls.NoClientCert,
 	}
 
-	return credentials.NewTLS(tlsConfig), nil
+	return credentials.NewTLS(tlsConfig)
 }

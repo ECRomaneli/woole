@@ -1,13 +1,11 @@
 package recorder
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -17,9 +15,7 @@ import (
 	"woole/shared/util"
 
 	"github.com/ecromaneli-golang/console/logger"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -30,11 +26,6 @@ var log = logger.New("recorder")
 
 var records = NewRecords(uint(config.MaxRecords))
 var proxyHandler http.HandlerFunc
-
-func Start() {
-	proxyHandler = createProxyHandler()
-	startTunnelStream()
-}
 
 func Replay(request *payload.Request) {
 	record := NewRecord(request)
@@ -51,7 +42,7 @@ func GetRecords() *Records {
 
 func startTunnelStream() {
 	// Establish tunnel connection and retrieve request/response stream
-	stream, cancelFunc := connectTunnel()
+	stream, cancelFunc := connectTunnel(true)
 	defer cancelFunc()
 
 	// Send ack with client id (if exists)
@@ -84,6 +75,8 @@ func startTunnelStream() {
 
 func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequest) {
 	record := NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
+	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
+	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
 	DoRequest(record)
 	handleRedirections(record)
 
@@ -98,45 +91,6 @@ func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequ
 
 	if !handleGRPCErrors(err) {
 		panic(err)
-	}
-}
-
-func connectTunnel() (pb.Tunnel_TunnelClient, context.CancelFunc) {
-	// Opts
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt32)))
-
-	// Dial tunnel
-	conn, err := grpc.Dial(config.TunnelUrl.Host, opts...)
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
-
-	// Create a cancelable context
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// Start the tunnel stream
-	client := pb.NewTunnelClient(conn)
-	stream, err := client.Tunnel(ctx)
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
-
-	return stream, func() {
-		cancel()
-		conn.Close()
-	}
-}
-
-func handleGRPCErrors(err error) bool {
-	if err == nil {
-		return true
-	}
-
-	switch status.Code(err) {
-	case codes.ResourceExhausted:
-		log.Warn("Request discarded. Reason: Max size exceeded")
-		return true
-	default:
-		return false
 	}
 }
 
@@ -161,7 +115,6 @@ func handleRedirections(record *Record) {
 }
 
 func proxyRequest(req *payload.Request) (*payload.Response, time.Duration) {
-
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
 	elapsed := util.Timer(func() {
@@ -170,24 +123,39 @@ func proxyRequest(req *payload.Request) (*payload.Response, time.Duration) {
 
 	// Save req and res data
 	return (&payload.Response{}).FromResponseRecorder(recorder), elapsed
-
 }
 
-func createProxyHandler() http.HandlerFunc {
-	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
-
-	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
-		log.Error(err, ":", req.Method, req.URL)
-		rw.WriteHeader(StatusInternalProxyError)
-		fmt.Fprintf(rw, "%v", err)
+func handleGRPCErrors(err error) bool {
+	if err == nil {
+		return true
 	}
 
-	return func(rw http.ResponseWriter, req *http.Request) {
-		req.Host = config.CustomUrl.Host
-		req.URL.Host = config.CustomUrl.Host
-		req.URL.Scheme = config.CustomUrl.Scheme
-		proxy.ServeHTTP(rw, req)
+	switch status.Code(err) {
+	case codes.ResourceExhausted:
+		log.Warn("Request discarded. Reason: Max size exceeded")
+		return true
+	default:
+		return false
 	}
+}
+
+func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName string) {
+	if header == nil || header[headerName] == nil {
+		return
+	}
+
+	referer := header[headerName].Val[0]
+
+	refererUrl, err := url.Parse(referer)
+	if err != nil {
+		log.Error("Error when trying to parse [", referer, "] to URL. Reason: ", err.Error())
+	}
+
+	refererUrl.Scheme = config.CustomUrl.Scheme
+	refererUrl.Host = config.CustomUrl.Host
+	refererUrl.Opaque = config.CustomUrl.Opaque
+
+	header[headerName] = &pb.StringList{Val: []string{refererUrl.String()}}
 }
 
 func panicIfNotNil(err error) {
