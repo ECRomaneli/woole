@@ -20,7 +20,7 @@
         <div id="sidebar" class="d-flex flex-column flex-shrink-0">
             <div class="d-flex">
                 <div class="d-flex p-3 me-2 card-shadow dashboard-button" :class="{ active: !selectedRecord }" @click="selectedRecord = null">
-                    <img class="bi" src="assets/images/dashboard.svg" alt="dashboard" style="width: 24px">
+                    <img class="square-24" src="assets/images/settings.svg" alt="dashboard">
                 </div>
                 <div class="d-flex" style="width: 100%;">
                     <input class="p-3 card-shadow input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Search..." type="search" spellcheck="false">
@@ -39,7 +39,7 @@
             </div>
         </div>
         <div id="body">
-            <dashboard v-show="!selectedRecord" :info="info"></dashboard>
+            <dashboard v-show="!selectedRecord" :session-details="sessionDetails"></dashboard>
             <record-viewer id="record-viewer" v-if="selectedRecord" :record="selectedRecord"></record-viewer>
         </div>
     </main>
@@ -55,12 +55,9 @@
 
     <script src="components/SidebarItem.js"></script>
     <script src="components/Dashboard.js"></script>
-    <script src="components/RequestSubmitter.js"></script>
     <script src="components/RecordViewer.js"></script>
 
-    <script>
-        app.vue.mount('#app')
-    </script>
+    <script>app.vue.mount('#app')</script>
 </body>
 
 </html>

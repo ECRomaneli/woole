@@ -1,18 +1,21 @@
 app.vue.component('RecordViewer', {
-    template: `
+    template: /*html*/ `
         <div class="container-fluid">
             <div class="row row-custom">
                 <div class="col-md-12 col-custom-6">
                     <div class="card card-shadow" :class="{ maximized: maximized === 'request' }">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <span class="h5">Request</span>
+                            <div class="inline-flex">
+                                <img class="square-24 me-2 ms-2" src="assets/images/request.svg" alt="request">
+                                <span class="h5">Request</span>
+                            </div>
                             <div class="btn-toolbar">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">Replay</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#request-submitter" @mouseover="requestSubmitterEnabled = true">w/ Changes</button>
                                 </div>
                                 <div class="maximize-btn ms-3 me-2" @click="maximize('request')">
-                                    <img :src="maximizeSvg" alt="maximize" />
+                                    <img class="square-24" :src="maximizeSvg" alt="maximize" />
                                 </div>
                             </div>
                         </div>
@@ -25,10 +28,13 @@ app.vue.component('RecordViewer', {
                 <div class="col-md-12 col-custom-6">
                     <div class="card card-shadow" :class="{ maximized: maximized === 'response' }">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <span class="h5">Response</span>
+                            <div class="inline-flex">
+                                <img class="square-24 me-2 ms-2" src="assets/images/response.svg" alt="response">
+                                <span class="h5">Response</span>
+                            </div>
                             <div class="btn-toolbar">
                                 <div class="maximize-btn ms-3 me-2" @click="maximize('response')">
-                                    <img :src="maximizeSvg" alt="maximize" />
+                                    <img class="square-24" :src="maximizeSvg" alt="maximize" />
                                 </div>
                             </div>
                         </div>
@@ -61,9 +67,25 @@ app.vue.component('RecordViewer', {
         }
     },
 
+    watch: {
+        record: function () {
+            this.requestSubmitterEnabled = false;
+        }
+    },
+
     methods: { 
-        async replay(record) {
-            this.$parent.replay(record);            
+        replay(record) {
+            app.once('update', (rec) => this.$parent.show(rec));
+            
+            if (record.id !== void 0) {
+                fetch('/record/' + record.id + '/replay');
+            } else {
+                fetch('/record/request/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(record.request)
+                });
+            }
         },
 
         maximize(card) {
@@ -81,9 +103,9 @@ app.vue.component('RecordViewer', {
 })
 
 app.vue.component('RecordItem', {
-    template: `
+    template: /*html*/ `
         <div class="col-md-12 mb-5">
-            <div class="input-group mb-3">
+            <div class="cursor-default input-group mb-3">
                 <span class="input-group-text">{{ titleGroup[0] }}</span>
                 <input type="text" class="form-control" disabled :value="titleGroup[1]">
                 <span class="input-group-text">{{ titleGroup[2] }}</span>
@@ -93,7 +115,7 @@ app.vue.component('RecordItem', {
                 <li class="nav-item" role="presentation" @click='tab=0'>
                     <button class="nav-link" :class="{ active: tab === 0 }">Header</button>
                 </li>
-                <li class="nav-item" role="presentation" v-if="hasBody()" @click="tab=1; bodyFlag=bodyFlag?0:1">
+                <li class="nav-item" role="presentation" v-if="hasBody()" @click='tab=1'>
                     <button class="nav-link" :class="{ active: tab === 1 }">Body</button>
                 </li>
 
@@ -108,7 +130,7 @@ app.vue.component('RecordItem', {
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 1 }">
-                    <content-editor :content="content" :readOnly="true" :minLines="2" :maxLines="40" :updated="bodyFlag"></content-editor>
+                    <content-editor :content="content" :readOnly="true" :minLines="2" :maxLines="40"></content-editor>
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 2 }">
@@ -122,7 +144,6 @@ app.vue.component('RecordItem', {
         return {
             supportedPreviews: ['video', 'image'],
             tab: 0,
-            bodyFlag: 0
         }
     },
     beforeMount() { this.parseBody() },
@@ -168,12 +189,12 @@ app.vue.component('RecordItem', {
 })
 
 app.vue.component('HeaderGrid', {
-    template: `
+    template: /*html*/ `
         <table class="table table-striped table-hover header-grid" aria-label="headers">
             <thead>
                 <tr>
-                <th scope="name">Name</th>
-                <th scope="value">Value</th>
+                    <th scope="name">Name</th>
+                    <th scope="value">Value</th>
                 </tr>
             </thead>
             <tbody>
@@ -188,7 +209,7 @@ app.vue.component('HeaderGrid', {
 })
 
 app.vue.component('ContentPreview', {
-    template: `
+    template: /*html*/ `
         <div class='content-preview'>
             <img v-if="content.category === 'image'" :src="contentToSource()" alt="preview" />
             <video v-else-if="content.category === 'video'" controls=""><source :type="contentType()" :src="contentToSource()"></video>
@@ -207,8 +228,8 @@ app.vue.component('ContentPreview', {
 })
 
 app.vue.component('ContentEditor', {
-    template: `<div :id="id"></div>`,
-    props: { content: Object, readOnly: Boolean, minLines: Number, maxLines: Number, onChangeCallback: Function },
+    template: /*html*/ `<div :id="id"></div>`,
+    props: { content: Object, readOnly: Boolean, minLines: Number, maxLines: Number },
     data() {
         return {
             id: "ace-editor-" + app.nextInt(),
@@ -237,17 +258,20 @@ app.vue.component('ContentEditor', {
             if (this.readOnly) {
                 this.editor.renderer.$cursorLayer.element.style.display = "none"
             }
+
+            this.updateData();
         },
 
         updateData() {
             if (this.lastValue === this.content.data) {
+                // Workaround to update content when tab is shown after content change
                 this.editor.renderer.updateFull()
                 return
             }
 
-            if (this.content) { this.setEditorMode() }
+            if (this.content.type) { this.setEditorMode() }
 
-            this.editor.setValue(atob(this.content.data))
+            this.editor.setValue(atob(this.content.data)/*, -1 to scroll top */)
             this.editor.clearSelection()
 
             this.lastValue = this.content.data
@@ -264,7 +288,113 @@ app.vue.component('ContentEditor', {
         },
 
         getValue() {
-            return this.editor.getValue();
+            return btoa(this.editor.getValue());
+        }
+    }
+})
+
+app.vue.component('RequestSubmitter', {
+    template: /*html*/ `
+    <form @submit.prevent="submit" class="checkout-form">
+        <div :id="modalId" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" style="max-width: 1000px">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title inline-flex" style="height: 24px">
+                            <img class="square-24 me-2" src="assets/images/request.svg" alt="request">
+                            <span class="h5">Request</span>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-3">
+                            <select class="request-method input-group-text" name="method" v-model="request.method">
+                                <option v-for="(method) in httpMethods" :value="method">{{ method }}</option>
+                            </select>
+                            <input name="url" type="text" class="form-control" spellcheck="false" aria-label="url" v-model="request.url">
+                        </div>
+                        <div class="h5 centered-title">Headers</div>
+                        <table class="table table-striped table-hover header-grid" aria-label="headers">
+                            <thead>
+                                <tr><th scope="remove"></th><th scope="name">Name</th><th scope="value">Value</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(header, index) in request.header" :key="index">
+                                    <td><div class="clickable-img" @click="remove(index)"><img class="square-24" src="assets/images/trash.svg" alt="remove-header"></div></td>
+                                    <td><textarea placeholder="Name" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="autoResize" v-model="header.name"></textarea></td>
+                                    <td><textarea placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="autoResize" v-model="header.value"></textarea></td>
+                                </tr>
+                                <tr>
+                                    <td colspan='3'><div class="clickable-img" @click="add()"><img class="square-24" src="assets/images/plus.svg" alt="add-header" style="width: 24px"></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="h5 centered-title">Body</div>
+                        <content-editor ref="bodyEditor" :content="content" :readOnly="false" :minLines="20" :maxLines="40"></content-editor>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="cancel()">Cancel</button>
+                        <button type="submit" class="btn btn-secondary" data-bs-dismiss="modal">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    `,
+    props: { modalId: String, originalRequest: Object },
+
+    data() {
+        return {
+            httpMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
+            content: { data: this.originalRequest.body }
+        }
+    },
+
+    beforeMount() { this.resetRequest() },
+
+    methods: {
+        cancel() {
+            this.resetRequest();
+            this.$forceUpdate();
+        },
+
+        async submit() {
+            let req = this.clone(this.request);
+            req.header = {};
+            req.body = this.$refs.bodyEditor.getValue();
+            this.request.header.forEach(h => req.header[h.name] = {Val: [h.value]});
+            this.$parent.replay({request:req});
+        },
+
+        resetRequest() {
+            this.request = this.clone(this.originalRequest);
+            this.request.header = [];
+
+            Object.keys(this.originalRequest.header).forEach(headerName => {
+                this.request.header.push({
+                    name: headerName,
+                    value: this.originalRequest.header[headerName].Val.join(';')
+                });
+            });
+        },
+
+        add() {
+            this.request.header.push({ name: '', value: '' });
+            this.$forceUpdate();
+        },
+
+        remove(index) {
+            this.request.header.splice(index, 1);
+            this.$forceUpdate();
+        },
+
+        autoResize(event) {
+            let el = event.currentTarget;
+            el.style.height = 'auto';
+            el.style.height = event.type !== 'blur' ? (el.scrollHeight)+'px' : '';
+        },
+
+        clone(obj) {
+            return JSON.parse(JSON.stringify(obj));
         }
     }
 })

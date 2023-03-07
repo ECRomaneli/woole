@@ -5,6 +5,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,6 +15,7 @@ import (
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder"
 	"woole/shared/payload"
+	pb "woole/shared/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"github.com/google/brotli/go/cbrotli"
@@ -37,6 +39,7 @@ func setupServer() *webserver.Server {
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
 	server.Get("/record/{id}/replay", replayHandler)
+	server.Post("/record/request/new", newRequestHandler)
 	server.Get("/record/clear", clearHandler)
 
 	return server
@@ -50,7 +53,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	res.Headers(webserver.EventStreamHeader)
 
 	res.FlushEvent(&webserver.Event{
-		Name: "info",
+		Name: "sessionDetails",
 		Data: *(&SessionDetails{}).FromConfig(config),
 	})
 
@@ -71,14 +74,24 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	<-req.Raw.Context().Done()
 }
 
-func clearHandler(req *webserver.Request, res *webserver.Response) {
-	records.RemoveAll()
-	res.Status(http.StatusOK).NoBody()
-}
-
 func replayHandler(req *webserver.Request, res *webserver.Response) {
 	record := records.FindById(req.Param("id"))
 	recorder.Replay(record.Request)
+}
+
+func newRequestHandler(req *webserver.Request, res *webserver.Response) {
+	newRequest := &payload.Request{}
+	err := json.Unmarshal(req.Body(), newRequest)
+	if err != nil {
+		webserver.NewHTTPError(
+			http.StatusBadRequest,
+			"Error when trying to parse the new request. Reason: "+err.Error()).Panic()
+	}
+	recorder.Replay(newRequest)
+}
+
+func clearHandler(req *webserver.Request, res *webserver.Response) {
+	records.RemoveAll()
 }
 
 func responseBodyHandler(req *webserver.Request, res *webserver.Response) {
@@ -125,7 +138,7 @@ func decompress(contentEncoding string, data []byte) []byte {
 	return data
 }
 
-func dumpCurl(req *payload.Request) string {
+func dumpCurl(req *pb.Request) string {
 	var b strings.Builder
 	// Build cmd.
 	fmt.Fprintf(&b, "curl -X %s %s", req.Method, req.Url)

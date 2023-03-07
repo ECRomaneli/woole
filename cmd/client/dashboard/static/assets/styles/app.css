@@ -15,7 +15,6 @@ main {
     max-height: 100vh;
     overflow-x: auto;
     overflow-y: hidden;
-    /* background-color: #fafafa; */
     background-color: #0d1117;
     color: #c9d1d9;
 }
@@ -30,63 +29,12 @@ main {
     border-bottom: 1px solid #21262d;
 }
 
-.bi {
-    vertical-align: -.125em;
-    pointer-events: none;
-    fill: currentColor;
-}
-
 .dropdown-toggle {
     outline: 0;
 }
 
 .nav-flush .nav-link {
     border-radius: 0;
-}
-
-.btn-toggle {
-    display: inline-flex;
-    align-items: center;
-    padding: .25rem .5rem;
-    font-weight: 600;
-    color: rgba(0, 0, 0, .65);
-    background-color: transparent;
-    border: 0;
-}
-
-.btn-toggle:hover,
-.btn-toggle:focus {
-    color: rgba(0, 0, 0, .85);
-    background-color: #d2f4ea;
-}
-
-.btn-toggle::before {
-    width: 1.25em;
-    line-height: 0;
-    content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%280,0,0,.5%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 14l6-6-6-6'/%3e%3c/svg%3e");
-    transition: transform .35s ease;
-    transform-origin: .5em 50%;
-}
-
-.btn-toggle[aria-expanded="true"] {
-    color: rgba(0, 0, 0, .85);
-}
-
-.btn-toggle[aria-expanded="true"]::before {
-    transform: rotate(90deg);
-}
-
-.btn-toggle-nav a {
-    display: inline-flex;
-    padding: .1875rem .5rem;
-    margin-top: .125rem;
-    margin-left: 1.25rem;
-    text-decoration: none;
-}
-
-.btn-toggle-nav a:hover,
-.btn-toggle-nav a:focus {
-    background-color: #d2f4ea;
 }
 
 .scrollarea {
@@ -135,12 +83,14 @@ main {
     background-color: #E64A19;
 }
 
-.bg-http {
-    background-color: #03A9F4;
+.bg-replay-badge {
+    background-color: #8b251d;
 }
 
-.bg-https {
-    background-color: #0288D1;
+.replay-badge > img {
+    width: 10px;
+    height: 9px;
+    vertical-align: baseline;
 }
 
 .bg-status-1 {
@@ -165,6 +115,14 @@ main {
 
 .mr-3 {
     margin-right: 3px;
+}
+
+.mr-4 {
+    margin-right: 4px;
+}
+
+.cursor-default {
+    cursor: default !important;
 }
 
 #sidebar {
@@ -373,6 +331,15 @@ textarea.auto-resize {
 
 .clickable-img {
     cursor: pointer;
+}
+
+.square-24 {
+    width: 24px;
+    height: 24px;
+}
+
+.inline-flex {
+    display: inline-flex;
 }
 
 @media (min-width: 1460px) {

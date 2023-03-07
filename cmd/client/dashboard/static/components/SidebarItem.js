@@ -1,13 +1,17 @@
 app.vue.component('SidebarItem', {
-    template: `
+    template: /*html*/ `
         <div class="list-group-item list-group-item-action py-3 lh-tight">
             <div class="d-flex w-100 align-items-center justify-content-between">
                 <div class="mb-1">
-                    <span class="badge mr-3" :class="protoBadge()">{{ protocol }}</span>
-                    <span class="badge mr-3" :class="methodBadge()">{{ request.method }}</span>
-                    <span class="badge mr-3" :class="statusBadge()">{{ response.code }}</span>
+                    <div v-if="isReplay()" class="bg-replay-badge replay-badge badge mr-4"><img src="assets/images/play.svg" alt="replay" /></div>
+                    <span class="badge mr-4" :class="methodBadge()">{{ request.method }}</span>
+                    <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
-                <small>{{ record.elapsed }}ms</small>
+                <div>
+                    <small style="font-size: 10px; margin-right: 3px; color: #bbb;">77ms /</small>
+                    <small>{{ record.elapsed }}ms</small>
+                </div>
+                
             </div>
             <div class="mb-1 small">
                 <span class="request-path">{{ ellipsis(request.path) }}</span>
@@ -32,10 +36,6 @@ app.vue.component('SidebarItem', {
         methodBadge() {
             return "bg-" + this.request.method.toLowerCase()
         },
-        protoBadge() {
-            this.protocol = this.request.proto.split("/")[0]
-            return "bg-" + this.protocol.toLowerCase()
-        },
         statusBadge() {
             return "bg-status-" + parseInt(this.response.code/100)
         },
@@ -46,6 +46,9 @@ app.vue.component('SidebarItem', {
             if (hasQuery) { maxLength -= 4 }
             let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)
             return result + (hasQuery ? ' ' : '')
+        },
+        isReplay() {
+            return this.record.id.indexOf('R') !== -1;
         }
     }
 })
