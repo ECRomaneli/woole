@@ -1,4 +1,4 @@
-app.vue.component('SidebarItem', {
+app.component('SidebarItem', {
     template: /*html*/ `
         <div class="list-group-item list-group-item-action py-3 lh-tight">
             <div class="d-flex w-100 align-items-center justify-content-between">
@@ -48,7 +48,7 @@ app.vue.component('SidebarItem', {
             return result + (hasQuery ? ' ' : '')
         },
         isReplay() {
-            return this.record.id.indexOf('R') !== -1;
+            return this.record.id.indexOf('R') !== -1
         }
     }
 })

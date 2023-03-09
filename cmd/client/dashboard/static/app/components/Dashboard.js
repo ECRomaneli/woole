@@ -1,4 +1,4 @@
-app.vue.component('Dashboard', {
+app.component('Dashboard', {
     template: /*html*/ `
         <div class="container-fluid">
             <div class="row">
@@ -9,7 +9,7 @@ app.vue.component('Dashboard', {
     props: { sessionDetails: Object }
 })
 
-app.vue.component('SessionDetailsCard', {
+app.component('SessionDetailsCard', {
     template: /*html*/ `
         <div class="p-0">
             <div class="card card-shadow" style="padding: 10px 20px">

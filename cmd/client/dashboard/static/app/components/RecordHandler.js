@@ -1,4 +1,4 @@
-app.vue.component('RecordViewer', {
+app.component('RecordViewer', {
     template: /*html*/ `
         <div class="container-fluid">
             <div class="row row-custom">
@@ -45,12 +45,10 @@ app.vue.component('RecordViewer', {
                     </div>
                 </div>
             </div>
-            <request-submitter v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request"></request-submitter>
+            <request-editor v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request" @submit="(req) => replay({ request: req })"></request-editor>
         </div>
     `,
-    props: {
-        record: Object
-    },
+    props: { record: Object },
     data() {
         return {
             httpStatusMessage: {
@@ -69,32 +67,32 @@ app.vue.component('RecordViewer', {
 
     watch: {
         record: function () {
-            this.requestSubmitterEnabled = false;
+            this.requestSubmitterEnabled = false
         }
     },
 
     methods: { 
         replay(record) {
-            app.once('update', (rec) => this.$parent.show(rec));
+            this.$bus.once('update', (rec) => this.$bus.trigger('show', rec))
             
             if (record.id !== void 0) {
-                fetch('/record/' + record.id + '/replay');
+                fetch('/record/' + record.id + '/replay')
             } else {
                 fetch('/record/request/new', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(record.request)
-                });
+                })
             }
         },
 
         maximize(card) {
             if (this.maximized === "") {
-                this.maximized = card;
-                this.maximizeSvg = "assets/images/minimize.svg";
+                this.maximized = card
+                this.maximizeSvg = "assets/images/minimize.svg"
             } else {
-                this.maximized = "";
-                this.maximizeSvg = "assets/images/maximize.svg";
+                this.maximized = ""
+                this.maximizeSvg = "assets/images/maximize.svg"
             }
             // Workaround to make ACE Editor re-wrap lines
             setTimeout(() => window.dispatchEvent(new Event('resize')), 10)
@@ -102,7 +100,7 @@ app.vue.component('RecordViewer', {
     }
 })
 
-app.vue.component('RecordItem', {
+app.component('RecordItem', {
     template: /*html*/ `
         <div class="col-md-12 mb-5">
             <div class="cursor-default input-group mb-3">
@@ -115,7 +113,7 @@ app.vue.component('RecordItem', {
                 <li class="nav-item" role="presentation" @click='tab=0'>
                     <button class="nav-link" :class="{ active: tab === 0 }">Header</button>
                 </li>
-                <li class="nav-item" role="presentation" v-if="hasBody()" @click='tab=1'>
+                <li class="nav-item" role="presentation" v-if="hasBody()" @click='tab=1; $refs.codeEditor.forceUpdate()'>
                     <button class="nav-link" :class="{ active: tab === 1 }">Body</button>
                 </li>
 
@@ -130,22 +128,18 @@ app.vue.component('RecordItem', {
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 1 }">
-                    <content-editor :content="content" :readOnly="true" :minLines="2" :maxLines="40"></content-editor>
+                    <code-editor ref="codeEditor" :type="content.type" :code="item.body" :readOnly="true" :minLines="2" :maxLines="40"></code-editor>
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 2 }">
-                    <content-preview :content="content"></content-preview>
+                    <base64-viewer :category="content.category" :type="content.type" :data="item.body"></base64-viewer>
                 </div>
             </div>
         </div>
     `,
+    inject: ['$util'],
     props: { titleGroup: Array, item: Object },
-    data() { 
-        return {
-            supportedPreviews: ['video', 'image'],
-            tab: 0,
-        }
-    },
+    data() { return { supportedPreviews: ['video', 'image'], tab: 0 } },
     beforeMount() { this.parseBody() },
     beforeUpdate() {
         this.parseBody()
@@ -160,35 +154,21 @@ app.vue.component('RecordItem', {
         },
 
         parseBody() {
+            this.content = {}
             if (this.item.body === void 0 || this.item.body === null) { this.item.body = '' }
-
-            this.content = { data: this.item.body, category: '', type: '' }
-
-            if (!this.item || !this.item.header) { return }
-
+            if (!this.item.header) { return }
             let contentType = this.item.header['Content-Type']
-            if (contentType === void 0 || contentType === '' || contentType.length === 0) { return }
-
-            let tokens = contentType.Val.join(";").toLowerCase().split(";").map(str => str.trim())
-
-            // Parse the xxxx/yyyyy content-type
-            let categoryAndType = tokens.shift().split('/')
-            this.content.category = categoryAndType[0]
-            this.content.type = categoryAndType[1]
-
-            // Parse other possible tokens
-            for (let token in tokens) {
-                token.indexOf("charset=") === 0 && (this.content.charset = token.substring(8))
-            }
+            if (!contentType) { return }
+            this.content = this.$util.parseContentType(contentType.Val.join(";"))
         },
 
-        hasBody() { return this.content.data !== '' },
+        hasBody() { return this.item.body !== '' },
         isPreviewSupported() { return this.supportedPreviews.indexOf(this.content.category) !== -1 }
     }
     
 })
 
-app.vue.component('HeaderGrid', {
+app.component('HeaderGrid', {
     template: /*html*/ `
         <table class="table table-striped table-hover header-grid" aria-label="headers">
             <thead>
@@ -208,92 +188,7 @@ app.vue.component('HeaderGrid', {
     props: { header: Object }
 })
 
-app.vue.component('ContentPreview', {
-    template: /*html*/ `
-        <div class='content-preview'>
-            <img v-if="content.category === 'image'" :src="contentToSource()" alt="preview" />
-            <video v-else-if="content.category === 'video'" controls=""><source :type="contentType()" :src="contentToSource()"></video>
-        </div>
-    `,
-    props: { content: Object },
-    methods: {
-        contentType() {
-            return this.content.category + '/' + this.content.type
-        },
-        // The body is already in base64
-        contentToSource() {
-            return "data:" + this.contentType() + ";base64," + this.content.data
-        }
-    }
-})
-
-app.vue.component('ContentEditor', {
-    template: /*html*/ `<div :id="id"></div>`,
-    props: { content: Object, readOnly: Boolean, minLines: Number, maxLines: Number },
-    data() {
-        return {
-            id: "ace-editor-" + app.nextInt(),
-            typesByMode: {
-                'html': [ 'html', 'xml' ],
-                'css': [ 'css', 'sass', 'scss' ],
-                'javascript': [ 'javascript' ],
-                'json5': [ 'json' ]
-            }
-        }
-    },
-    mounted() { this.createEditor() },
-    beforeUpdate() { this.updateData() },
-    beforeUnmount() { this.editor.destroy() },
-    methods: {
-        createEditor() {
-            this.editor = ace.edit(this.id, {
-                useWorker: false,
-                theme: "ace/theme/twilight",
-                readOnly: this.readOnly,
-                autoScrollEditorIntoView: true,
-                minLines: this.minLines,
-                maxLines: this.maxLines,
-                wrap: true
-            });
-            if (this.readOnly) {
-                this.editor.renderer.$cursorLayer.element.style.display = "none"
-            }
-
-            this.updateData();
-        },
-
-        updateData() {
-            if (this.lastValue === this.content.data) {
-                // Workaround to update content when tab is shown after content change
-                this.editor.renderer.updateFull()
-                return
-            }
-
-            if (this.content.type) { this.setEditorMode() }
-
-            this.editor.setValue(atob(this.content.data)/*, -1 to scroll top */)
-            this.editor.clearSelection()
-
-            this.lastValue = this.content.data
-        },
-
-        setEditorMode() {
-            for (const mode in this.typesByMode) {
-                if (this.typesByMode[mode].some(t => this.content.type.indexOf(t) !== -1)) {
-                    this.editor.session.setMode('ace/mode/' + mode)
-                    return
-                }                
-            }
-            this.editor.session.setMode('')
-        },
-
-        getValue() {
-            return btoa(this.editor.getValue());
-        }
-    }
-})
-
-app.vue.component('RequestSubmitter', {
+app.component('RequestEditor', {
     template: /*html*/ `
     <form @submit.prevent="submit" class="checkout-form">
         <div :id="modalId" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -320,8 +215,8 @@ app.vue.component('RequestSubmitter', {
                             <tbody>
                                 <tr v-for="(header, index) in request.header" :key="index">
                                     <td><div class="clickable-img" @click="remove(index)"><img class="square-24" src="assets/images/trash.svg" alt="remove-header"></div></td>
-                                    <td><textarea placeholder="Name" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="autoResize" v-model="header.name"></textarea></td>
-                                    <td><textarea placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="autoResize" v-model="header.value"></textarea></td>
+                                    <td><textarea placeholder="Name" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.name"></textarea></td>
+                                    <td><textarea placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.value"></textarea></td>
                                 </tr>
                                 <tr>
                                     <td colspan='3'><div class="clickable-img" @click="add()"><img class="square-24" src="assets/images/plus.svg" alt="add-header" style="width: 24px"></div></td>
@@ -329,7 +224,7 @@ app.vue.component('RequestSubmitter', {
                             </tbody>
                         </table>
                         <div class="h5 centered-title">Body</div>
-                        <content-editor ref="bodyEditor" :content="content" :readOnly="false" :minLines="20" :maxLines="40"></content-editor>
+                        <code-editor ref="codeEditor" :code="originalRequest.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="cancel()">Cancel</button>
@@ -340,12 +235,14 @@ app.vue.component('RequestSubmitter', {
         </div>
     </form>
     `,
+    emits: [ 'submit' ],
+    inject: [ '$util' ],
     props: { modalId: String, originalRequest: Object },
 
     data() {
         return {
             httpMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
-            content: { data: this.originalRequest.body }
+            content: {}
         }
     },
 
@@ -353,48 +250,65 @@ app.vue.component('RequestSubmitter', {
 
     methods: {
         cancel() {
-            this.resetRequest();
-            this.$forceUpdate();
+            this.resetRequest()
+            this.$forceUpdate()
         },
 
         async submit() {
-            let req = this.clone(this.request);
-            req.header = {};
-            req.body = this.$refs.bodyEditor.getValue();
-            this.request.header.forEach(h => req.header[h.name] = {Val: [h.value]});
-            this.$parent.replay({request:req});
+            let req = this.clone(this.request)
+            req.header = {}
+            req.body = this.$refs.codeEditor.getCode()
+            this.request.header.forEach(h => req.header[h.name] = { Val: [h.value] })
+            this.$emit('submit', req)
         },
 
         resetRequest() {
-            this.request = this.clone(this.originalRequest);
-            this.request.header = [];
+            this.request = this.clone(this.originalRequest)
+            this.request.header = []
 
             Object.keys(this.originalRequest.header).forEach(headerName => {
-                this.request.header.push({
+                let newHeader = {
                     name: headerName,
                     value: this.originalRequest.header[headerName].Val.join(';')
-                });
-            });
+                }
+
+                this.request.header.push(newHeader)
+
+                if (newHeader.name.toLowerCase() === 'content-type') {
+                    this.content = this.$util.parseContentType(newHeader.value)
+                }
+            })
         },
 
         add() {
-            this.request.header.push({ name: '', value: '' });
-            this.$forceUpdate();
+            this.request.header.push({ name: '', value: '' })
+            this.$forceUpdate()
         },
 
         remove(index) {
-            this.request.header.splice(index, 1);
-            this.$forceUpdate();
+            let header = this.request.header.splice(index, 1)[0]
+            if (header.name.toLowerCase() === 'content-type') {
+                this.content = {}
+            }
+
+            this.$forceUpdate()
         },
 
         autoResize(event) {
-            let el = event.currentTarget;
-            el.style.height = 'auto';
-            el.style.height = event.type !== 'blur' ? (el.scrollHeight)+'px' : '';
+            let el = event.currentTarget
+            el.style.height = 'auto'
+            el.style.height = event.type !== 'blur' ? (el.scrollHeight)+'px' : ''
+        },
+
+        onBlur(event, header) {
+            this.autoResize(event)
+            if (header.name.toLowerCase() === 'content-type') {
+                this.content = this.$util.parseContentType(header.value)
+            }
         },
 
         clone(obj) {
-            return JSON.parse(JSON.stringify(obj));
+            return JSON.parse(JSON.stringify(obj))
         }
     }
 })

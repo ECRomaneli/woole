@@ -51,13 +51,25 @@
     <script src="assets/vendor/fuse/fuse.min.js"></script>
 
     <script src="assets/vendor/bootstrap/bootstrap.min.js"></script>
-    <script src="assets/scripts/app.js"></script>
+    
+    <!-- App -->
+    <script src="app/main.js"></script>
 
-    <script src="components/SidebarItem.js"></script>
-    <script src="components/Dashboard.js"></script>
-    <script src="components/RecordViewer.js"></script>
+    <!-- Providers -->
+    <script src="app/providers/Util.js"></script>
 
-    <script>app.vue.mount('#app')</script>
+    <!-- Plugins -->
+    <script src="app/plugins/EventBus.js"></script>
+
+    <!-- Components -->
+    <script src="app/components/CodeEditor.js"></script>
+    <script src="app/components/Base64Viewer.js"></script>
+    <script src="app/components/SidebarItem.js"></script>
+    <script src="app/components/Dashboard.js"></script>
+    <script src="app/components/RecordHandler.js"></script>
+
+    <!-- Mount App -->
+    <script>app.mount('#app')</script>
 </body>
 
 </html>
