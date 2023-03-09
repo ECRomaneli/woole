@@ -14,8 +14,8 @@ app.component('CodeEditor', {
     mounted() { this.createEditor() },
     beforeUnmount() { this.editor.destroy() },
     watch: {
-        type: function (val, _) { this.setEditorMode(val) },
-        code: function (val, _) { this.setCode(val) }
+        type: function (val) { this.setEditorMode(val) },
+        code: function (val) { this.setCode(val) }
     },
     methods: {
         createEditor() {

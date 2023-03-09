@@ -242,7 +242,8 @@ app.component('RequestEditor', {
     data() {
         return {
             httpMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
-            content: {}
+            content: {},
+            request: null
         }
     },
 
@@ -251,7 +252,6 @@ app.component('RequestEditor', {
     methods: {
         cancel() {
             this.resetRequest()
-            this.$forceUpdate()
         },
 
         async submit() {
@@ -282,7 +282,6 @@ app.component('RequestEditor', {
 
         add() {
             this.request.header.push({ name: '', value: '' })
-            this.$forceUpdate()
         },
 
         remove(index) {
@@ -290,8 +289,6 @@ app.component('RequestEditor', {
             if (header.name.toLowerCase() === 'content-type') {
                 this.content = {}
             }
-
-            this.$forceUpdate()
         },
 
         autoResize(event) {

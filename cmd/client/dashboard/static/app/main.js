@@ -1,52 +1,7 @@
 const app = Vue.createApp({
-    data() {
-        return {
-            recordList: [],
-            filteredRecordList: [],
-            selectedRecord: null,
-            config: {},
-            auth: {},
-            events: [],
-            inputSearch: ""
-        }
-    },
-    created() {
-        this.setupStream()
-        this.$bus.on('init', (recs) => {
-            recs.reverse()
-            this.recordList = recs
-            this.filteredRecordList = this.recordList.slice()
-        })
+    data() { return { sessionDetails: {}, selectedRecord: null } },
 
-        this.$bus.on('update', (rec) => {
-            this.recordList.unshift(rec)
-            while (this.recordList.length > this.sessionDetails.maxRecords) {
-                this.recordList.pop()
-            }
-
-            if (this.matchRequest(rec)) {
-                this.filteredRecordList.unshift(rec)
-            }
-        })
-
-        this.$bus.on('show', this.show)
-    },
-
-    watch: {
-        inputSearch: function (val, oldVal) {
-            if (val === "") {
-                this.filteredRecordList = this.recordList
-                return
-            }
-
-            if (val.indexOf(oldVal) === -1) {
-                this.filteredRecordList = this.recordList.filter(this.matchRequest)
-                return
-            }
-
-            this.filteredRecordList = this.filteredRecordList.filter(this.matchRequest)
-        }
-    },
+    created() { this.setupStream() },
 
     methods: {
         setupStream() {
@@ -56,7 +11,6 @@ const app = Vue.createApp({
             es.addEventListener('sessionDetails', event => {
                 const data = JSON.parse(event.data)
                 this.sessionDetails = data
-                this.$forceUpdate()
             })
 
             es.addEventListener('records', event => {
@@ -80,35 +34,6 @@ const app = Vue.createApp({
                     console.error("Tunnel connection closed")
                 }
             }
-        },
-
-        isSelectedRecord(record) {
-            return this.selectedRecord && this.selectedRecord.id === record.id
-        },
-
-        async show(record) {
-            if (this.isSelectedRecord(record.id)) { return }
-
-            if (!record.isFetched && record.response) {
-                let resp = await fetch('/record/' + record.id + '/response/body')
-                record.response.body = await resp.json()
-                record.isFetched = true
-            }
-
-            this.selectedRecord = record
-        },
-
-        matchRequest(rec) {
-            if (this.inputSearch === "") { return true }
-
-            let tokens = this.inputSearch.split(" ")
-            
-            let recClone = JSON.parse(JSON.stringify(rec))
-            recClone.response.body = null
-            let recJson = JSON.stringify(recClone)
-
-            // TODO: Search all tokens simultaneously
-            return tokens.every(token => recJson.indexOf(token) !== -1)
         }
     }
 })
