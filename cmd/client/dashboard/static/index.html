@@ -16,19 +16,15 @@
 
 <body>
     <main id="app">
-        <sidebar :max-records="sessionDetails.maxRecords" @item-selected="(rec) => selectedRecord = rec"></sidebar>
+        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
         <div id="body">
             <dashboard v-show="!selectedRecord" :session-details="sessionDetails"></dashboard>
             <record-viewer id="record-viewer" v-if="selectedRecord" :record="selectedRecord"></record-viewer>
         </div>
     </main>
-    <script>
 
-    </script>
     <script src="assets/vendor/ace/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="assets/vendor/vue/vue.global.prod.js"></script>
-    <script src="assets/vendor/fuse/fuse.min.js"></script>
-
     <script src="assets/vendor/bootstrap/bootstrap.min.js"></script>
     
     <!-- App -->
@@ -38,7 +34,9 @@
     <script src="app/providers/Util.js"></script>
 
     <!-- Plugins -->
+    <script src="app/plugins/SearchEngine.js"></script>
     <script src="app/plugins/EventBus.js"></script>
+    <script src="app/plugins/Cloner.js"></script>
 
     <!-- Components -->
     <script src="app/components/CodeEditor.js"></script>

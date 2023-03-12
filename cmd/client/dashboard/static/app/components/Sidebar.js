@@ -22,6 +22,7 @@ app.component('Sidebar', {
             </div>
         </div>
     `,
+    inject: [ '$search' ],
     emits: [ 'itemSelected' ],
     props: { maxRecords: Number },
 
@@ -30,43 +31,32 @@ app.component('Sidebar', {
             recordList: [],
             filteredRecordList: [],
             selectedRecord: null,
-            inputSearch: ""
+            inputSearch: "",
+            excludeFromSearch: ['b64body', 'response.body']
         }
     },
     created() {
-        this.$bus.on('init', (recs) => {
+        this.$bus.on('stream.start', (recs) => {
             recs.reverse()
             this.recordList = recs
             this.filteredRecordList = this.recordList.slice()
         })
 
-        this.$bus.on('update', (rec) => {
+        this.$bus.on('stream.update', (rec) => {
             this.recordList.unshift(rec)
             while (this.recordList.length > this.maxRecords) {
                 this.recordList.pop()
             }
 
-            if (this.matchRequest(rec)) {
+            if (this.$search([rec], this.inputSearch, this.excludeFromSearch).length) {
                 this.filteredRecordList.unshift(rec)
             }
         })
-
-        this.$bus.on('show', this.show)
     },
 
     watch: {
-        inputSearch: function (val, oldVal) {
-            if (val === "") {
-                this.filteredRecordList = this.recordList
-                return
-            }
-
-            if (val.indexOf(oldVal) === -1) {
-                this.filteredRecordList = this.recordList.filter(this.matchRequest)
-                return
-            }
-
-            this.filteredRecordList = this.filteredRecordList.filter(this.matchRequest)
+        inputSearch: function (val, _) {
+            this.filteredRecordList = this.$search(this.recordList, val, this.excludeFromSearch)
         }
     },
 
@@ -86,27 +76,8 @@ app.component('Sidebar', {
 
             if (this.isSelectedRecord(record.id)) { return }
 
-            if (!record.isFetched && record.response) {
-                let resp = await fetch('/record/' + record.id + '/response/body')
-                record.response.body = await resp.json()
-                record.isFetched = true
-            }
-
             this.selectedRecord = record
             this.$emit('itemSelected', record)
-        },
-
-        matchRequest(rec) {
-            if (this.inputSearch === "") { return true }
-
-            let tokens = this.inputSearch.split(" ")
-            
-            let recClone = JSON.parse(JSON.stringify(rec))
-            recClone.response.body = null
-            let recJson = JSON.stringify(recClone)
-
-            // TODO: Search all tokens simultaneously
-            return tokens.every(token => recJson.indexOf(token) !== -1)
         }
     }
 })

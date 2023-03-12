@@ -39,8 +39,8 @@ func setupServer() *webserver.Server {
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
 	server.Get("/record/{id}/replay", replayHandler)
-	server.Post("/record/request/new", newRequestHandler)
-	server.Get("/record/clear", clearHandler)
+	server.Post("/record/request", newRequestHandler)
+	server.Delete("/record", clearHandler)
 
 	return server
 }
@@ -53,19 +53,19 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	res.Headers(webserver.EventStreamHeader)
 
 	res.FlushEvent(&webserver.Event{
-		Name: "sessionDetails",
+		Name: "session",
 		Data: *(&SessionDetails{}).FromConfig(config),
 	})
 
 	res.FlushEvent(&webserver.Event{
-		Name: "records",
+		Name: "start",
 		Data: records.ThinClone(),
 	})
 
 	go func() {
 		for msg := range listener {
 			res.FlushEvent(&webserver.Event{
-				Name: "record",
+				Name: "update",
 				Data: msg.(*recorder.Record).ThinClone(),
 			})
 		}

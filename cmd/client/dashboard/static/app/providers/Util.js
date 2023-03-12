@@ -18,5 +18,11 @@ app.provide('$util', {
         }
 
         return content
+    },
+
+    parseBody: (obj) => {
+        if (!obj.body) { return }
+        obj.b64Body = obj.body
+        obj.body = atob(body)
     }
 });

@@ -49,12 +49,16 @@ app.component('CodeEditor', {
         },
 
         setCode(code) {
-            this.editor.setValue(atob(code)/*, -1 to scroll top */)
+            this.editor.setValue(code/*, -1 to scroll top */)
             this.editor.clearSelection()
         },
 
+        getLength() {
+            return this.editor.getValue().length
+        },
+
         getCode() {
-            return btoa(this.editor.getValue())
+            return this.editor.getValue()
         },
 
         forceUpdate() {

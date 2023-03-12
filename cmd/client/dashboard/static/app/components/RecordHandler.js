@@ -11,7 +11,7 @@ app.component('RecordViewer', {
                             </div>
                             <div class="btn-toolbar">
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="replay(record)">Replay</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="$bus.trigger('record.replay', record)">Replay</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#request-submitter" @mouseover="requestSubmitterEnabled = true">w/ Changes</button>
                                 </div>
                                 <div class="maximize-btn ms-3 me-2" @click="maximize('request')">
@@ -45,7 +45,7 @@ app.component('RecordViewer', {
                     </div>
                 </div>
             </div>
-            <request-editor v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request" @submit="(req) => replay({ request: req })"></request-editor>
+            <request-editor v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request"></request-editor>
         </div>
     `,
     props: { record: Object },
@@ -72,20 +72,6 @@ app.component('RecordViewer', {
     },
 
     methods: { 
-        replay(record) {
-            this.$bus.once('update', (rec) => this.$bus.trigger('show', rec))
-            
-            if (record.id !== void 0) {
-                fetch('/record/' + record.id + '/replay')
-            } else {
-                fetch('/record/request/new', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(record.request)
-                })
-            }
-        },
-
         maximize(card) {
             if (this.maximized === "") {
                 this.maximized = card
@@ -132,7 +118,7 @@ app.component('RecordItem', {
                 </div>
 
                 <div class="tab-pane mt-3" :class="{ active: tab === 2 }">
-                    <base64-viewer :category="content.category" :type="content.type" :data="item.body"></base64-viewer>
+                    <base64-viewer :category="content.category" :type="content.type" :data="item.b64Body"></base64-viewer>
                 </div>
             </div>
         </div>
@@ -223,6 +209,7 @@ app.component('RequestEditor', {
                                 </tr>
                             </tbody>
                         </table>
+                        <div style="padding-left: 8px"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
                         <div class="h5 centered-title">Body</div>
                         <code-editor ref="codeEditor" :code="originalRequest.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
                     </div>
@@ -235,15 +222,15 @@ app.component('RequestEditor', {
         </div>
     </form>
     `,
-    emits: [ 'submit' ],
-    inject: [ '$util' ],
+    inject: [ '$util', '$clone' ],
     props: { modalId: String, originalRequest: Object },
 
     data() {
         return {
             httpMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
             content: {},
-            request: null
+            request: null,
+            isAutoContentLengthEnabled: true
         }
     },
 
@@ -255,15 +242,20 @@ app.component('RequestEditor', {
         },
 
         async submit() {
-            let req = this.clone(this.request)
+            let req = this.$clone(this.request)
             req.header = {}
-            req.body = this.$refs.codeEditor.getCode()
+            req.b64Body = this.$refs.codeEditor.getCode()
             this.request.header.forEach(h => req.header[h.name] = { Val: [h.value] })
-            this.$emit('submit', req)
+
+            if (this.isAutoContentLengthEnabled) {
+                req.header['Content-Length'] = { Val: [`${this.$refs.codeEditor.getLength()}`] }
+            }
+
+            this.$bus.trigger('record.new', { request: req })
         },
 
         resetRequest() {
-            this.request = this.clone(this.originalRequest)
+            this.request = this.$clone(this.originalRequest)
             this.request.header = []
 
             Object.keys(this.originalRequest.header).forEach(headerName => {
@@ -302,10 +294,6 @@ app.component('RequestEditor', {
             if (header.name.toLowerCase() === 'content-type') {
                 this.content = this.$util.parseContentType(header.value)
             }
-        },
-
-        clone(obj) {
-            return JSON.parse(JSON.stringify(obj))
         }
     }
 })
