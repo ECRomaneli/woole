@@ -5,31 +5,33 @@ option go_package = "woole/payload";
 package payload;
 
 service Tunnel {
-    rpc Tunnel(stream TunnelResponse) returns (stream TunnelRequest) {}
+    rpc RequestSession(Handshake) returns (Session) {}
+    rpc Tunnel(stream ClientMessage) returns (stream ServerMessage) {}
 }
 
-message TunnelRequest {
-    Auth auth = 1;
-
-    string recordId = 2;
-    Request request = 3;
-}
-
-message TunnelResponse {
-    string clientId = 1;
-
-    string recordId = 2;
+message ServerMessage {
+    string recordId = 1;
+    Request request = 2;
     Response response = 3;
-    
-    string bearer = 4;
 }
 
-message Auth {
+message ClientMessage {
+    string recordId = 1;
+    Response response = 2;
+    Session session = 3;
+}
+
+message Handshake {
+    string clientId = 1;
+    string allowReaders = 2;
+}
+
+message Session {
     string clientId = 1;
     string hostname = 2;
     string httpPort = 3;
     string httpsPort = 4;
-    string bearer = 5;
+    bytes bearer = 5;
     int32 maxRequestSize = 6;
     int32 maxResponseSize = 7;
 }
@@ -50,7 +52,7 @@ message Response {
     int32 code = 3;
     map<string, StringList> header = 4;
     bytes body = 5;
-    string bearer = 6;
+    int64 elapsed = 6;
 }
 
 message StringList {

@@ -1,7 +1,6 @@
 package recorder
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +9,7 @@ import (
 	"strconv"
 	"time"
 	"woole/cmd/client/app"
-	"woole/shared/payload"
+	"woole/cmd/client/recorder/adt"
 	pb "woole/shared/payload"
 	"woole/shared/util"
 
@@ -24,11 +23,11 @@ const StatusInternalProxyError = 999
 var config = app.ReadConfig()
 var log = logger.New("recorder")
 
-var records = NewRecords(uint(config.MaxRecords))
+var records = adt.NewRecords(uint(config.MaxRecords))
 var proxyHandler http.HandlerFunc
 
-func Replay(request *payload.Request) {
-	record := NewRecord(request)
+func Replay(request *pb.Request) {
+	record := adt.NewRecord(request)
 	DoRequest(record)
 
 	if log.IsInfoEnabled() {
@@ -36,51 +35,50 @@ func Replay(request *payload.Request) {
 	}
 }
 
-func GetRecords() *Records {
+func GetRecords() *adt.Records {
 	return records
 }
 
 func startTunnelStream() {
 	// Establish tunnel connection and retrieve request/response stream
-	stream, cancelFunc := connectTunnel(true)
-	defer cancelFunc()
+	client, ctx, cancelFunc := connectClient(config.EnableTLSTunnel)
 
-	// Send ack with client id (if exists)
-	stream.Send(&pb.TunnelResponse{ClientId: config.ClientId})
-
-	// Retrieve the authentication data and store
-	tunnelReq, err := stream.Recv()
-	panicIfNotNil(err)
-
-	if tunnelReq.Auth == nil {
-		exitIfNotNil("Failed to authenticate with tunnel on "+config.TunnelUrl.String(), errors.New("authencation not sent"))
+	// Start the tunnel stream
+	stream, err := client.Tunnel(ctx)
+	if !handleGRPCErrors(err) {
+		panic(err)
 	}
 
-	app.Authenticate(tunnelReq.Auth)
+	stream.Send(&pb.ClientMessage{Session: app.GetSession()})
+
+	// Restart tunnel and try to reconnect
+	defer startTunnelStream()
+	defer cancelFunc()
 
 	// Listen for requests and send responses asynchronously
 	for {
-		tunnelReq, err := stream.Recv()
+		serverMsg, err := stream.Recv()
 
 		if err != nil {
 			if !handleGRPCErrors(err) {
-				panic(err)
+				log.Error(err)
+				break
 			}
 			continue
 		}
 
-		go handleTunnelRequest(stream, tunnelReq)
+		go handleServerMsg(stream, serverMsg)
 	}
 }
 
-func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequest) {
-	record := NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
+func handleServerMsg(stream pb.Tunnel_TunnelClient, tunnelReq *pb.ServerMessage) {
+	record := adt.NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
 	DoRequest(record)
 	handleRedirections(record)
 
-	err := stream.Send(&pb.TunnelResponse{
+	err := stream.Send(&pb.ClientMessage{
 		RecordId: record.Id,
 		Response: record.Response,
 	})
@@ -94,14 +92,14 @@ func handleTunnelRequest(stream pb.Tunnel_TunnelClient, tunnelReq *pb.TunnelRequ
 	}
 }
 
-func DoRequest(record *Record) {
+func DoRequest(record *adt.Record) {
 	res, elapsed := proxyRequest(record.Request)
 	record.Response = res
 	record.Elapsed = elapsed
 	records.Add(record)
 }
 
-func handleRedirections(record *Record) {
+func handleRedirections(record *adt.Record) {
 	location := record.Response.GetHttpHeader().Get("location")
 	if location != "" {
 		httpHeader := record.Response.GetHttpHeader()
@@ -114,7 +112,7 @@ func handleRedirections(record *Record) {
 	}
 }
 
-func proxyRequest(req *payload.Request) (*payload.Response, time.Duration) {
+func proxyRequest(req *pb.Request) (*pb.Response, time.Duration) {
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
 	elapsed := util.Timer(func() {
@@ -122,7 +120,7 @@ func proxyRequest(req *payload.Request) (*payload.Response, time.Duration) {
 	})
 
 	// Save req and res data
-	return (&payload.Response{}).FromResponseRecorder(recorder), elapsed
+	return (&pb.Response{}).FromResponseRecorder(recorder), elapsed
 }
 
 func handleGRPCErrors(err error) bool {
@@ -156,12 +154,6 @@ func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName st
 	refererUrl.Opaque = config.CustomUrl.Opaque
 
 	header[headerName] = &pb.StringList{Val: []string{refererUrl.String()}}
-}
-
-func panicIfNotNil(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func exitIfNotNil(msg string, err error) {

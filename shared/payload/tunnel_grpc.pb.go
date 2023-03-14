@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TunnelClient interface {
+	RequestSession(ctx context.Context, in *Handshake, opts ...grpc.CallOption) (*Session, error)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tunnel_TunnelClient, error)
 }
 
@@ -31,6 +32,15 @@ type tunnelClient struct {
 
 func NewTunnelClient(cc grpc.ClientConnInterface) TunnelClient {
 	return &tunnelClient{cc}
+}
+
+func (c *tunnelClient) RequestSession(ctx context.Context, in *Handshake, opts ...grpc.CallOption) (*Session, error) {
+	out := new(Session)
+	err := c.cc.Invoke(ctx, "/payload.Tunnel/RequestSession", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *tunnelClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tunnel_TunnelClient, error) {
@@ -43,8 +53,8 @@ func (c *tunnelClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tun
 }
 
 type Tunnel_TunnelClient interface {
-	Send(*TunnelResponse) error
-	Recv() (*TunnelRequest, error)
+	Send(*ClientMessage) error
+	Recv() (*ServerMessage, error)
 	grpc.ClientStream
 }
 
@@ -52,12 +62,12 @@ type tunnelTunnelClient struct {
 	grpc.ClientStream
 }
 
-func (x *tunnelTunnelClient) Send(m *TunnelResponse) error {
+func (x *tunnelTunnelClient) Send(m *ClientMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *tunnelTunnelClient) Recv() (*TunnelRequest, error) {
-	m := new(TunnelRequest)
+func (x *tunnelTunnelClient) Recv() (*ServerMessage, error) {
+	m := new(ServerMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -68,6 +78,7 @@ func (x *tunnelTunnelClient) Recv() (*TunnelRequest, error) {
 // All implementations must embed UnimplementedTunnelServer
 // for forward compatibility
 type TunnelServer interface {
+	RequestSession(context.Context, *Handshake) (*Session, error)
 	Tunnel(Tunnel_TunnelServer) error
 	mustEmbedUnimplementedTunnelServer()
 }
@@ -76,6 +87,9 @@ type TunnelServer interface {
 type UnimplementedTunnelServer struct {
 }
 
+func (UnimplementedTunnelServer) RequestSession(context.Context, *Handshake) (*Session, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestSession not implemented")
+}
 func (UnimplementedTunnelServer) Tunnel(Tunnel_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
 }
@@ -92,13 +106,31 @@ func RegisterTunnelServer(s grpc.ServiceRegistrar, srv TunnelServer) {
 	s.RegisterService(&Tunnel_ServiceDesc, srv)
 }
 
+func _Tunnel_RequestSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Handshake)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TunnelServer).RequestSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/payload.Tunnel/RequestSession",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TunnelServer).RequestSession(ctx, req.(*Handshake))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Tunnel_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(TunnelServer).Tunnel(&tunnelTunnelServer{stream})
 }
 
 type Tunnel_TunnelServer interface {
-	Send(*TunnelRequest) error
-	Recv() (*TunnelResponse, error)
+	Send(*ServerMessage) error
+	Recv() (*ClientMessage, error)
 	grpc.ServerStream
 }
 
@@ -106,12 +138,12 @@ type tunnelTunnelServer struct {
 	grpc.ServerStream
 }
 
-func (x *tunnelTunnelServer) Send(m *TunnelRequest) error {
+func (x *tunnelTunnelServer) Send(m *ServerMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *tunnelTunnelServer) Recv() (*TunnelResponse, error) {
-	m := new(TunnelResponse)
+func (x *tunnelTunnelServer) Recv() (*ClientMessage, error) {
+	m := new(ClientMessage)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -124,7 +156,12 @@ func (x *tunnelTunnelServer) Recv() (*TunnelResponse, error) {
 var Tunnel_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "payload.Tunnel",
 	HandlerType: (*TunnelServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RequestSession",
+			Handler:    _Tunnel_RequestSession_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Tunnel",

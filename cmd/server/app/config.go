@@ -17,16 +17,17 @@ import (
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
-	HostnamePattern    string
-	HttpPort           string
-	HttpsPort          string
-	TunnelPort         string
-	Timeout            int
-	TlsCert            string
-	TlsKey             string
-	TunnelRequestSize  int
-	TunnelResponseSize int
-	isRead             bool
+	HostnamePattern        string
+	HttpPort               string
+	HttpsPort              string
+	TlsCert                string
+	TlsKey                 string
+	TunnelPort             string
+	TunnelReconnectTimeout int
+	TunnelRequestSize      int
+	TunnelResponseSize     int
+	TunnelResponseTimeout  int
+	isRead                 bool
 }
 
 const (
@@ -57,28 +58,30 @@ func ReadConfig() *Config {
 	httpsPort := flag.Int("https", util.GetDefaultPort("https"), "HTTPS Port")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: Use "+ClientToken+".mysite.com to vary the subdomain as client ID")
-	timeout := flag.Int("timeout", 10000, "Timeout to receive a response from Client")
 	tlsCert := flag.String("tls-cert", "", "TLS cert/fullchain file path")
 	tlsKey := flag.String("tls-key", "", "TLS key/privkey file path")
 	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Tunnel Port")
+	tunnelReconnectTimeout := flag.Int("tunnel-reconnect-timeout", 10000, "Timeout to reconnect the stream when lose connection")
 	tunnelRequestSize := flag.Int("tunnel-request-size", math.MaxInt32, "Tunnel maximum request size in bytes. 0 = max value")
 	tunnelResponseSize := flag.Int("tunnel-response-size", 4*1024*1024, "Tunnel maximum response size in bytes. 0 = max value")
+	tunnelResponseTimeout := flag.Int("tunnel-response-timeout", 20000, "Timeout to receive a response from Client")
 
 	flag.Parse()
 
 	logger.SetLogLevelStr(*logLevel)
 
 	config = &Config{
-		HttpPort:           strconv.Itoa(*httpPort),
-		HttpsPort:          strconv.Itoa(*httpsPort),
-		HostnamePattern:    *hostnamePattern,
-		Timeout:            *timeout,
-		TlsCert:            *tlsCert,
-		TlsKey:             *tlsKey,
-		TunnelPort:         strconv.Itoa(*tunnelPort),
-		TunnelRequestSize:  *tunnelRequestSize,
-		TunnelResponseSize: *tunnelResponseSize,
-		isRead:             true,
+		HttpPort:               strconv.Itoa(*httpPort),
+		HttpsPort:              strconv.Itoa(*httpsPort),
+		HostnamePattern:        *hostnamePattern,
+		TlsCert:                *tlsCert,
+		TlsKey:                 *tlsKey,
+		TunnelPort:             strconv.Itoa(*tunnelPort),
+		TunnelReconnectTimeout: *tunnelReconnectTimeout,
+		TunnelRequestSize:      *tunnelRequestSize,
+		TunnelResponseSize:     *tunnelResponseSize,
+		TunnelResponseTimeout:  *tunnelResponseTimeout,
+		isRead:                 true,
 	}
 
 	if !strings.Contains(config.HostnamePattern, ClientToken) {

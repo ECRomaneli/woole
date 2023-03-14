@@ -1,7 +1,11 @@
-package recorder
+package adt
 
 import (
+	"bytes"
+	"encoding/hex"
+	"errors"
 	"sync"
+	pb "woole/shared/payload"
 	"woole/shared/util/hash"
 )
 
@@ -24,8 +28,22 @@ func (cm *ClientManager) Register(clientId string) *Client {
 }
 
 func (cm *ClientManager) Deregister(clientId string) {
-	close(cm.clients[clientId].Tunnel)
+	close(cm.clients[clientId].recordChannel)
 	cm.put(clientId, nil)
+}
+
+func (cm *ClientManager) RecoverSession(session *pb.Session) (*Client, error) {
+	client := cm.Get(session.ClientId)
+
+	if client == nil {
+		return nil, errors.New("The client '" + session.ClientId + "' is not in use")
+	}
+
+	if !bytes.Equal(client.Bearer, session.Bearer) {
+		return nil, errors.New("Failed to authenticate to client '" + session.ClientId + "'")
+	}
+
+	return client, nil
 }
 
 func (cm *ClientManager) Get(clientId string) *Client {
@@ -41,9 +59,9 @@ func (cm *ClientManager) generateClientId(clientId string) string {
 
 	for clientId == "" || cm.Exists(clientId) {
 		if hasClientId {
-			clientId = clientId + "-" + string(hash.RandSha1(clientId))[:5]
+			clientId = clientId + "-" + hex.EncodeToString(hash.RandMD5(clientId))[:5]
 		} else {
-			clientId = string(hash.RandSha1(""))[:8]
+			clientId = hex.EncodeToString(hash.RandMD5(""))[:8]
 		}
 	}
 

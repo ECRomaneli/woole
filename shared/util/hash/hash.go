@@ -1,19 +1,38 @@
 package hash
 
 import (
+	"crypto/md5"
 	"crypto/sha1"
-	"encoding/hex"
+	"crypto/sha256"
+	"crypto/sha512"
 	"math/rand"
 	"strconv"
 	"time"
 )
 
-func RandSha1(var1 string) []byte {
+func RandMD5(var1 string) []byte { // 16
+	hash := md5.Sum(generateUniqueByteArr(var1))
+	return hash[:]
+}
+
+func RandSha1(var1 string) []byte { // 20
+	hash := sha1.Sum(generateUniqueByteArr(var1))
+	return hash[:]
+}
+
+func RandSha256(var1 string) []byte { // 32
+	hash := sha256.Sum256(generateUniqueByteArr(var1))
+	return hash[:]
+}
+
+func RandSha512(var1 string) []byte { // 64
+	hash := sha512.Sum512(generateUniqueByteArr(var1))
+	return hash[:]
+}
+
+func generateUniqueByteArr(var1 string) []byte {
 	r1 := time.Now().UnixNano()
 	r2 := rand.Int()
 	r3 := rand.Int()
-
-	h := sha1.New()
-	h.Write([]byte(strconv.FormatInt(r1, 16) + var1 + strconv.Itoa(r2) + strconv.Itoa(r3)))
-	return []byte(hex.EncodeToString(h.Sum(nil)))
+	return []byte(strconv.FormatInt(r1, 16) + var1 + strconv.Itoa(r2) + strconv.Itoa(r3))
 }

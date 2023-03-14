@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httputil"
+	"woole/cmd/client/app"
 	pb "woole/shared/payload"
 
 	"google.golang.org/grpc"
@@ -36,7 +37,7 @@ func createProxyHandler() http.HandlerFunc {
 	}
 }
 
-func connectTunnel(enableTransportCredentials bool) (pb.Tunnel_TunnelClient, context.CancelFunc) {
+func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Context, context.CancelFunc) {
 	// Opts
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
@@ -45,31 +46,36 @@ func connectTunnel(enableTransportCredentials bool) (pb.Tunnel_TunnelClient, con
 	if enableTransportCredentials {
 		opts = append(opts, grpc.WithTransportCredentials(config.GetTransportCredentials()))
 	} else {
-		log.Warn("Connecting with tunnel without TLS Credentials...")
+		log.Warn("Trying to connect with tunnel without TLS Credentials...")
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	// Dial tunnel
+	// Dial server
 	conn, err := grpc.Dial(config.TunnelUrl.Host, opts...)
 	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
 
 	// Create a cancelable context
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Start the tunnel stream
 	client := pb.NewTunnelClient(conn)
-	stream, err := client.Tunnel(ctx)
 
-	// If unavailable, retry without credentials
-	if status.Code(err) == codes.Unavailable && enableTransportCredentials {
-		cancel()
-		conn.Close()
-		return connectTunnel(false)
+	if !app.HasSession() {
+		// Send handshake with client id (if exists)
+		session, err := client.RequestSession(ctx, &pb.Handshake{ClientId: config.ClientId})
+
+		// If unavailable, retry without credentials
+		if status.Code(err) == codes.Unavailable && enableTransportCredentials {
+			cancel()
+			conn.Close()
+			config.EnableTLSTunnel = false
+			return connectClient(config.EnableTLSTunnel)
+		}
+
+		exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
+		app.SetSession(session)
 	}
 
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
-
-	return stream, func() {
+	return client, ctx, func() {
 		cancel()
 		conn.Close()
 	}

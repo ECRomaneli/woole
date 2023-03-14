@@ -4,7 +4,7 @@ import (
 	"woole/shared/util"
 )
 
-func (auth *Auth) HttpUrl() string {
+func (auth *Session) HttpUrl() string {
 	var port string
 
 	if util.GetDefaultPortStr("http") != auth.GetHttpPort() {
@@ -14,7 +14,7 @@ func (auth *Auth) HttpUrl() string {
 	return "http://" + auth.GetHostname() + port
 }
 
-func (auth *Auth) HttpsUrl() string {
+func (auth *Session) HttpsUrl() string {
 	if auth.HttpsPort == "" {
 		return ""
 	}

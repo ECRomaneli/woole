@@ -13,8 +13,9 @@ import (
 	"net/http"
 	"strings"
 	"woole/cmd/client/app"
+	"woole/cmd/client/dashboard/adt"
 	"woole/cmd/client/recorder"
-	"woole/shared/payload"
+	recorderAdt "woole/cmd/client/recorder/adt"
 	pb "woole/shared/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
@@ -54,7 +55,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 	res.FlushEvent(&webserver.Event{
 		Name: "session",
-		Data: *(&SessionDetails{}).FromConfig(config),
+		Data: *(&adt.SessionDetails{}).FromConfig(config),
 	})
 
 	res.FlushEvent(&webserver.Event{
@@ -66,7 +67,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 		for msg := range listener {
 			res.FlushEvent(&webserver.Event{
 				Name: "update",
-				Data: msg.(*recorder.Record).ThinClone(),
+				Data: msg.(*recorderAdt.Record).ThinClone(),
 			})
 		}
 	}()
@@ -80,7 +81,7 @@ func replayHandler(req *webserver.Request, res *webserver.Response) {
 }
 
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
-	newRequest := &payload.Request{}
+	newRequest := &pb.Request{}
 	err := json.Unmarshal(req.Body(), newRequest)
 	if err != nil {
 		webserver.NewHTTPError(

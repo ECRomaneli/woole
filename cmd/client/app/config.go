@@ -5,11 +5,11 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"sync"
 	"woole/shared/constants"
-	"woole/shared/payload"
+	pb "woole/shared/payload"
 	"woole/shared/util"
 	"woole/shared/util/signal"
 
@@ -19,15 +19,16 @@ import (
 
 // Config has all the configuration parsed from the command line.
 type Config struct {
-	ClientId      string
-	ProxyUrl      *url.URL
-	TunnelUrl     *url.URL
-	CustomUrl     *url.URL
-	DashboardUrl  *url.URL
-	MaxRecords    int
-	tlsSkipVerify bool
-	tlsCa         string
-	isRead        bool
+	ClientId        string
+	ProxyUrl        *url.URL
+	TunnelUrl       *url.URL
+	CustomUrl       *url.URL
+	DashboardUrl    *url.URL
+	MaxRecords      int
+	tlsSkipVerify   bool
+	tlsCa           string
+	EnableTLSTunnel bool
+	isRead          bool
 }
 
 const (
@@ -37,24 +38,25 @@ const (
 )
 
 var (
-	config        *Config       = &Config{isRead: false}
-	auth          *payload.Auth = &payload.Auth{}
-	authenticated signal.Signal = *signal.New()
-	writingConfig sync.Mutex
+	config           *Config       = &Config{isRead: false}
+	session          *pb.Session   = &pb.Session{}
+	sessionInitiated signal.Signal = *signal.New()
+	writingConfig    sync.Mutex
 )
 
-// If no auth was provided yet, the routine will wait for an authentication
-func GetAuth() *payload.Auth {
-	<-authenticated.Receive()
-	return auth
+func HasSession() bool {
+	return session.Bearer != nil
 }
 
-func Authenticate(authentication *payload.Auth) {
-	auth = authentication
-	if auth.Bearer == "" {
-		panic("No bearer was provided")
-	}
-	authenticated.SendLast()
+// If no session was provided yet, the routine will wait for a session
+func GetSession() *pb.Session {
+	<-sessionInitiated.Receive()
+	return session
+}
+
+func SetSession(serverSession *pb.Session) {
+	session = serverSession
+	sessionInitiated.SendLast()
 }
 
 func ReadConfig() *Config {
@@ -89,18 +91,19 @@ func ReadConfig() *Config {
 	}
 
 	config = &Config{
-		ClientId:      *clientId,
-		ProxyUrl:      util.RawUrlToUrl(*proxyUrl, "http", ""),
-		TunnelUrl:     util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
-		CustomUrl:     util.RawUrlToUrl(*customUrl, "http", ""),
-		DashboardUrl:  util.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
-		MaxRecords:    *maxRecords,
-		tlsSkipVerify: *tlsSkipVerify,
-		tlsCa:         *tlsCa,
-		isRead:        true,
+		ClientId:        *clientId,
+		ProxyUrl:        util.RawUrlToUrl(*proxyUrl, "http", ""),
+		TunnelUrl:       util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
+		CustomUrl:       util.RawUrlToUrl(*customUrl, "http", ""),
+		DashboardUrl:    util.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
+		MaxRecords:      *maxRecords,
+		tlsSkipVerify:   *tlsSkipVerify,
+		tlsCa:           *tlsCa,
+		EnableTLSTunnel: true,
+		isRead:          true,
 	}
 
-	auth.ClientId = *clientId
+	session.ClientId = *clientId
 	return config
 }
 
@@ -111,7 +114,7 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 		return credentials.NewTLS(tlsConfig)
 	}
 
-	caBytes, err := ioutil.ReadFile(cfg.tlsCa)
+	caBytes, err := os.ReadFile(cfg.tlsCa)
 	if err != nil {
 		panic("Failed to load TLS CA File on: " + cfg.tlsCa + ". Reason: " + err.Error())
 	}

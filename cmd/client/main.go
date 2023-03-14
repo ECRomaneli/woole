@@ -5,8 +5,6 @@ import (
 	"woole/cmd/client/app"
 	"woole/cmd/client/dashboard"
 	"woole/cmd/client/recorder"
-
-	"github.com/ecromaneli-golang/console/logger"
 )
 
 var config = app.ReadConfig()
@@ -26,7 +24,7 @@ func startDashboard() {
 }
 
 func printInfo() {
-	auth := app.GetAuth()
+	auth := app.GetSession()
 
 	fmt.Println()
 	fmt.Println("===============")
@@ -39,9 +37,6 @@ func printInfo() {
 	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
 	fmt.Printf("Dashboard: %s\n", config.DashboardUrl.String())
 
-	if logger.GetInstance().IsDebugEnabled() {
-		fmt.Printf("   Bearer: %s\n", auth.Bearer)
-	}
 	fmt.Println("===============")
 	fmt.Println()
 }
