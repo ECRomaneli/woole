@@ -5,12 +5,13 @@ import (
 	"net/http/httptest"
 )
 
-func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder) *Response {
+func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder, elapsed int64) *Response {
 
 	res.Proto = httpRes.Result().Proto
 	res.Status = httpRes.Result().Status
 	res.Code = int32(httpRes.Code)
 	res.Body = httpRes.Body.Bytes()
+	res.Elapsed = elapsed
 	res.SetHttpHeader(httpRes.Header())
 
 	return res

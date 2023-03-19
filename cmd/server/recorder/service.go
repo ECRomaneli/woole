@@ -22,7 +22,7 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 
 	var err error
 
-	record.Elapsed = util.Timer(func() {
+	elapsed := util.Timer(func() {
 		defer client.RemoveRecord(record.Id)
 
 		select {
@@ -35,11 +35,12 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 	})
 
 	if err != nil {
-		record.Response = &pb.Response{Code: http.StatusGatewayTimeout}
+		record.Response = &pb.Response{Code: http.StatusGatewayTimeout, Elapsed: elapsed}
 		logRecord(client.Id, record)
 		panic(err)
 	}
 
+	record.Response.Elapsed = elapsed
 	return record
 }
 

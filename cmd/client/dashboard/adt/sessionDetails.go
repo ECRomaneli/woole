@@ -22,7 +22,9 @@ func (session *SessionDetails) FromConfig(config *app.Config) *SessionDetails {
 	session.HTTPS = auth.HttpsUrl()
 	session.Proxying = config.CustomUrl.String()
 	session.Dashboard = config.DashboardUrl.String()
-	session.Tunnel = config.TunnelUrl.String()
+	if !config.IsStandalone {
+		session.Tunnel = config.TunnelUrl.String()
+	}
 	session.MaxRecords = config.MaxRecords
 
 	return session

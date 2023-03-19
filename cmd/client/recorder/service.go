@@ -1,30 +1,19 @@
 package recorder
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strconv"
-	"time"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder/adt"
 	pb "woole/shared/payload"
 	"woole/shared/util"
 
-	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-const StatusInternalProxyError = 999
-
-var config = app.ReadConfig()
-var log = logger.New("recorder")
-
-var records = adt.NewRecords(uint(config.MaxRecords))
-var proxyHandler http.HandlerFunc
 
 func Replay(request *pb.Request) {
 	record := adt.NewRecord(request)
@@ -39,21 +28,16 @@ func GetRecords() *adt.Records {
 	return records
 }
 
-func startTunnelStream() {
-	// Establish tunnel connection and retrieve request/response stream
-	client, ctx, cancelFunc := connectClient(config.EnableTLSTunnel)
+func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx context.CancelFunc) error {
+	defer cancelCtx()
 
 	// Start the tunnel stream
 	stream, err := client.Tunnel(ctx)
 	if !handleGRPCErrors(err) {
-		panic(err)
+		return err
 	}
 
 	stream.Send(&pb.ClientMessage{Session: app.GetSession()})
-
-	// Restart tunnel and try to reconnect
-	defer startTunnelStream()
-	defer cancelFunc()
 
 	// Listen for requests and send responses asynchronously
 	for {
@@ -61,18 +45,21 @@ func startTunnelStream() {
 
 		if err != nil {
 			if !handleGRPCErrors(err) {
-				log.Error(err)
-				break
+				return err
 			}
 			continue
 		}
 
-		go handleServerMsg(stream, serverMsg)
+		if serverMsg.Response == nil {
+			go handleServerRequest(stream, serverMsg.RecordId, serverMsg.Request)
+		} else {
+			go handleServerResponse(stream, serverMsg.RecordId, serverMsg.Response)
+		}
 	}
 }
 
-func handleServerMsg(stream pb.Tunnel_TunnelClient, tunnelReq *pb.ServerMessage) {
-	record := adt.NewRecordWithId(tunnelReq.RecordId, tunnelReq.Request)
+func handleServerRequest(stream pb.Tunnel_TunnelClient, recordId string, request *pb.Request) {
+	record := adt.NewRecordWithId(recordId, request)
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
 	DoRequest(record)
@@ -88,14 +75,16 @@ func handleServerMsg(stream pb.Tunnel_TunnelClient, tunnelReq *pb.ServerMessage)
 	}
 
 	if !handleGRPCErrors(err) {
-		panic(err)
+		log.Error("Failed to send response for Record[", recordId, "].", err)
 	}
 }
 
+func handleServerResponse(stream pb.Tunnel_TunnelClient, recordId string, response *pb.Response) {
+
+}
+
 func DoRequest(record *adt.Record) {
-	res, elapsed := proxyRequest(record.Request)
-	record.Response = res
-	record.Elapsed = elapsed
+	record.Response = proxyRequest(record.Request)
 	records.Add(record)
 }
 
@@ -112,7 +101,7 @@ func handleRedirections(record *adt.Record) {
 	}
 }
 
-func proxyRequest(req *pb.Request) (*pb.Response, time.Duration) {
+func proxyRequest(req *pb.Request) *pb.Response {
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
 	elapsed := util.Timer(func() {
@@ -120,7 +109,7 @@ func proxyRequest(req *pb.Request) (*pb.Response, time.Duration) {
 	})
 
 	// Save req and res data
-	return (&pb.Response{}).FromResponseRecorder(recorder), elapsed
+	return (&pb.Response{}).FromResponseRecorder(recorder, elapsed)
 }
 
 func handleGRPCErrors(err error) bool {
@@ -154,12 +143,4 @@ func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName st
 	refererUrl.Opaque = config.CustomUrl.Opaque
 
 	header[headerName] = &pb.StringList{Val: []string{refererUrl.String()}}
-}
-
-func exitIfNotNil(msg string, err error) {
-	if err != nil {
-		fmt.Println(msg)
-		log.Fatal(msg + ". Reason: " + err.Error())
-		os.Exit(1)
-	}
 }

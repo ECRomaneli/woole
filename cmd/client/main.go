@@ -24,14 +24,14 @@ func startDashboard() {
 }
 
 func printInfo() {
-	auth := app.GetSession()
+	session := app.GetSession()
 
 	fmt.Println()
 	fmt.Println("===============")
-	fmt.Printf(" HTTP URL: %s\n", auth.HttpUrl())
+	fmt.Printf(" HTTP URL: %s\n", session.HttpUrl())
 
-	if auth.HttpsPort != "" {
-		fmt.Printf("HTTPS URL: %s\n", auth.HttpsUrl())
+	if session.HttpsPort != "" {
+		fmt.Printf("HTTPS URL: %s\n", session.HttpsUrl())
 	}
 
 	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())

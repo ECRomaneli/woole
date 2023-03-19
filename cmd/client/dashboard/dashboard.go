@@ -60,14 +60,14 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 	res.FlushEvent(&webserver.Event{
 		Name: "start",
-		Data: records.ThinClone(),
+		Data: records.ThinCloneWithoutResponseBody(),
 	})
 
 	go func() {
 		for msg := range listener {
 			res.FlushEvent(&webserver.Event{
 				Name: "update",
-				Data: msg.(*recorderAdt.Record).ThinClone(),
+				Data: msg.(*recorderAdt.Record).ThinCloneWithoutResponseBody(),
 			})
 		}
 	}()

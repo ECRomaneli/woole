@@ -2,6 +2,8 @@ github.com/ecromaneli-golang/console v0.2.2 h1:oxx5GhMzP7XJTyEBTdyWk+kckOS2TtnKQ
 github.com/ecromaneli-golang/console v0.2.2/go.mod h1:v9yAjzFFTvtMWyU/WaN4hHlMVGBdI5dtx3xM7uJGB8s=
 github.com/ecromaneli-golang/http v0.5.1 h1:DQPi0sXHl3mGZcTEmoPIxZugbXYBMskDY3OKH8NZfTE=
 github.com/ecromaneli-golang/http v0.5.1/go.mod h1:uIRX8Z0hGyF9JCao6CdZGXD6Z+dgD8vWuU91IbzXg0U=
+github.com/ecromaneli/webserver v0.1.0 h1:sadPB9504q6KrINeKRLqnV+Vk6qdwS1ar+IhSO1pQv8=
+github.com/ecromaneli/webserver v0.1.0/go.mod h1:XNZ9nl7qSYdZcrcNjQlCmC/Nl+i2oT7vSDLNrOuucZg=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/golang/protobuf v1.5.2 h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw=
 github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=

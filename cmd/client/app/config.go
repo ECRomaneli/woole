@@ -21,6 +21,7 @@ import (
 type Config struct {
 	ClientId        string
 	ProxyUrl        *url.URL
+	HttpUrl         *url.URL
 	TunnelUrl       *url.URL
 	CustomUrl       *url.URL
 	DashboardUrl    *url.URL
@@ -28,13 +29,16 @@ type Config struct {
 	tlsSkipVerify   bool
 	tlsCa           string
 	EnableTLSTunnel bool
+	IsStandalone    bool
 	isRead          bool
 }
 
 const (
-	defaultProxyPort        = "80"
-	defaultDashboardPort    = "8000"
-	defaultCustomUrlMessage = "[<scheme>://]<hostname>[:<port>]"
+	defaultProxyPort         = "80"
+	defaultDashboardPort     = "8000"
+	defaultStandalonePort    = "8080"
+	defaultStandaloneMessage = "[<hostname>]:<port>"
+	defaultCustomUrlMessage  = "[<scheme>://]<hostname>[:<port>]"
 )
 
 var (
@@ -69,9 +73,12 @@ func ReadConfig() *Config {
 		return config
 	}
 
+	emptyStr := ""
+
 	clientId := flag.String("client", "", "Client is an unique key used to identify the client on server")
+	httpUrl := flag.String("http", defaultStandaloneMessage, "Standalone HTTP URL")
 	proxyUrl := flag.String("proxy", ":"+defaultProxyPort, "URL to Proxy")
-	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "Server Tunnel URL") // TODO: If no one is set, the sniffer will run locally
+	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "Server Tunnel URL")
 	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Provide a customized URL when proxying URL")
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Dashboard Port")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
@@ -90,8 +97,13 @@ func ReadConfig() *Config {
 		customUrl = proxyUrl
 	}
 
+	if *httpUrl == defaultStandaloneMessage {
+		httpUrl = &emptyStr
+	}
+
 	config = &Config{
 		ClientId:        *clientId,
+		HttpUrl:         util.RawUrlToUrl(*httpUrl, "http", defaultStandalonePort),
 		ProxyUrl:        util.RawUrlToUrl(*proxyUrl, "http", ""),
 		TunnelUrl:       util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
 		CustomUrl:       util.RawUrlToUrl(*customUrl, "http", ""),
@@ -100,6 +112,7 @@ func ReadConfig() *Config {
 		tlsSkipVerify:   *tlsSkipVerify,
 		tlsCa:           *tlsCa,
 		EnableTLSTunnel: true,
+		IsStandalone:    httpUrl != &emptyStr,
 		isRead:          true,
 	}
 

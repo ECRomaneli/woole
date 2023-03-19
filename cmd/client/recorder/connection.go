@@ -6,6 +6,8 @@ import (
 	"math"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"time"
 	"woole/cmd/client/app"
 	pb "woole/shared/payload"
 
@@ -15,9 +17,21 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Start() {
-	proxyHandler = createProxyHandler()
-	startTunnelStream()
+func startConnectionWithServer(onConnectionStart func(pb.TunnelClient, context.Context, context.CancelFunc) error) {
+	for {
+		// Establish tunnel connection and retrieve request/response stream
+		client, ctx, cancelCtx, err := connectClient(config.EnableTLSTunnel)
+
+		if err != nil {
+			recoverOrExit(err)
+			continue
+		}
+
+		err = onConnectionStart(client, ctx, cancelCtx)
+		if err != nil {
+			recoverOrExit(err)
+		}
+	}
 }
 
 func createProxyHandler() http.HandlerFunc {
@@ -37,7 +51,7 @@ func createProxyHandler() http.HandlerFunc {
 	}
 }
 
-func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Context, context.CancelFunc) {
+func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Context, context.CancelFunc, error) {
 	// Opts
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
@@ -46,13 +60,15 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 	if enableTransportCredentials {
 		opts = append(opts, grpc.WithTransportCredentials(config.GetTransportCredentials()))
 	} else {
-		log.Warn("Trying to connect with tunnel without TLS Credentials...")
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	// Dial server
 	conn, err := grpc.Dial(config.TunnelUrl.Host, opts...)
-	exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
+	if err != nil {
+		conn.Close()
+		return nil, nil, nil, err
+	}
 
 	// Create a cancelable context
 	ctx, cancel := context.WithCancel(context.Background())
@@ -64,19 +80,46 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 		session, err := client.RequestSession(ctx, &pb.Handshake{ClientId: config.ClientId})
 
 		// If unavailable, retry without credentials
-		if status.Code(err) == codes.Unavailable && enableTransportCredentials {
+		if err != nil {
 			cancel()
 			conn.Close()
-			config.EnableTLSTunnel = false
-			return connectClient(config.EnableTLSTunnel)
+
+			if status.Code(err) == codes.Unavailable && enableTransportCredentials {
+				config.EnableTLSTunnel = false
+				log.Warn("Trying to connect with tunnel without TLS Credentials...")
+				return connectClient(config.EnableTLSTunnel)
+			}
+
+			return nil, nil, nil, err
 		}
 
-		exitIfNotNil("Failed to connect with tunnel on "+config.TunnelUrl.String(), err)
 		app.SetSession(session)
 	}
 
-	return client, ctx, func() {
-		cancel()
-		conn.Close()
+	return client, ctx, func() { cancel(); conn.Close() }, nil
+}
+
+func recoverOrExit(err error) {
+	errStatus, ok := status.FromError(err)
+
+	if ok && isRecoverable(err) {
+		log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
+		log.Error("[", config.TunnelUrl.String(), "] Retrying in 5 seconds...")
+		<-time.After(5 * time.Second)
+	} else {
+		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
+		fmt.Println("Failed to connect with tunnel on " + config.TunnelUrl.String())
+		os.Exit(1)
+	}
+}
+
+func isRecoverable(err error) bool {
+	switch status.Code(err) {
+
+	// e.g. server restart, load balance, etc
+	case codes.Unavailable:
+		return true
+	default:
+		return false
 	}
 }

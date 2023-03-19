@@ -55,6 +55,12 @@ message Response {
     int64 elapsed = 6;
 }
 
+message Record {
+    string id = 1;
+    Request request = 2;
+    Response response = 3;
+}
+
 message StringList {
     repeated string Val = 1;
 }

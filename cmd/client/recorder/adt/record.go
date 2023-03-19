@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-	"time"
 
-	"woole/shared/payload"
+	pb "woole/shared/payload"
 	"woole/shared/util/channel"
 	"woole/shared/util/sequence"
 	"woole/shared/util/signal"
@@ -15,10 +14,8 @@ import (
 var seqId sequence.Seq
 
 type Record struct {
-	Id       string            `json:"id"`
-	Request  *payload.Request  `json:"request"`
-	Response *payload.Response `json:"response"`
-	Elapsed  time.Duration     `json:"elapsed"`
+	pb.Record
+	ClientId string
 }
 
 type Records struct {
@@ -35,12 +32,13 @@ func NewRecords(maxRecords uint) *Records {
 	return records
 }
 
-func NewRecord(req *payload.Request) *Record {
-	return &Record{Id: "R" + seqId.NextString(), Request: req}
+func NewRecord(req *pb.Request) *Record {
+	id := seqId.NextString()
+	return &Record{ClientId: id, Record: pb.Record{Id: id + "C", Request: req}}
 }
 
-func NewRecordWithId(id string, req *payload.Request) *Record {
-	return &Record{Id: id, Request: req}
+func NewRecordWithId(id string, req *pb.Request) *Record {
+	return &Record{ClientId: seqId.NextString(), Record: pb.Record{Id: id, Request: req}}
 }
 
 func (recs *Records) Add(rec *Record) {
@@ -69,19 +67,6 @@ func (recs *Records) FindById(id string) *Record {
 	return nil
 }
 
-func (recs *Records) GetLast() *Record {
-	recs.mu.RLock()
-	defer recs.mu.RUnlock()
-
-	lastIndex := len(recs.records) - 1
-
-	if lastIndex < 0 {
-		return nil
-	}
-
-	return recs.records[lastIndex]
-}
-
 func (recs *Records) RemoveAll() {
 	recs.mu.Lock()
 	defer recs.mu.Unlock()
@@ -99,37 +84,39 @@ func (recs *Records) Each(iterator func(rec *Record)) {
 	}
 }
 
-func (recs *Records) Updated() bool {
-	<-recs.signal.Receive()
-	return true
-}
-
-func (recs *Records) ThinClone() *[]Record {
+func (recs *Records) ThinCloneWithoutResponseBody() *[]Record {
 	slice := []Record{}
 
 	recs.Each(func(r *Record) {
-		slice = append(slice, *r.ThinClone())
+		slice = append(slice, *r.ThinCloneWithoutResponseBody())
 	})
 
 	return &slice
 }
 
-func (rec *Record) ThinClone() *Record {
-	clone := &Record{Request: &payload.Request{}, Response: &payload.Response{}}
-
-	clone.Id = rec.Id
-	clone.Request.Url = rec.Request.Url
-	clone.Request.Path = rec.Request.Path
-	clone.Request.Method = rec.Request.Method
-	clone.Request.Proto = rec.Request.Proto
-	clone.Request.Header = rec.Request.Header
-	clone.Request.Body = rec.Request.Body
-	clone.Response.Code = rec.Response.Code
-	clone.Response.Proto = rec.Response.Proto
-	clone.Response.Header = rec.Response.Header
-	clone.Elapsed = rec.Elapsed
-
-	return clone
+func (rec *Record) ThinCloneWithoutResponseBody() *Record {
+	return &Record{
+		Record: pb.Record{
+			Id: rec.Id,
+			Request: &pb.Request{
+				Proto:      rec.Request.Proto,
+				Path:       rec.Request.Path,
+				Method:     rec.Request.Method,
+				RemoteAddr: rec.Request.RemoteAddr,
+				Url:        rec.Request.Url,
+				Header:     rec.Request.Header,
+				Body:       rec.Request.Body,
+			},
+			Response: &pb.Response{
+				Proto:   rec.Response.Proto,
+				Status:  rec.Response.Status,
+				Code:    rec.Response.Code,
+				Header:  rec.Response.Header,
+				Elapsed: rec.Response.Elapsed,
+				/*Body: rec.Response.Body, Skipped */
+			},
+		},
+	}
 }
 
 func (rec *Record) ToString(maxPathLength int) string {
@@ -148,5 +135,5 @@ func (rec *Record) ToString(maxPathLength int) string {
 		return str
 	}
 
-	return str + fmt.Sprintf(" %d - %dms", rec.Response.Code, rec.Elapsed)
+	return str + fmt.Sprintf(" %d - %dms", rec.Response.Code, rec.Response.Elapsed)
 }
