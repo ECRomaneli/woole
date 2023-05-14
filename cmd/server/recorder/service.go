@@ -47,8 +47,11 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 func sendRequests(stream pb.Tunnel_TunnelServer, client *adt.Client) {
 	for record := range client.GetNewRecords() {
 		err := stream.Send(&pb.ServerMessage{
-			RecordId: record.Id,
-			Request:  record.Request,
+			Record: &pb.Record{
+				Id:      record.Id,
+				Request: record.Request,
+				Step:    pb.Step_SEND_REQUEST,
+			},
 		})
 
 		if !handleGRPCErrors(err) {
@@ -65,8 +68,13 @@ func receiveResponses(stream pb.Tunnel_TunnelServer, client *adt.Client) {
 			return
 		}
 
+		if tunnelRes.Record.Step != pb.Step_RECEIVE_RESPONSE {
+			log.Error("Wrong record step")
+			return
+		}
+
 		if err == nil {
-			client.SetRecordResponse(tunnelRes.RecordId, tunnelRes.Response)
+			client.SetRecordResponse(tunnelRes.Record.Id, tunnelRes.Record.Response)
 		}
 
 	}

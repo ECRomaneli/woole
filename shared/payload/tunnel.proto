@@ -7,23 +7,22 @@ package payload;
 service Tunnel {
     rpc RequestSession(Handshake) returns (Session) {}
     rpc Tunnel(stream ClientMessage) returns (stream ServerMessage) {}
+    rpc TestConn(Empty) returns (Empty) {}
 }
 
 message ServerMessage {
-    string recordId = 1;
-    Request request = 2;
-    Response response = 3;
+    Record record = 1;
 }
 
 message ClientMessage {
-    string recordId = 1;
-    Response response = 2;
-    Session session = 3;
+    Record record = 1;
+    Session session = 2;
 }
 
 message Handshake {
     string clientId = 1;
-    string allowReaders = 2;
+    bytes clientKey = 2;
+    string allowReaders = 3;
 }
 
 message Session {
@@ -59,8 +58,17 @@ message Record {
     string id = 1;
     Request request = 2;
     Response response = 3;
+    Step step = 4;
 }
 
 message StringList {
     repeated string Val = 1;
+}
+
+message Empty {}
+
+enum Step {
+    SEND_REQUEST = 0;
+    RECEIVE_RESPONSE = 1;
+    SEND_SERVER_RESPONSE = 2;
 }

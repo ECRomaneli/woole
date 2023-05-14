@@ -76,6 +76,11 @@ func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
 	return nil
 }
 
+// gRPC = TestConn()
+func (_t *Tunnel) TestConn(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
+	return new(pb.Empty), nil
+}
+
 func hasClient(clientId string) (string, error) {
 	if len(clientId) == 0 {
 		return clientId, webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification")

@@ -72,31 +72,33 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 
 	// Create a cancelable context
 	ctx, cancel := context.WithCancel(context.Background())
+	cancelFn := func() { cancel(); conn.Close() }
 
+	// Test connection and retry without credentials if needed
 	client := pb.NewTunnelClient(conn)
+	_, err = client.TestConn(ctx, new(pb.Empty))
+
+	if err != nil {
+		cancelFn()
+		if status.Code(err) == codes.Unavailable && enableTransportCredentials {
+			config.EnableTLSTunnel = false
+			return connectClient(config.EnableTLSTunnel)
+		}
+		return nil, nil, nil, err
+	}
 
 	if !app.HasSession() {
 		// Send handshake with client id (if exists)
 		session, err := client.RequestSession(ctx, &pb.Handshake{ClientId: config.ClientId})
 
-		// If unavailable, retry without credentials
 		if err != nil {
-			cancel()
-			conn.Close()
-
-			if status.Code(err) == codes.Unavailable && enableTransportCredentials {
-				config.EnableTLSTunnel = false
-				log.Warn("Trying to connect with tunnel without TLS Credentials...")
-				return connectClient(config.EnableTLSTunnel)
-			}
-
 			return nil, nil, nil, err
 		}
 
 		app.SetSession(session)
 	}
 
-	return client, ctx, func() { cancel(); conn.Close() }, nil
+	return client, ctx, cancelFn, nil
 }
 
 func recoverOrExit(err error) {
@@ -115,7 +117,6 @@ func recoverOrExit(err error) {
 
 func isRecoverable(err error) bool {
 	switch status.Code(err) {
-
 	// e.g. server restart, load balance, etc
 	case codes.Unavailable:
 		return true

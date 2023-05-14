@@ -14,7 +14,7 @@ import (
 var seqId sequence.Seq
 
 type Record struct {
-	pb.Record
+	*pb.Record
 	ClientId string
 }
 
@@ -34,11 +34,11 @@ func NewRecords(maxRecords uint) *Records {
 
 func NewRecord(req *pb.Request) *Record {
 	id := seqId.NextString()
-	return &Record{ClientId: id, Record: pb.Record{Id: id + "C", Request: req}}
+	return &Record{ClientId: id, Record: &pb.Record{Id: id + "C", Request: req}}
 }
 
-func NewRecordWithId(id string, req *pb.Request) *Record {
-	return &Record{ClientId: seqId.NextString(), Record: pb.Record{Id: id, Request: req}}
+func EnhanceRecord(rec *pb.Record) *Record {
+	return &Record{ClientId: seqId.NextString(), Record: rec}
 }
 
 func (recs *Records) Add(rec *Record) {
@@ -96,7 +96,7 @@ func (recs *Records) ThinCloneWithoutResponseBody() *[]Record {
 
 func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 	return &Record{
-		Record: pb.Record{
+		Record: &pb.Record{
 			Id: rec.Id,
 			Request: &pb.Request{
 				Proto:      rec.Request.Proto,

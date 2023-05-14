@@ -50,24 +50,28 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 			continue
 		}
 
-		if serverMsg.Response == nil {
-			go handleServerRequest(stream, serverMsg.RecordId, serverMsg.Request)
+		clientRecord := adt.EnhanceRecord(serverMsg.Record)
+
+		if serverMsg.Record.Step == pb.Step_SEND_REQUEST {
+			go handleServerRequest(stream, clientRecord)
+		} else if serverMsg.Record.Step == pb.Step_SEND_SERVER_RESPONSE {
+			go handleServerResponse(stream, clientRecord)
 		} else {
-			go handleServerResponse(stream, serverMsg.RecordId, serverMsg.Response)
+			log.Error("Record Step Not Allowed")
 		}
 	}
 }
 
-func handleServerRequest(stream pb.Tunnel_TunnelClient, recordId string, request *pb.Request) {
-	record := adt.NewRecordWithId(recordId, request)
+func handleServerRequest(stream pb.Tunnel_TunnelClient, record *adt.Record) {
+	record.Step = pb.Step_RECEIVE_RESPONSE
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
+
 	DoRequest(record)
 	handleRedirections(record)
 
 	err := stream.Send(&pb.ClientMessage{
-		RecordId: record.Id,
-		Response: record.Response,
+		Record: record.Record,
 	})
 
 	if log.IsInfoEnabled() {
@@ -75,12 +79,12 @@ func handleServerRequest(stream pb.Tunnel_TunnelClient, recordId string, request
 	}
 
 	if !handleGRPCErrors(err) {
-		log.Error("Failed to send response for Record[", recordId, "].", err)
+		log.Error("Failed to send response for Record[", record.Id, "].", err)
 	}
 }
 
-func handleServerResponse(stream pb.Tunnel_TunnelClient, recordId string, response *pb.Response) {
-
+func handleServerResponse(stream pb.Tunnel_TunnelClient, record *adt.Record) {
+	log.Debug("Received a STEP.RECEIVE_SERVER_RESPONSE")
 }
 
 func DoRequest(record *adt.Record) {

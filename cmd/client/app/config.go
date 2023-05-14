@@ -29,6 +29,7 @@ type Config struct {
 	tlsSkipVerify   bool
 	tlsCa           string
 	EnableTLSTunnel bool
+	AllowReaders    bool
 	IsStandalone    bool
 	isRead          bool
 }
@@ -83,6 +84,7 @@ func ReadConfig() *Config {
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Dashboard Port")
 	maxRecords := flag.Int("records", 16, "Max Requests to Record")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
+	allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Do not validate the integrity of the Server's certificate")
 	tlsCa := flag.String("tls-ca", "", "TLS CA file path. Only for self-signed certificates")
 
@@ -112,6 +114,7 @@ func ReadConfig() *Config {
 		tlsSkipVerify:   *tlsSkipVerify,
 		tlsCa:           *tlsCa,
 		EnableTLSTunnel: true,
+		AllowReaders:    *allowReaders,
 		IsStandalone:    httpUrl != &emptyStr,
 		isRead:          true,
 	}
