@@ -27,7 +27,7 @@ func (cm *ClientManager) Register(clientId string, bearer []byte) *Client {
 }
 
 func (cm *ClientManager) Deregister(clientId string) {
-	close(cm.clients[clientId].recordChannel)
+	close(cm.clients[clientId].NewRecordChannel)
 	cm.put(clientId, nil)
 }
 

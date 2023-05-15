@@ -45,7 +45,7 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 }
 
 func sendRequests(stream pb.Tunnel_TunnelServer, client *adt.Client) {
-	for record := range client.GetNewRecords() {
+	for record := range client.NewRecordChannel {
 		err := stream.Send(&pb.ServerMessage{
 			Record: &pb.Record{
 				Id:      record.Id,

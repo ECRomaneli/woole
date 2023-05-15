@@ -8,35 +8,31 @@ import (
 )
 
 type Client struct {
-	mu            sync.Mutex
-	Bearer        []byte
-	Id            string
-	seq           sequence.Seq
-	records       map[string]*Record
-	recordChannel chan *Record
-	IdleTimeout   *time.Timer
+	mu               sync.Mutex
+	Bearer           []byte
+	Id               string
+	seq              sequence.Seq
+	records          map[string]*Record
+	NewRecordChannel chan *Record
+	IdleTimeout      *time.Timer
 }
 
 func NewClient(clientId string, bearer []byte) *Client {
 	client := &Client{
-		Id:            clientId,
-		recordChannel: make(chan *Record, 32),
-		records:       make(map[string]*Record),
-		Bearer:        bearer,
-		IdleTimeout:   time.NewTimer(time.Minute),
+		Id:               clientId,
+		NewRecordChannel: make(chan *Record, 32),
+		records:          make(map[string]*Record),
+		Bearer:           bearer,
+		IdleTimeout:      time.NewTimer(time.Minute),
 	}
 	client.Connected()
 	return client
 }
 
-func (cl *Client) GetNewRecords() chan *Record {
-	return cl.recordChannel
-}
-
 func (cl *Client) AddRecord(rec *Record) (id string) {
 	rec.Id = cl.seq.NextString()
 	cl.putRecord(rec.Id, rec)
-	cl.recordChannel <- rec
+	cl.NewRecordChannel <- rec
 	return rec.Id
 }
 
