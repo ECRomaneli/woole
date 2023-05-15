@@ -5,24 +5,25 @@ option go_package = "woole/payload";
 package payload;
 
 service Tunnel {
-    rpc RequestSession(Handshake) returns (Session) {}
     rpc Tunnel(stream ClientMessage) returns (stream ServerMessage) {}
     rpc TestConn(Empty) returns (Empty) {}
 }
 
 message ServerMessage {
     Record record = 1;
+    Session session = 2;
 }
 
 message ClientMessage {
     Record record = 1;
-    Session session = 2;
+    Handshake handshake = 2;
 }
 
 message Handshake {
     string clientId = 1;
     bytes clientKey = 2;
-    string allowReaders = 3;
+    bool allowReaders = 3;
+    bytes bearer = 4;
 }
 
 message Session {

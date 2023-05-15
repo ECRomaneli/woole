@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/sha512"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"woole/shared/constants"
 	"woole/shared/util"
+	"woole/shared/util/rand"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
@@ -27,6 +29,7 @@ type Config struct {
 	TunnelRequestSize      int
 	TunnelResponseSize     int
 	TunnelResponseTimeout  int
+	serverKey              []byte
 	isRead                 bool
 }
 
@@ -58,6 +61,7 @@ func ReadConfig() *Config {
 	httpsPort := flag.Int("https", util.GetDefaultPort("https"), "HTTPS Port")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: Use "+ClientToken+".mysite.com to vary the subdomain as client ID")
+	serverKey := flag.String("key", "", "Key used to hash the bearer")
 	tlsCert := flag.String("tls-cert", "", "TLS cert/fullchain file path")
 	tlsKey := flag.String("tls-key", "", "TLS key/privkey file path")
 	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Tunnel Port")
@@ -74,6 +78,7 @@ func ReadConfig() *Config {
 		HttpPort:               strconv.Itoa(*httpPort),
 		HttpsPort:              strconv.Itoa(*httpsPort),
 		HostnamePattern:        *hostnamePattern,
+		serverKey:              []byte(*serverKey),
 		TlsCert:                *tlsCert,
 		TlsKey:                 *tlsKey,
 		TunnelPort:             strconv.Itoa(*tunnelPort),
@@ -86,6 +91,10 @@ func ReadConfig() *Config {
 
 	if !strings.Contains(config.HostnamePattern, ClientToken) {
 		panic("Hostname pattern MUST has " + ClientToken)
+	}
+
+	if len(config.serverKey) == 0 {
+		config.serverKey = rand.RandSha512("")
 	}
 
 	if config.TunnelRequestSize == 0 {
@@ -121,4 +130,9 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	}
 
 	return credentials.NewTLS(tlsConfig)
+}
+
+func GenerateBearer(clientKey []byte) []byte {
+	hash := sha512.Sum512(append(config.serverKey, clientKey...))
+	return hash[:]
 }

@@ -17,7 +17,7 @@ var proxyHandler = createProxyHandler()
 
 func Start() {
 	if config.IsStandalone {
-		startStandalone(onTunnelStart)
+		startStandalone()
 	} else {
 		startConnectionWithServer(onTunnelStart)
 	}

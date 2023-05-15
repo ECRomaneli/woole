@@ -22,7 +22,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TunnelClient interface {
-	RequestSession(ctx context.Context, in *Handshake, opts ...grpc.CallOption) (*Session, error)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tunnel_TunnelClient, error)
 	TestConn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -33,15 +32,6 @@ type tunnelClient struct {
 
 func NewTunnelClient(cc grpc.ClientConnInterface) TunnelClient {
 	return &tunnelClient{cc}
-}
-
-func (c *tunnelClient) RequestSession(ctx context.Context, in *Handshake, opts ...grpc.CallOption) (*Session, error) {
-	out := new(Session)
-	err := c.cc.Invoke(ctx, "/payload.Tunnel/RequestSession", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *tunnelClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tunnel_TunnelClient, error) {
@@ -88,7 +78,6 @@ func (c *tunnelClient) TestConn(ctx context.Context, in *Empty, opts ...grpc.Cal
 // All implementations must embed UnimplementedTunnelServer
 // for forward compatibility
 type TunnelServer interface {
-	RequestSession(context.Context, *Handshake) (*Session, error)
 	Tunnel(Tunnel_TunnelServer) error
 	TestConn(context.Context, *Empty) (*Empty, error)
 	mustEmbedUnimplementedTunnelServer()
@@ -98,9 +87,6 @@ type TunnelServer interface {
 type UnimplementedTunnelServer struct {
 }
 
-func (UnimplementedTunnelServer) RequestSession(context.Context, *Handshake) (*Session, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestSession not implemented")
-}
 func (UnimplementedTunnelServer) Tunnel(Tunnel_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
 }
@@ -118,24 +104,6 @@ type UnsafeTunnelServer interface {
 
 func RegisterTunnelServer(s grpc.ServiceRegistrar, srv TunnelServer) {
 	s.RegisterService(&Tunnel_ServiceDesc, srv)
-}
-
-func _Tunnel_RequestSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Handshake)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TunnelServer).RequestSession(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/payload.Tunnel/RequestSession",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TunnelServer).RequestSession(ctx, req.(*Handshake))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Tunnel_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -189,10 +157,6 @@ var Tunnel_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "payload.Tunnel",
 	HandlerType: (*TunnelServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "RequestSession",
-			Handler:    _Tunnel_RequestSession_Handler,
-		},
 		{
 			MethodName: "TestConn",
 			Handler:    _Tunnel_TestConn_Handler,

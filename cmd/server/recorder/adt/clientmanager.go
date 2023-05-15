@@ -5,8 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"sync"
-	pb "woole/shared/payload"
-	"woole/shared/util/hash"
+	"woole/shared/util/rand"
 )
 
 type ClientManager struct {
@@ -18,10 +17,10 @@ func NewClientManager() *ClientManager {
 	return &ClientManager{clients: make(map[string]*Client)}
 }
 
-func (cm *ClientManager) Register(clientId string) *Client {
+func (cm *ClientManager) Register(clientId string, bearer []byte) *Client {
 	clientId = cm.generateClientId(clientId)
 
-	client := NewClient(clientId)
+	client := NewClient(clientId, bearer)
 	cm.put(clientId, client)
 
 	return client
@@ -32,15 +31,25 @@ func (cm *ClientManager) Deregister(clientId string) {
 	cm.put(clientId, nil)
 }
 
-func (cm *ClientManager) RecoverSession(session *pb.Session) (*Client, error) {
-	client := cm.Get(session.ClientId)
+func (cm *ClientManager) DeregisterIfIdle(clientId string, callback func()) {
+	client := cm.clients[clientId]
+
+	go func() {
+		<-client.IdleTimeout.C
+		cm.Deregister(client.Id)
+		callback()
+	}()
+}
+
+func (cm *ClientManager) RecoverSession(clientId string, bearer []byte) (*Client, error) {
+	client := cm.Get(clientId)
 
 	if client == nil {
-		return nil, errors.New("The client '" + session.ClientId + "' is not in use")
+		return nil, nil
 	}
 
-	if !bytes.Equal(client.Bearer, session.Bearer) {
-		return nil, errors.New("Failed to authenticate to client '" + session.ClientId + "'")
+	if !bytes.Equal(client.Bearer, bearer) {
+		return nil, errors.New("failed to authenticate the client")
 	}
 
 	return client, nil
@@ -57,12 +66,12 @@ func (cm *ClientManager) Exists(clientId string) bool {
 func (cm *ClientManager) generateClientId(clientId string) string {
 	hasClientId := clientId != ""
 
-	for clientId == "" || cm.Exists(clientId) {
-		if hasClientId {
-			clientId = clientId + "-" + hex.EncodeToString(hash.RandMD5(clientId))[:5]
-		} else {
-			clientId = hex.EncodeToString(hash.RandMD5(""))[:8]
-		}
+	if !hasClientId {
+		return hex.EncodeToString(rand.RandMD5(""))[:8]
+	}
+
+	if cm.Exists(clientId) {
+		return clientId + "-" + hex.EncodeToString(rand.RandMD5(clientId))[:5]
 	}
 
 	return clientId

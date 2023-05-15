@@ -24,7 +24,7 @@ func startDashboard() {
 }
 
 func printInfo() {
-	session := app.GetSession()
+	session := app.GetSessionWhenAvailable()
 
 	fmt.Println()
 	fmt.Println("===============")

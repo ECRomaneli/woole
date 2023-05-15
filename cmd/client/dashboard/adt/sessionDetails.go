@@ -14,18 +14,22 @@ type SessionDetails struct {
 	MaxRecords int    `json:"maxRecords"`
 }
 
-func (session *SessionDetails) FromConfig(config *app.Config) *SessionDetails {
-	auth := app.GetSession()
+func NewSessionDetails() *SessionDetails {
+	session := app.GetSessionWhenAvailable()
+	config := app.ReadConfig()
 
-	session.ClientID = auth.ClientId
-	session.HTTP = auth.HttpUrl()
-	session.HTTPS = auth.HttpsUrl()
-	session.Proxying = config.CustomUrl.String()
-	session.Dashboard = config.DashboardUrl.String()
-	if !config.IsStandalone {
-		session.Tunnel = config.TunnelUrl.String()
+	sessionDetails := &SessionDetails{
+		ClientID:   session.ClientId,
+		HTTP:       session.HttpUrl(),
+		HTTPS:      session.HttpsUrl(),
+		Proxying:   config.CustomUrl.String(),
+		Dashboard:  config.DashboardUrl.String(),
+		MaxRecords: config.MaxRecords,
 	}
-	session.MaxRecords = config.MaxRecords
 
-	return session
+	if !config.IsStandalone {
+		sessionDetails.Tunnel = config.TunnelUrl.String()
+	}
+
+	return sessionDetails
 }

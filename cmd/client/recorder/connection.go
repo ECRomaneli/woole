@@ -8,7 +8,6 @@ import (
 	"net/http/httputil"
 	"os"
 	"time"
-	"woole/cmd/client/app"
 	pb "woole/shared/payload"
 
 	"google.golang.org/grpc"
@@ -85,17 +84,6 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 			return connectClient(config.EnableTLSTunnel)
 		}
 		return nil, nil, nil, err
-	}
-
-	if !app.HasSession() {
-		// Send handshake with client id (if exists)
-		session, err := client.RequestSession(ctx, &pb.Handshake{ClientId: config.ClientId})
-
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		app.SetSession(session)
 	}
 
 	return client, ctx, cancelFn, nil

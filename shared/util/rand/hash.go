@@ -1,4 +1,4 @@
-package hash
+package rand
 
 import (
 	"crypto/md5"

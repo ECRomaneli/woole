@@ -55,7 +55,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 
 	res.FlushEvent(&webserver.Event{
 		Name: "session",
-		Data: *(&adt.SessionDetails{}).FromConfig(config),
+		Data: adt.NewSessionDetails(),
 	})
 
 	res.FlushEvent(&webserver.Event{

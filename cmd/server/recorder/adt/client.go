@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 	pb "woole/shared/payload"
-	"woole/shared/util/hash"
 	"woole/shared/util/sequence"
 )
 
@@ -18,14 +17,16 @@ type Client struct {
 	IdleTimeout   *time.Timer
 }
 
-func NewClient(id string) *Client {
-	this := &Client{
-		Id:            id,
+func NewClient(clientId string, bearer []byte) *Client {
+	client := &Client{
+		Id:            clientId,
 		recordChannel: make(chan *Record, 32),
 		records:       make(map[string]*Record),
-		Bearer:        hash.RandSha512(id),
+		Bearer:        bearer,
+		IdleTimeout:   time.NewTimer(time.Minute),
 	}
-	return this
+	client.Connected()
+	return client
 }
 
 func (cl *Client) GetNewRecords() chan *Record {
@@ -57,18 +58,12 @@ func (cl *Client) SetRecordResponse(recordId string, response *pb.Response) {
 	record.OnResponse.SendLast()
 }
 
-func (cl *Client) DisconnectAfter(duration time.Duration) {
-	if cl.IdleTimeout == nil {
-		cl.IdleTimeout = time.NewTimer(duration)
-	} else {
-		cl.IdleTimeout.Reset(duration)
-	}
+func (cl *Client) DisconnectAfter(duration time.Duration) bool {
+	return cl.IdleTimeout.Reset(duration)
 }
 
-func (cl *Client) Connected() {
-	if cl.IdleTimeout != nil {
-		cl.IdleTimeout.Stop()
-	}
+func (cl *Client) Connected() bool {
+	return cl.IdleTimeout.Stop()
 }
 
 func (cl *Client) putRecord(recordId string, record *Record) {

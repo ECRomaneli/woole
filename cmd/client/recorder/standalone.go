@@ -1,7 +1,6 @@
 package recorder
 
 import (
-	"context"
 	"math"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder/adt"
@@ -10,7 +9,7 @@ import (
 	"github.com/ecromaneli-golang/http/webserver"
 )
 
-func startStandalone(onConnectionStart func(pb.TunnelClient, context.Context, context.CancelFunc) error) {
+func startStandalone() {
 	app.SetSession(&pb.Session{
 		ClientId:        "standalone",
 		HttpPort:        config.HttpUrl.Port(),

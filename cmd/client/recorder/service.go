@@ -37,7 +37,16 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 		return err
 	}
 
-	stream.Send(&pb.ClientMessage{Session: app.GetSession()})
+	// Send the handshake
+	stream.Send(&pb.ClientMessage{Handshake: config.GetHandshake()})
+
+	// Receive the session
+	serverMsg, err := stream.Recv()
+	if !handleGRPCErrors(err) {
+		return err
+	}
+
+	app.SetSession(serverMsg.Session)
 
 	// Listen for requests and send responses asynchronously
 	for {

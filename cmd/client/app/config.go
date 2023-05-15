@@ -11,6 +11,7 @@ import (
 	"woole/shared/constants"
 	pb "woole/shared/payload"
 	"woole/shared/util"
+	"woole/shared/util/rand"
 	"woole/shared/util/signal"
 
 	"github.com/ecromaneli-golang/console/logger"
@@ -20,6 +21,7 @@ import (
 // Config has all the configuration parsed from the command line.
 type Config struct {
 	ClientId        string
+	ClientKey       []byte
 	ProxyUrl        *url.URL
 	HttpUrl         *url.URL
 	TunnelUrl       *url.URL
@@ -54,14 +56,16 @@ func HasSession() bool {
 }
 
 // If no session was provided yet, the routine will wait for a session
-func GetSession() *pb.Session {
+func GetSessionWhenAvailable() *pb.Session {
 	<-sessionInitiated.Receive()
 	return session
 }
 
 func SetSession(serverSession *pb.Session) {
+	if !HasSession() {
+		defer sessionInitiated.SendLast()
+	}
 	session = serverSession
-	sessionInitiated.SendLast()
 }
 
 func ReadConfig() *Config {
@@ -105,6 +109,7 @@ func ReadConfig() *Config {
 
 	config = &Config{
 		ClientId:        *clientId,
+		ClientKey:       rand.RandMD5(*clientId),
 		HttpUrl:         util.RawUrlToUrl(*httpUrl, "http", defaultStandalonePort),
 		ProxyUrl:        util.RawUrlToUrl(*proxyUrl, "http", ""),
 		TunnelUrl:       util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
@@ -141,6 +146,15 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	}
 
 	return credentials.NewTLS(tlsConfig)
+}
+
+func (cfg *Config) GetHandshake() *pb.Handshake {
+	return &pb.Handshake{
+		ClientId:     cfg.ClientId,
+		ClientKey:    cfg.ClientKey,
+		AllowReaders: cfg.AllowReaders,
+		Bearer:       session.Bearer,
+	}
 }
 
 func PrintConfig() {

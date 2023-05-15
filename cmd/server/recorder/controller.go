@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+	"woole/cmd/server/app"
+	"woole/cmd/server/recorder/adt"
 	pb "woole/shared/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
@@ -21,45 +23,29 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	logRecord(clientId, record)
 }
 
-// gRPC = RequestSession(*Handshake) *Session
-func (_t *Tunnel) RequestSession(_ctx context.Context, hs *pb.Handshake) (*pb.Session, error) {
-	client := clientManager.Register(hs.ClientId)
-	session := createSession(client)
-
-	log.Info(client.Id, "- Session Started")
-
-	go func() {
-		<-client.IdleTimeout.C
-		clientManager.Deregister(client.Id)
-		log.Info(client.Id, "- Session Finished")
-	}()
-
-	client.DisconnectAfter(time.Duration(config.TunnelReconnectTimeout+1000) * time.Millisecond)
-	return session, nil
-}
-
 // gRPC = Tunnel(stream *TunnelServer)
 func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
-	// Receive the client ACK
-	ack, err := stream.Recv()
+	// Receive the client handshake
+	hs, err := stream.Recv()
 
 	if !handleGRPCErrors(err) {
 		return err
 	}
 
 	// Recover client session if exists
-	client, err := clientManager.RecoverSession(ack.Session)
+	client, err := getClient(hs.Handshake)
 	if err != nil {
-		log.Error(ack.Session.ClientId, "-", err.Error())
 		return err
 	}
 
 	client.Connected()
-	defer client.DisconnectAfter(time.Duration(config.TunnelReconnectTimeout) * time.Millisecond)
-
-	// Schedule the client to deregister after the tunnel finishes
 	log.Info(client.Id, "- Tunnel Connected")
+
+	defer client.DisconnectAfter(time.Duration(config.TunnelReconnectTimeout) * time.Millisecond)
 	defer log.Info(client.Id, "- Tunnel Disconnected")
+
+	// Send session
+	stream.Send(&pb.ServerMessage{Session: createSession(client)})
 
 	if !handleGRPCErrors(err) {
 		return err
@@ -92,4 +78,36 @@ func hasClient(clientId string) (string, error) {
 	}
 
 	return clientId, nil
+}
+
+func getClient(hs *pb.Handshake) (*adt.Client, error) {
+	// Recover client session if exists
+	client, err := clientManager.RecoverSession(hs.ClientId, hs.Bearer)
+
+	if err != nil {
+		log.Error(hs.ClientId, "-", err.Error())
+		return nil, err
+	}
+
+	if client != nil {
+		return client, nil
+	}
+
+	// Create session
+	client = clientManager.Register(hs.ClientId, app.GenerateBearer(hs.ClientKey))
+
+	if len(hs.Bearer) != 0 {
+		// Verify if old session is equal to the new one
+		client, err = clientManager.RecoverSession(hs.ClientId, hs.Bearer)
+
+		if err != nil {
+			clientManager.Deregister(hs.ClientId)
+			log.Error(hs.ClientId, "-", err.Error())
+			return nil, err
+		}
+	}
+
+	log.Info(client.Id, "- Session Started")
+	clientManager.DeregisterIfIdle(client.Id, func() { log.Info(client.Id, "- Session Finished") })
+	return client, nil
 }
