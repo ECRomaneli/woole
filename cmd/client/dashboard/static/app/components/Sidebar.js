@@ -132,7 +132,7 @@ app.component('SidebarItem', {
             return result + (hasQuery ? ' ' : '')
         },
         isReplay() {
-            return this.record.id.indexOf('R') !== -1
+            return this.record.id.lastIndexOf('C') !== -1
         }
     }
 })

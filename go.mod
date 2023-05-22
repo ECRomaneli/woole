@@ -10,7 +10,6 @@ require (
 )
 
 require (
-	github.com/ecromaneli/webserver v0.1.0
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/brotli/go/cbrotli v0.0.0-20220512075048-9801a2c5d6c6
 	golang.org/x/net v0.5.0 // indirect

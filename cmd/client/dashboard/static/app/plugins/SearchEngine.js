@@ -10,18 +10,18 @@ app.use({
                 BOOLEAN = 'boolean'
 
         app.provide('$search', (objList, queryStr, exclude) => {
-            if (queryStr === void 0 || queryStr === null || queryStr === '') { return objList }
+            if (objList === void 0 || objList === null) { return [] }
+            if (queryStr === void 0 || queryStr === null || queryStr === '') { return objList.slice() }
     
-            queryStr = queryStr.toLowerCase()
-            let tokens = queryStr.split(TOKEN_SEPARATOR)
+            let tokens = queryStr.trim().toLowerCase().split(TOKEN_SEPARATOR)
 
             if (tokens.length === 1) {
-                return objList.filter((obj) => findValue(obj, queryStr, '', exclude))
+                return objList.filter((obj) => findValue(obj, tokens[0], '', exclude))
             }
 
             let query = {
                 key: tokens.shift().trim(), 
-                value: tokens.join(TOKEN_SEPARATOR).trim().toLowerCase(),
+                value: tokens.join(TOKEN_SEPARATOR).trim()
             }
 
             return objList.filter((obj) => findQuery(obj, query, '', exclude))
@@ -53,7 +53,7 @@ app.use({
         }
 
         function match(expectedValue, key, value) {
-            if (key.toLowerCase().indexOf(expectedValue) !== UNKNOWN) { return true }
+            if (key.indexOf(expectedValue) !== UNKNOWN) { return true }
             
             const typeOf = typeof value
 
@@ -64,16 +64,15 @@ app.use({
             return false
         }
         
-        function exclude(nestedKeys, excludeKeys) {
-            return excludeKeys.some((key) => {
-                const indexOf = nestedKeys.indexOf(key)
-                return indexOf !== UNKNOWN && indexOf === nestedKeys.length - key.length
+        function exclude(nestedKeys, excludedKeys) {
+            return excludedKeys.some((key) => {
+                const index = nestedKeys.lastIndexOf(key)
+                return index !== UNKNOWN && index === nestedKeys.length - key.length
             })
         }
         
         function getObjectKeys(obj) {
-            if (!(obj instanceof Object)) { return EMPTY_ARR }
-            return Object.keys(obj)
+            return obj instanceof Object ? Object.keys(obj) : EMPTY_ARR
         }
     }
 })

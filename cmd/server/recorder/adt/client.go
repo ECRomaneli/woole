@@ -8,7 +8,7 @@ import (
 )
 
 type Client struct {
-	mu               sync.Mutex
+	rw               sync.RWMutex
 	Bearer           []byte
 	Id               string
 	seq              sequence.Seq
@@ -25,7 +25,11 @@ func NewClient(clientId string, bearer []byte) *Client {
 		Bearer:           bearer,
 		IdleTimeout:      time.NewTimer(time.Minute),
 	}
-	client.Connected()
+
+	if !client.Connect() {
+		panic("Failed to connect client")
+	}
+
 	return client
 }
 
@@ -37,14 +41,13 @@ func (cl *Client) AddRecord(rec *Record) (id string) {
 }
 
 func (cl *Client) RemoveRecord(recordId string) *Record {
-	data := cl.records[recordId]
+	removedRecord := cl.getRecord(recordId)
 	cl.putRecord(recordId, nil)
-
-	return data
+	return removedRecord
 }
 
 func (cl *Client) SetRecordResponse(recordId string, response *pb.Response) {
-	record := cl.records[recordId]
+	record := cl.getRecord(recordId)
 
 	if record == nil {
 		return
@@ -58,12 +61,18 @@ func (cl *Client) DisconnectAfter(duration time.Duration) bool {
 	return cl.IdleTimeout.Reset(duration)
 }
 
-func (cl *Client) Connected() bool {
+func (cl *Client) Connect() bool {
 	return cl.IdleTimeout.Stop()
 }
 
+func (cl *Client) getRecord(recordId string) *Record {
+	cl.rw.RLock()
+	defer cl.rw.RUnlock()
+	return cl.records[recordId]
+}
+
 func (cl *Client) putRecord(recordId string, record *Record) {
-	cl.mu.Lock()
-	defer cl.mu.Unlock()
+	cl.rw.Lock()
+	defer cl.rw.Unlock()
 	cl.records[recordId] = record
 }

@@ -38,7 +38,7 @@ func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
 		return err
 	}
 
-	client.Connected()
+	client.Connect()
 	log.Info(client.Id, "- Tunnel Connected")
 
 	defer client.DisconnectAfter(time.Duration(config.TunnelReconnectTimeout) * time.Millisecond)
