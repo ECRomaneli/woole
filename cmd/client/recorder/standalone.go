@@ -25,11 +25,9 @@ func startStandalone() {
 
 // REST = [ALL] /**
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	record := adt.NewRecord((&pb.Request{}).FromHTTPRequest(req))
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
-	DoRequest(record)
-	handleRedirections(record)
+	record := adt.NewRecord((&pb.Request{}).FromHTTPRequest(req), adt.DEFAULT)
+	doRequest(record)
+	records.AddRecordAndCallListeners(record)
 
 	res.Headers(record.Response.GetHttpHeader()).Status(int(record.Response.Code)).Write(record.Response.Body)
 

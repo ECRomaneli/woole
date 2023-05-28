@@ -15,6 +15,7 @@ type Client struct {
 	records          map[string]*Record
 	NewRecordChannel chan *Record
 	IdleTimeout      *time.Timer
+	IsIdle           bool
 }
 
 func NewClient(clientId string, bearer []byte) *Client {
@@ -58,10 +59,12 @@ func (cl *Client) SetRecordResponse(recordId string, response *pb.Response) {
 }
 
 func (cl *Client) DisconnectAfter(duration time.Duration) bool {
+	cl.IsIdle = true
 	return cl.IdleTimeout.Reset(duration)
 }
 
 func (cl *Client) Connect() bool {
+	cl.IsIdle = false
 	return cl.IdleTimeout.Stop()
 }
 

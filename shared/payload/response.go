@@ -39,3 +39,15 @@ func (res *Response) SetHttpHeader(header http.Header) {
 		res.Header[key] = &StringList{Val: values}
 	}
 }
+
+func (res *Response) Clone() *Response {
+	clone := &Response{
+		Proto:   res.Proto,
+		Status:  res.Status,
+		Code:    res.Code,
+		Header:  CloneStringMap(res.Header),
+		Body:    res.Body,
+		Elapsed: res.Elapsed,
+	}
+	return clone
+}

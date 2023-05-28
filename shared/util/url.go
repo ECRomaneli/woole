@@ -54,3 +54,25 @@ func RawUrlToUrl(rawUrl string, defaultSchema string, defaultPort string) *url.U
 
 	return url
 }
+
+func ReplaceHostByUsingExampleUrl(rawUrl string, customSchemeHostOpaqueUrl *url.URL) (newUrl *url.URL, ok bool) {
+	parsedUrl, err := url.Parse(rawUrl)
+	if err != nil {
+		return nil, false
+	}
+
+	parsedUrl.Scheme = customSchemeHostOpaqueUrl.Scheme
+	parsedUrl.Host = customSchemeHostOpaqueUrl.Host
+	parsedUrl.Opaque = customSchemeHostOpaqueUrl.Opaque
+
+	return parsedUrl, true
+}
+
+func ReplaceHostByUsingExampleStr(rawUrl string, customSchemeHostOpaque string) (newUrl *url.URL, ok bool) {
+	parsedUrl, err := url.Parse(customSchemeHostOpaque)
+	if err != nil {
+		return nil, false
+	}
+
+	return ReplaceHostByUsingExampleUrl(rawUrl, parsedUrl)
+}

@@ -14,7 +14,7 @@ app.provide('$util', {
 
         // Parse other possible tokens
         for (let token in tokens) {
-            token.indexOf("charset=") === 0 && (content.charset = token.substring(8))
+            token.startsWith("charset=") && (content.charset = token.substring(8))
         }
 
         return content
@@ -24,5 +24,9 @@ app.provide('$util', {
         if (!obj.body) { return }
         obj.b64Body = obj.body
         obj.body = atob(body)
+    },
+
+    parseRequestToCurl(req) {
+
     }
 });

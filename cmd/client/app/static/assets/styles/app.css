@@ -127,7 +127,8 @@ main {
 
 #sidebar {
     margin: 10px 0 10px 10px;
-    width: 320px;
+    /* width: 320px; */
+    width: 280px; 
 }
 
 #body {

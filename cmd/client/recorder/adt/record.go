@@ -13,9 +13,19 @@ import (
 
 var seqId sequence.Seq
 
+type Type string
+
+const (
+	DEFAULT  Type = "default"
+	REPLAY   Type = "replay"
+	REDIRECT Type = "redirect"
+)
+
 type Record struct {
 	*pb.Record
-	ClientId string
+	OriginalResponse *pb.Response
+	ClientId         string `json:"clientId,omitempty"`
+	Type             Type   `json:"type,omitempty"`
 }
 
 type Records struct {
@@ -32,16 +42,16 @@ func NewRecords(maxRecords uint) *Records {
 	return records
 }
 
-func NewRecord(req *pb.Request) *Record {
+func NewRecord(req *pb.Request, recType Type) *Record {
 	id := seqId.NextString()
-	return &Record{ClientId: id, Record: &pb.Record{Id: id + "C", Request: req}}
+	return &Record{ClientId: id, Type: recType, Record: &pb.Record{Id: id, Request: req}}
 }
 
 func EnhanceRecord(rec *pb.Record) *Record {
-	return &Record{ClientId: seqId.NextString(), Record: rec}
+	return &Record{ClientId: seqId.NextString(), Record: rec, Type: DEFAULT}
 }
 
-func (recs *Records) Add(rec *Record) {
+func (recs *Records) AddRecordAndCallListeners(rec *Record) {
 	recs.mu.Lock()
 	defer recs.mu.Unlock()
 
@@ -96,17 +106,11 @@ func (recs *Records) ThinCloneWithoutResponseBody() *[]Record {
 
 func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 	return &Record{
+		ClientId: rec.ClientId,
+		Type:     rec.Type,
 		Record: &pb.Record{
-			Id: rec.Id,
-			Request: &pb.Request{
-				Proto:      rec.Request.Proto,
-				Path:       rec.Request.Path,
-				Method:     rec.Request.Method,
-				RemoteAddr: rec.Request.RemoteAddr,
-				Url:        rec.Request.Url,
-				Header:     rec.Request.Header,
-				Body:       rec.Request.Body,
-			},
+			Id:      rec.Id,
+			Request: rec.Request,
 			Response: &pb.Response{
 				Proto:   rec.Response.Proto,
 				Status:  rec.Response.Status,
@@ -117,6 +121,15 @@ func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 			},
 		},
 	}
+}
+
+func (rec *Record) Clone() *Record {
+	clone := &Record{
+		ClientId: rec.ClientId,
+		Type:     rec.Type,
+		Record:   rec.Record.Clone(),
+	}
+	return clone
 }
 
 func (rec *Record) ToString(maxPathLength int) string {

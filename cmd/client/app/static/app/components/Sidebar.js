@@ -87,7 +87,7 @@ app.component('SidebarItem', {
         <div class="list-group-item list-group-item-action py-3 lh-tight">
             <div class="d-flex w-100 align-items-center justify-content-between">
                 <div class="mb-1">
-                    <div v-if="isReplay()" class="bg-replay-badge replay-badge badge mr-4"><img src="assets/images/play.svg" alt="replay" /></div>
+                    <div v-if="record.isReplay" class="bg-replay-badge replay-badge badge mr-4"><img src="assets/images/play.svg" alt="replay" /></div>
                     <span class="badge mr-4" :class="methodBadge()">{{ request.method }}</span>
                     <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
@@ -130,9 +130,6 @@ app.component('SidebarItem', {
             if (hasQuery) { maxLength -= 4 }
             let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)
             return result + (hasQuery ? ' ' : '')
-        },
-        isReplay() {
-            return this.record.id.lastIndexOf('C') !== -1
         }
     }
 })

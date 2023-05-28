@@ -7,7 +7,8 @@ app.component('CodeEditor', {
                       'html': [ 'html', 'xml' ],
                        'css': [ 'css', 'sass', 'scss' ],
                 'javascript': [ 'javascript', 'js' ],
-                     'json5': [ 'json' ]
+                     'json5': [ 'json' ],
+                        'sh': [ 'shellscript', 'sh' ]
             }
         }
     },

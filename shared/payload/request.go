@@ -77,3 +77,16 @@ func (req *Request) setHttpHeader(header http.Header) {
 		req.Header[key] = &StringList{Val: values}
 	}
 }
+
+func (req *Request) Clone() *Request {
+	clone := &Request{
+		Proto:      req.Proto,
+		Method:     req.Method,
+		Url:        req.Url,
+		Path:       req.Path,
+		Header:     CloneStringMap(req.Header),
+		Body:       req.Body,
+		RemoteAddr: req.RemoteAddr,
+	}
+	return clone
+}

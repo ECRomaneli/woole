@@ -5,6 +5,7 @@ const app = Vue.createApp({
         this.setupStream()
         this.$bus.on('record.replay', this.sendRecord)
         this.$bus.on('record.new', this.sendRecord)
+        this.$bus.on('record.curl', this.createCurl)
     },
 
     methods: {
@@ -18,18 +19,27 @@ const app = Vue.createApp({
             this.selectedRecord = record
         },
 
-        sendRecord(record) {
+        async sendRecord(record) {
             this.$bus.once('stream.update', (rec) => this.$refs.sidebar.show(rec))
             
             if (record.id !== void 0) {
-                fetch('/record/' + record.id + '/replay')
+                await fetch('/record/' + record.id + '/replay')
             } else {
                 this.encodeBody(record.request)
-                fetch('/record/request', {
+                await fetch('/record/request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(record.request)
                 })
+            }
+        },
+
+        async createCurl(record) {
+            let resp = await fetch('/record/' + record.id + '/request/curl')
+            if (resp.ok) {
+                this.$bus.trigger('record.curl.retrieved', await resp.json())
+            } else {
+                this.$bus.trigger('record.curl.retrieved', "Failed to retrieve cURL")
             }
         },
 

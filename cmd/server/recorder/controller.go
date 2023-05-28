@@ -17,6 +17,9 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	panicIfNotNil(err)
 
 	client := clientManager.Get(clientId)
+	if client.IsIdle {
+		panic("Trying to use an idle client")
+	}
 
 	record := getRecordWhenReady(client, req)
 	res.Headers(record.Response.GetHttpHeader()).Status(int(record.Response.Code)).Write(record.Response.Body)

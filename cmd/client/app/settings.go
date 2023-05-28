@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"embed"
 	"flag"
 	"fmt"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"woole/shared/util"
 	"woole/shared/util/rand"
 	"woole/shared/util/signal"
+	"woole/shared/util/template"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
@@ -44,7 +46,11 @@ const (
 	defaultCustomUrlMessage  = "[<scheme>://]<hostname>[:<port>]"
 )
 
+//go:embed static
+var EmbeddedFS embed.FS
+
 var (
+	RedirectTemplate               = template.FromFile(EmbeddedFS, "static/redirect.html")
 	config           *Config       = &Config{isRead: false}
 	session          *pb.Session   = &pb.Session{}
 	sessionInitiated signal.Signal = *signal.New()

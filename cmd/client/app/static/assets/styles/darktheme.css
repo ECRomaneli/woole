@@ -71,12 +71,16 @@ main {
 /* BUTTON =========================== */
 
 .btn {
-    background-color: #30363d !important;
-    color: #c9d1d9 !important;
-    box-shadow: none !important;
-    border-color: #444a50;
+    color: #c9d1d9;
     font-weight: 500;
     border-radius: 6px;
+    background-color: #0d1117;
+    border-color: #30363d;
+    padding: 4px 18px;
+}
+
+.btn:hover {
+    background-color: #161b22 !important;
 }
 
 /* INPUT GROUP ====================== */

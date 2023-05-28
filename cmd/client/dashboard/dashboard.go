@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"woole/cmd/client/app"
@@ -22,24 +20,23 @@ import (
 	"github.com/google/brotli/go/cbrotli"
 )
 
-//go:embed static
-var embeddedFS embed.FS
-
 var records = recorder.GetRecords()
 var config = app.ReadConfig()
 
 func ListenAndServe() error {
+
 	return setupServer().ListenAndServe(":" + config.DashboardUrl.Port())
 }
 
 func setupServer() *webserver.Server {
-	staticFolder, _ := fs.Sub(embeddedFS, "static")
+	staticFolder, _ := fs.Sub(app.EmbeddedFS, "static")
 	server := webserver.NewServerWithFS(http.FS(staticFolder))
 
 	server.FileServer("/")
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
 	server.Get("/record/{id}/replay", replayHandler)
+	server.Get("/record/{id}/request/curl", curlHandler)
 	server.Post("/record/request", newRequestHandler)
 	server.Delete("/record", clearHandler)
 
@@ -78,6 +75,15 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 func replayHandler(req *webserver.Request, res *webserver.Response) {
 	record := records.FindById(req.Param("id"))
 	recorder.Replay(record.Request)
+}
+
+func curlHandler(req *webserver.Request, res *webserver.Response) {
+	record := records.FindById(req.Param("id"))
+	if record == nil {
+		res.Status(http.StatusNotFound).NoBody()
+	} else {
+		res.WriteJSON(dumpCurl(record.Request))
+	}
 }
 
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
@@ -119,21 +125,15 @@ func decompress(contentEncoding string, data []byte) []byte {
 	}()
 
 	if contentEncoding == "gzip" {
-
 		reader, err = gzip.NewReader(bytes.NewReader(data))
 		panicIfNotNil(err)
-
 	} else if contentEncoding == "br" {
-
 		reader = cbrotli.NewReader(bytes.NewReader(data))
-
 	} else if contentEncoding == "deflate" {
-
 		reader = flate.NewReader(bytes.NewReader(data))
-
 	}
 
-	data, err = ioutil.ReadAll(reader)
+	data, err = io.ReadAll(reader)
 	panicIfNotNil(err)
 
 	return data

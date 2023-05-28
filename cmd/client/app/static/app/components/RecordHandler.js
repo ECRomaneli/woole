@@ -11,8 +11,11 @@ app.component('RecordViewer', {
                             </div>
                             <div class="btn-toolbar">
                                 <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="openCurlViewer()">cURL</button>
+                                </div>
+                                <div class="btn-group ms-2 me-2">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" @click="$bus.trigger('record.replay', record)">Replay</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#request-submitter" @mouseover="requestSubmitterEnabled = true">w/ Changes</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="openRequestEditor()">w/ Changes</button>
                                 </div>
                                 <div class="maximize-btn ms-3 me-2" @click="maximize('request')">
                                     <img class="square-24" :src="maximizeSvg" alt="maximize" />
@@ -39,35 +42,29 @@ app.component('RecordViewer', {
                             </div>
                         </div>
                         <record-item 
-                            :titleGroup="[record.response.code, httpStatusMessage[record.response.code], record.response.proto]" 
+                            :titleGroup="[record.response.code, $constants.HTTP_STATUS_MESSAGE[record.response.code], record.response.proto]" 
                             :item="record.response">
                         </record-item>
                     </div>
                 </div>
             </div>
-            <request-editor v-if="requestSubmitterEnabled" :modalId="'request-submitter'" :originalRequest="record.request"></request-editor>
+            <request-editor ref="reqEditor" :originalRequest="record.request"></request-editor>
+            <code-viewer ref='curlViewer' :type="'shellscript'" :code="requestCurl"></code-viewer>
         </div>
     `,
+    inject: ['$constants'],
     props: { record: Object },
     data() {
         return {
-            httpStatusMessage: {
-                200: 'OK', 201: 'Created', 202: 'Accepted', 203: 'Non-Authoritative Information', 204: 'No Content', 205: 'Reset Content', 206: 'Partial Content',
-                300: 'Multiple Choices', 301: 'Moved Permanently', 302: 'Found', 303: 'See Other', 304: 'Not Modified', 305: 'Use Proxy', 307: 'Temporary Redirect',
-                400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable',
-                407: 'Proxy Authentication Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed',
-                413: 'Request Entity Too Large', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed',
-                500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported'
-            },
             maximizeSvg: "assets/images/maximize.svg",
             maximized: "",
-            requestSubmitterEnabled: false
+            requestCurl: ''
         }
     },
 
     watch: {
         record: function () {
-            this.requestSubmitterEnabled = false
+            this.requestCurl = ''
         }
     },
 
@@ -82,6 +79,18 @@ app.component('RecordViewer', {
             }
             // Workaround to make ACE Editor re-wrap lines
             setTimeout(() => window.dispatchEvent(new Event('resize')), 10)
+        },
+
+        openRequestEditor() {
+            this.$refs.reqEditor.show()
+        },
+
+        openCurlViewer() {
+            if (!this.requestCurl) {
+                this.$bus.once('record.curl.retrieved', curl => this.requestCurl = curl)
+                this.$bus.trigger('record.curl', this.record)
+            }
+            this.$refs.curlViewer.show()
         }
     }
 })
@@ -176,54 +185,46 @@ app.component('HeaderGrid', {
 
 app.component('RequestEditor', {
     template: /*html*/ `
-    <form @submit.prevent="submit" class="checkout-form">
-        <div :id="modalId" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable" style="max-width: 1000px">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <div class="modal-title inline-flex" style="height: 24px">
-                            <img class="square-24 me-2" src="assets/images/request.svg" alt="request">
-                            <span class="h5">Request</span>
-                        </div>
-                    </div>
-                    <div class="modal-body">
-                        <div class="input-group mb-3">
-                            <select class="request-method input-group-text" name="method" v-model="request.method">
-                                <option v-for="(method) in httpMethods" :value="method">{{ method }}</option>
-                            </select>
-                            <input name="url" type="text" class="form-control" spellcheck="false" aria-label="url" v-model="request.url">
-                        </div>
-                        <div class="h5 centered-title">Headers</div>
-                        <table class="table table-striped table-hover header-grid" aria-label="headers">
-                            <thead>
-                                <tr><th scope="remove"></th><th scope="name">Name</th><th scope="value">Value</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(header, index) in request.header" :key="index">
-                                    <td><div class="clickable-img" @click="remove(index)"><img class="square-24" src="assets/images/trash.svg" alt="remove-header"></div></td>
-                                    <td><textarea placeholder="Name" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.name"></textarea></td>
-                                    <td><textarea placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.value"></textarea></td>
-                                </tr>
-                                <tr>
-                                    <td colspan='3'><div class="clickable-img" @click="add()"><img class="square-24" src="assets/images/plus.svg" alt="add-header" style="width: 24px"></div></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div style="padding-left: 8px"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
-                        <div class="h5 centered-title">Body</div>
-                        <code-editor ref="codeEditor" :code="originalRequest.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="cancel()">Cancel</button>
-                        <button type="submit" class="btn btn-secondary" data-bs-dismiss="modal">Submit</button>
-                    </div>
+        <modal ref="modal" @show="cloneRequest()" @hide="removeRequest()">
+            <template #title>
+                <img class="square-24 me-2" src="assets/images/request.svg" alt="request">
+                <span class="h5">Request</span>
+            </template>
+            <template #body v-if="request">
+                <div class="input-group mb-3">
+                    <select class="request-method input-group-text" name="method" v-model="request.method">
+                        <option v-for="(method) in httpMethods" :value="method">{{ method }}</option>
+                    </select>
+                    <input name="url" type="text" class="form-control" spellcheck="false" aria-label="url" v-model="request.url">
                 </div>
-            </div>
-        </div>
-    </form>
+                <div class="h5 centered-title">Headers</div>
+                <table class="table table-striped table-hover header-grid" aria-label="headers">
+                    <thead>
+                        <tr><th scope="remove"></th><th scope="name">Name</th><th scope="value">Value</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(header, index) in request.header" :key="index">
+                            <td><div class="clickable-img" @click="remove(index)"><img class="square-24" src="assets/images/trash.svg" alt="remove-header"></div></td>
+                            <td><textarea placeholder="Name" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.name"></textarea></td>
+                            <td><textarea placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, header)" v-model="header.value"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td colspan='3'><div class="clickable-img" @click="add()"><img class="square-24" src="assets/images/plus.svg" alt="add-header" style="width: 24px"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="padding-left: 8px"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
+                <div class="h5 centered-title">Body</div>
+                <code-editor ref="codeEditor" :code="originalRequest.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
+            </template>
+            <template #footer v-if="request">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="$refs.modal.hide()">Cancel</button>
+                <button type="button" class="btn btn-secondary" @click="submit()">Submit</button>
+            </template>
+        </modal>
     `,
     inject: [ '$util', '$clone' ],
-    props: { modalId: String, originalRequest: Object },
+    props: { originalRequest: Object },
 
     data() {
         return {
@@ -234,17 +235,12 @@ app.component('RequestEditor', {
         }
     },
 
-    beforeMount() { this.resetRequest() },
-
     methods: {
-        cancel() {
-            this.resetRequest()
-        },
-
         async submit() {
             let req = this.$clone(this.request)
             req.header = {}
             req.b64Body = this.$refs.codeEditor.getCode()
+            req.path = new URL(req.url, "http://dummy").pathname
             this.request.header.forEach(h => req.header[h.name] = { Val: [h.value] })
 
             if (this.isAutoContentLengthEnabled) {
@@ -252,9 +248,10 @@ app.component('RequestEditor', {
             }
 
             this.$bus.trigger('record.new', { request: req })
+            this.$refs.modal.hide()
         },
 
-        resetRequest() {
+        cloneRequest() {
             this.request = this.$clone(this.originalRequest)
             this.request.header = []
 
@@ -272,6 +269,8 @@ app.component('RequestEditor', {
             })
         },
 
+        removeRequest() { this.request = null },
+
         add() {
             this.request.header.push({ name: '', value: '' })
         },
@@ -286,7 +285,7 @@ app.component('RequestEditor', {
         autoResize(event) {
             let el = event.currentTarget
             el.style.height = 'auto'
-            el.style.height = event.type !== 'blur' ? (el.scrollHeight)+'px' : ''
+            el.style.height = event.type !== 'blur' ? el.scrollHeight + 'px' : ''
         },
 
         onBlur(event, header) {
@@ -294,6 +293,37 @@ app.component('RequestEditor', {
             if (header.name.toLowerCase() === 'content-type') {
                 this.content = this.$util.parseContentType(header.value)
             }
-        }
+        },
+
+        show() { this.$refs.modal.show() }
+    }
+})
+
+app.component('CodeViewer', {
+    template: /*html*/ `
+    <modal ref="modal">
+        <template #title>
+            <img class="square-24 me-2" src="assets/images/request.svg" alt="request">
+            <span class="h5">Code Viewer</span>
+        </template>
+        <template #body v-if="code">
+            <code-editor ref="editor" :type="type" :code="code" :readOnly="false" :minLines="10" :maxLines="40"></code-editor>
+        </template>
+        <template #footer v-if="code">
+            <button v-if="code" type="button" class="btn btn-secondary" @click="copyToClipboard()">{{ copyBtnText }}</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </template>
+    </modal>
+    `,
+    props: { type: String, code: String },
+    data() { return { copyBtnText: "Copy to Clipboard" } },
+    methods: {
+        async copyToClipboard() {
+            await navigator.clipboard.writeText(this.$refs.editor.getCode())
+            this.copyBtnText = "Copied!"
+            setTimeout(() => this.copyBtnText = "Copy to Clipboard", 3000)
+        },
+
+        show() { this.$refs.modal.show() }
     }
 })

@@ -20,35 +20,35 @@ app.use({
             }
 
             let query = {
-                key: tokens.shift().trim(), 
+                key: tokens.shift().trim(),
                 value: tokens.join(TOKEN_SEPARATOR).trim()
             }
 
             return objList.filter((obj) => findQuery(obj, query, '', exclude))
         })
     
-        function findQuery(obj, query, nestedKeys, excludeKeys) {
+        function findQuery(obj, query, nestedKeys, excludedKeys) {
             return getObjectKeys(obj).some((key) => {
                 let newNestedKeys = nestedKeys + KEY_SEPARATOR + key.toLowerCase()
-                if (excludeKeys !== void 0 && exclude(newNestedKeys, excludeKeys)) { return false }
+                if (excludedKeys !== void 0 && exclude(newNestedKeys, excludedKeys)) { return false }
                 
                 if (newNestedKeys.indexOf(query.key) === UNKNOWN) {
-                    return findQuery(obj[key], query, newNestedKeys, excludeKeys)
+                    return findQuery(obj[key], query, newNestedKeys, excludedKeys)
                 } else if (query.value !== EMPTY_STR && !match(query.value, '', obj[key])) {
-                    return findValue(obj[key], query.value, newNestedKeys, excludeKeys)
+                    return findValue(obj[key], query.value, newNestedKeys, excludedKeys)
                 }
         
                 return true
             })
         }
         
-        function findValue(obj, value, nestedKeys, excludeKeys) {
+        function findValue(obj, value, nestedKeys, excludedKeys) {
             return getObjectKeys(obj).some((key) => {
                 let newNestedKeys = nestedKeys + KEY_SEPARATOR + key.toLowerCase()
-                if (excludeKeys !== void 0 && exclude(newNestedKeys, excludeKeys)) { return false }
+                if (excludedKeys !== void 0 && exclude(newNestedKeys, excludedKeys)) { return false }
                 
                 if (match(value, newNestedKeys, obj[key])) { return true }
-                return findValue(obj[key], value, newNestedKeys, excludeKeys)
+                return findValue(obj[key], value, newNestedKeys, excludedKeys)
             })
         }
 
@@ -65,10 +65,7 @@ app.use({
         }
         
         function exclude(nestedKeys, excludedKeys) {
-            return excludedKeys.some((key) => {
-                const index = nestedKeys.lastIndexOf(key)
-                return index !== UNKNOWN && index === nestedKeys.length - key.length
-            })
+            return excludedKeys.some((key) => nestedKeys.endsWith(key))
         }
         
         function getObjectKeys(obj) {

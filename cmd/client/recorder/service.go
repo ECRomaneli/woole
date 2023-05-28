@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strconv"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder/adt"
@@ -16,8 +15,9 @@ import (
 )
 
 func Replay(request *pb.Request) {
-	record := adt.NewRecord(request)
-	DoRequest(record)
+	record := adt.NewRecord(request, adt.REPLAY)
+	record.Response = proxyRequest(record.Request)
+	records.AddRecordAndCallListeners(record)
 
 	if log.IsInfoEnabled() {
 		log.Info(record.ToString(26))
@@ -59,29 +59,29 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 			continue
 		}
 
-		clientRecord := adt.EnhanceRecord(serverMsg.Record)
-
-		if serverMsg.Record.Step == pb.Step_SEND_REQUEST {
-			go handleServerRequest(stream, clientRecord)
-		} else if serverMsg.Record.Step == pb.Step_SEND_SERVER_RESPONSE {
-			go handleServerResponse(stream, clientRecord)
-		} else {
-			log.Error("Record Step Not Allowed")
-		}
+		go handleServerRecord(stream, serverMsg.Record)
 	}
 }
 
-func handleServerRequest(stream pb.Tunnel_TunnelClient, record *adt.Record) {
-	record.Step = pb.Step_RECEIVE_RESPONSE
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
+func handleServerRecord(stream pb.Tunnel_TunnelClient, record *pb.Record) {
+	defer catchAllErrors(record)
 
-	DoRequest(record)
-	handleRedirections(record)
+	switch record.Step {
+	case pb.Step_SEND_REQUEST:
+		handleServerRequest(stream, record)
+	case pb.Step_SEND_SERVER_RESPONSE:
+		handleServerResponse(stream, record)
+	default:
+		log.Error("Record Step Not Allowed")
+	}
+}
 
-	err := stream.Send(&pb.ClientMessage{
-		Record: record.Record,
-	})
+func handleServerRequest(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
+	record := adt.EnhanceRecord(serverRecord)
+
+	doRequest(record)
+	records.AddRecordAndCallListeners(record)
+	err := stream.Send(&pb.ClientMessage{Record: record.Record})
 
 	if log.IsInfoEnabled() {
 		log.Info(record.ToString(26))
@@ -92,26 +92,23 @@ func handleServerRequest(stream pb.Tunnel_TunnelClient, record *adt.Record) {
 	}
 }
 
-func handleServerResponse(stream pb.Tunnel_TunnelClient, record *adt.Record) {
-	log.Debug("Received a STEP.RECEIVE_SERVER_RESPONSE")
+func handleServerResponse(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
+	record := records.FindById(serverRecord.Id)
+	log.Debug("Received a STEP.RECEIVE_SERVER_RESPONSE for record [", record, "]")
 }
 
-func DoRequest(record *adt.Record) {
-	record.Response = proxyRequest(record.Request)
-	records.Add(record)
-}
+func doRequest(record *adt.Record) {
+	record.Step = pb.Step_RECEIVE_RESPONSE
+	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
+	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
 
-func handleRedirections(record *adt.Record) {
-	location := record.Response.GetHttpHeader().Get("location")
-	if location != "" {
-		httpHeader := record.Response.GetHttpHeader()
-		httpHeader.Set("Content-Type", "text/html")
-		httpHeader.Del("location")
-		record.Response.Body = []byte("<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><title>Woole - Redirecting</title><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><span>Trying to redirect to <a href='" + location + "'>" + location + "</a>...</span></body></html>")
-		record.Response.Code = http.StatusOK
-		httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
-		record.Response.SetHttpHeader(httpHeader)
+	handleWooleParamIfExists(record)
+	if record.Response != nil {
+		return
 	}
+
+	record.Response = proxyRequest(record.Request)
+	handleRedirections(record)
 }
 
 func proxyRequest(req *pb.Request) *pb.Response {
@@ -123,6 +120,94 @@ func proxyRequest(req *pb.Request) *pb.Response {
 
 	// Save req and res data
 	return (&pb.Response{}).FromResponseRecorder(recorder, elapsed)
+}
+
+func handleRedirections(record *adt.Record) {
+	location := record.Response.GetHttpHeader().Get("location")
+
+	if location == "" {
+		return
+	}
+
+	record.OriginalResponse = record.Response
+	record.Response = record.OriginalResponse.Clone()
+
+	urlParam := &adt.CustomPathParam{Redirect: adt.Redirect{
+		RecordId: record.Id,
+		Action:   adt.CONTINUE,
+	}}
+
+	params := make(map[string]string)
+	params["redirectUrl"] = location
+	params["hostname"] = app.GetSessionWhenAvailable().Hostname
+	params["originalUrl"] = urlParam.Serialize()
+
+	if record.Type == adt.REDIRECT {
+		params["enableCustomUrl"] = "false"
+		params["customUrl"] = "#"
+	} else {
+		urlParam.Redirect.Action = adt.CHANGE_URL_HOST
+		params["enableCustomUrl"] = "true"
+		params["customUrl"] = urlParam.Serialize()
+	}
+
+	record.Response.Body = []byte(app.RedirectTemplate.Apply(params))
+	record.Response.Code = http.StatusOK
+
+	httpHeader := record.Response.GetHttpHeader()
+	httpHeader.Set("Content-Type", "text/html")
+	httpHeader.Del("location")
+	httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
+	record.Response.SetHttpHeader(httpHeader)
+}
+
+func handleWooleParamIfExists(record *adt.Record) {
+	param, ok := adt.DeserializeCustomPathParam(record.Request.Url)
+	if !ok {
+		return
+	}
+
+	redirectRecord := records.FindById(param.Redirect.RecordId)
+	if redirectRecord == nil {
+		panic("Trying to access an invalid record [" + param.Redirect.RecordId + "]")
+	}
+
+	record.Type = adt.REDIRECT
+
+	if param.Redirect.Action == adt.CONTINUE {
+		record.Request = redirectRecord.Request.Clone()
+		record.Response = redirectRecord.OriginalResponse
+		return
+	}
+
+	location := redirectRecord.OriginalResponse.GetHttpHeader().Get("location")
+
+	if len(location) == 0 {
+		panic("There is no redirect URL")
+	}
+
+	newUrl, ok := util.ReplaceHostByUsingExampleStr(location, record.Request.Url)
+	if !ok {
+		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
+	}
+
+	record.Request.Url = newUrl.String()
+	record.Request.Path = newUrl.Path
+}
+
+func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName string) {
+	if header == nil || header[headerName] == nil {
+		return
+	}
+
+	rawUrl := header[headerName].Val[0]
+	newUrl, ok := util.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
+
+	if !ok {
+		panic("Error when trying to replace the host of [" + rawUrl + "]")
+	}
+
+	header[headerName] = &pb.StringList{Val: []string{newUrl.String()}}
 }
 
 func handleGRPCErrors(err error) bool {
@@ -139,21 +224,13 @@ func handleGRPCErrors(err error) bool {
 	}
 }
 
-func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName string) {
-	if header == nil || header[headerName] == nil {
+func catchAllErrors(record *pb.Record) {
+	err := recover()
+
+	if err == nil {
 		return
 	}
 
-	referer := header[headerName].Val[0]
-
-	refererUrl, err := url.Parse(referer)
-	if err != nil {
-		log.Error("Error when trying to parse [", referer, "] to URL. Reason: ", err.Error())
-	}
-
-	refererUrl.Scheme = config.CustomUrl.Scheme
-	refererUrl.Host = config.CustomUrl.Host
-	refererUrl.Opaque = config.CustomUrl.Opaque
-
-	header[headerName] = &pb.StringList{Val: []string{refererUrl.String()}}
+	log.Error(err)
+	// TODO: Improve error handling
 }
