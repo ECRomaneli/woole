@@ -12,14 +12,15 @@
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="assets/styles/app.css" rel="stylesheet">
     <link href="assets/styles/darktheme.css" rel="stylesheet">
+    <link href="assets/styles/lighttheme.css" rel="stylesheet">
 </head>
 
 <body>
     <main id="app">
         <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
-        <div id="body">
-            <dashboard v-show="!selectedRecord" :session-details="sessionDetails"></dashboard>
-            <record-viewer id="record-viewer" v-if="selectedRecord" :record="selectedRecord"></record-viewer>
+        <div id="body" class="pt-2 px-2">
+            <dashboard v-if="!selectedRecord" :session-details="sessionDetails"></dashboard>
+            <record-viewer id="record-viewer" v-else :record="selectedRecord"></record-viewer>
         </div>
     </main>
 
@@ -32,6 +33,7 @@
 
     <!-- Providers -->
     <script src="app/providers/Util.js"></script>
+    <script src="app/providers/Image.js"></script>
     <script src="app/providers/Constants.js"></script>
 
     <!-- Plugins -->
@@ -41,7 +43,11 @@
 
     <!-- Components -->
     <script src="app/components/BootstrapModal.js"></script>
+    <script src="app/components/LabeledBox.js"></script>
+    <script src="app/components/HeaderEditor.js"></script>
+    <script src="app/components/CodeViewer.js"></script>
     <script src="app/components/CodeEditor.js"></script>
+    <script src="app/components/RequestEditor.js"></script>
     <script src="app/components/Base64Viewer.js"></script>
     <script src="app/components/Sidebar.js"></script>
     <script src="app/components/Dashboard.js"></script>

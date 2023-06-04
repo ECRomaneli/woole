@@ -48,6 +48,9 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 
 	app.SetSession(serverMsg.Session)
 
+	// Reset old IDs
+	records.ResetServerIds()
+
 	// Listen for requests and send responses asynchronously
 	for {
 		serverMsg, err := stream.Recv()
@@ -93,7 +96,7 @@ func handleServerRequest(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record)
 }
 
 func handleServerResponse(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
-	record := records.FindById(serverRecord.Id)
+	record := records.GetByServerId(serverRecord.Id)
 	log.Debug("Received a STEP.RECEIVE_SERVER_RESPONSE for record [", record, "]")
 }
 
@@ -101,12 +104,6 @@ func doRequest(record *adt.Record) {
 	record.Step = pb.Step_RECEIVE_RESPONSE
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
-
-	handleWooleParamIfExists(record)
-	if record.Response != nil {
-		return
-	}
-
 	record.Response = proxyRequest(record.Request)
 	handleRedirections(record)
 }
@@ -129,26 +126,24 @@ func handleRedirections(record *adt.Record) {
 		return
 	}
 
-	record.OriginalResponse = record.Response
-	record.Response = record.OriginalResponse.Clone()
-
-	urlParam := &adt.CustomPathParam{Redirect: adt.Redirect{
-		RecordId: record.Id,
-		Action:   adt.CONTINUE,
-	}}
+	record.Type = adt.REDIRECT
 
 	params := make(map[string]string)
 	params["redirectUrl"] = location
 	params["hostname"] = app.GetSessionWhenAvailable().Hostname
-	params["originalUrl"] = urlParam.Serialize()
+	params["originalUrl"] = location
 
-	if record.Type == adt.REDIRECT {
+	newUrl, ok := util.ReplaceHostByUsingExampleStr(location, record.Request.Url)
+	if !ok {
+		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
+	}
+
+	if newUrl.String() == record.Request.Url {
 		params["enableCustomUrl"] = "false"
 		params["customUrl"] = "#"
 	} else {
-		urlParam.Redirect.Action = adt.CHANGE_URL_HOST
 		params["enableCustomUrl"] = "true"
-		params["customUrl"] = urlParam.Serialize()
+		params["customUrl"] = newUrl.String()
 	}
 
 	record.Response.Body = []byte(app.RedirectTemplate.Apply(params))
@@ -159,40 +154,6 @@ func handleRedirections(record *adt.Record) {
 	httpHeader.Del("location")
 	httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
 	record.Response.SetHttpHeader(httpHeader)
-}
-
-func handleWooleParamIfExists(record *adt.Record) {
-	param, ok := adt.DeserializeCustomPathParam(record.Request.Url)
-	if !ok {
-		return
-	}
-
-	redirectRecord := records.FindById(param.Redirect.RecordId)
-	if redirectRecord == nil {
-		panic("Trying to access an invalid record [" + param.Redirect.RecordId + "]")
-	}
-
-	record.Type = adt.REDIRECT
-
-	if param.Redirect.Action == adt.CONTINUE {
-		record.Request = redirectRecord.Request.Clone()
-		record.Response = redirectRecord.OriginalResponse
-		return
-	}
-
-	location := redirectRecord.OriginalResponse.GetHttpHeader().Get("location")
-
-	if len(location) == 0 {
-		panic("There is no redirect URL")
-	}
-
-	newUrl, ok := util.ReplaceHostByUsingExampleStr(location, record.Request.Url)
-	if !ok {
-		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
-	}
-
-	record.Request.Url = newUrl.String()
-	record.Request.Path = newUrl.Path
 }
 
 func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName string) {

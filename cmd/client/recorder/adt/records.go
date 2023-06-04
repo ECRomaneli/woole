@@ -23,28 +23,34 @@ const (
 
 type Record struct {
 	*pb.Record
-	OriginalResponse *pb.Response
-	ClientId         string `json:"clientId,omitempty"`
-	Type             Type   `json:"type,omitempty"`
+	ClientId string `json:"clientId,omitempty"`
+	Type     Type   `json:"type,omitempty"`
 }
 
 type Records struct {
-	mu         sync.RWMutex
-	records    []*Record
-	maxRecords uint
-	signal     *signal.Signal
-	Broker     *channel.Broker
+	mu          sync.RWMutex
+	records     map[string]*Record
+	maxRecords  uint
+	lastDeleted int
+	signal      *signal.Signal
+	Broker      *channel.Broker
 }
 
 func NewRecords(maxRecords uint) *Records {
-	records := &Records{maxRecords: maxRecords, signal: signal.New(), Broker: channel.NewBroker()}
-	records.Broker.Start()
-	return records
+	recs := &Records{
+		records:     make(map[string]*Record),
+		maxRecords:  maxRecords,
+		signal:      signal.New(),
+		Broker:      channel.NewBroker(),
+		lastDeleted: 0,
+	}
+	recs.Broker.Start()
+	return recs
 }
 
 func NewRecord(req *pb.Request, recType Type) *Record {
 	id := seqId.NextString()
-	return &Record{ClientId: id, Type: recType, Record: &pb.Record{Id: id, Request: req}}
+	return &Record{ClientId: id, Type: recType, Record: &pb.Record{Request: req}}
 }
 
 func EnhanceRecord(rec *pb.Record) *Record {
@@ -54,17 +60,23 @@ func EnhanceRecord(rec *pb.Record) *Record {
 func (recs *Records) AddRecordAndCallListeners(rec *Record) {
 	recs.mu.Lock()
 	defer recs.mu.Unlock()
-
-	recs.records = append(recs.records, rec)
+	recs.records[rec.ClientId] = rec
 
 	if len(recs.records) > int(recs.maxRecords) {
-		recs.records = recs.records[1:]
+		recs.lastDeleted++
+		delete(recs.records, strconv.Itoa(recs.lastDeleted))
 	}
 
 	recs.Broker.Publish(rec)
 }
 
-func (recs *Records) FindById(id string) *Record {
+func (recs *Records) Get(id string) *Record {
+	recs.mu.RLock()
+	defer recs.mu.RUnlock()
+	return recs.records[id]
+}
+
+func (recs *Records) GetByServerId(id string) *Record {
 	recs.mu.RLock()
 	defer recs.mu.RUnlock()
 
@@ -77,11 +89,20 @@ func (recs *Records) FindById(id string) *Record {
 	return nil
 }
 
+func (recs *Records) ResetServerIds() {
+	recs.mu.Lock()
+	defer recs.mu.Unlock()
+
+	for _, record := range recs.records {
+		record.Id = ""
+	}
+}
+
 func (recs *Records) RemoveAll() {
 	recs.mu.Lock()
 	defer recs.mu.Unlock()
 
-	recs.records = nil
+	recs.records = make(map[string]*Record)
 	recs.signal.Send()
 }
 

@@ -1,5 +1,5 @@
 app.use({
-    install: (app, _) => {
+    install: (app) => {
         const STRING = 'string', NUMBER = 'number', BOOLEAN = 'boolean'
 
         function clone(obj) {

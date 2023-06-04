@@ -6,41 +6,52 @@ const app = Vue.createApp({
         this.$bus.on('record.replay', this.sendRecord)
         this.$bus.on('record.new', this.sendRecord)
         this.$bus.on('record.curl', this.createCurl)
+        this.$bus.on('record.clear', this.clearRecords)
     },
 
     methods: {
         async itemSelected(record) {
-            if (record !== null && !record.isFetched && record.response) {
-                let resp = await fetch('/record/' + record.id + '/response/body')
+            if (record === null || record.isFetched || !record.response) {
+                this.selectedRecord = record
+                return
+            }
+
+            let resp = await fetch('/record/' + record.clientId + '/response/body').catch(this.catchAll)
+            if (resp.ok && resp.status === 200) {
                 record.response.body = await resp.json()
                 record.isFetched = true
                 this.decodeBody(record.response)
             }
+            
             this.selectedRecord = record
         },
 
         async sendRecord(record) {
-            this.$bus.once('stream.update', (rec) => this.$refs.sidebar.show(rec))
+            this.$bus.once('stream.update', (rec) => this.$refs.sidebar.showRecord(rec))
             
-            if (record.id !== void 0) {
-                await fetch('/record/' + record.id + '/replay')
+            if (record.clientId !== void 0) {
+                await fetch('/record/' + record.clientId + '/replay').catch(this.catchAll)
             } else {
                 this.encodeBody(record.request)
                 await fetch('/record/request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(record.request)
-                })
+                }).catch(this.catchAll)
+            }
+        },
+
+        async clearRecords() {
+            let resp = await fetch('/record', { method: 'DELETE' }).catch(this.catchAll)
+            if (resp.ok && resp.status === 200) {
+                this.$bus.trigger('stream.start', [])
             }
         },
 
         async createCurl(record) {
-            let resp = await fetch('/record/' + record.id + '/request/curl')
-            if (resp.ok) {
-                this.$bus.trigger('record.curl.retrieved', await resp.json())
-            } else {
-                this.$bus.trigger('record.curl.retrieved', "Failed to retrieve cURL")
-            }
+            let resp = await fetch('/record/' + record.clientId + '/request/curl').catch(this.catchAll)
+            record.request.curl = resp.ok && resp.status === 200 ? 
+                await resp.json() : "Failed to retrieve cURL"
         },
 
         setupStream() {
@@ -55,7 +66,7 @@ const app = Vue.createApp({
             es.addEventListener('start', (event) => {
                 if (event.data) {
                     let recs = JSON.parse(event.data)
-                    recs.forEach((rec) => this.decodeBody(rec.request))
+                    recs.sort((a, b) => b.clientId - a.clientId).forEach((rec) => this.decodeBody(rec.request))
                     this.$bus.trigger('stream.start', recs)
                 }
             })
@@ -91,6 +102,11 @@ const app = Vue.createApp({
                 item.body = btoa(item.b64Body)
                 item.b64Body = void 0
             }
+        },
+
+        catchAll(err) {
+            console.warn("Error caught: " + err)
+            return { ok: false }
         }
     }
 })

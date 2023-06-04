@@ -9,7 +9,8 @@ app.component('CodeEditor', {
                 'javascript': [ 'javascript', 'js' ],
                      'json5': [ 'json' ],
                         'sh': [ 'shellscript', 'sh' ]
-            }
+            },
+            appElement: document.getElementById('app')
         }
     },
     mounted() { this.createEditor() },
@@ -22,13 +23,13 @@ app.component('CodeEditor', {
         createEditor() {
             this.editor = ace.edit(this.$refs.container, {
                 useWorker: false,
-                theme: "ace/theme/twilight",
                 readOnly: this.readOnly,
                 autoScrollEditorIntoView: true,
                 minLines: this.minLines,
                 maxLines: this.maxLines,
                 wrap: true
             })
+            this.updateTheme()
             if (this.readOnly) {
                 this.editor.renderer.$cursorLayer.element.style.display = "none"
             }
@@ -50,7 +51,8 @@ app.component('CodeEditor', {
         },
 
         setCode(code) {
-            this.editor.setValue(code/*, -1 to scroll top */)
+            this.updateTheme()
+            this.editor.setValue(code, -1) // -1 to scroll top
             this.editor.clearSelection()
         },
 
@@ -63,7 +65,16 @@ app.component('CodeEditor', {
         },
 
         forceUpdate() {
+            this.updateTheme()
             this.editor.renderer.updateFull()
+        },
+
+        updateTheme() {
+            if (this.appElement.getAttribute('data-theme') === 'dark') {
+                this.editor.setTheme('ace/theme/twilight')
+            } else {
+                this.editor.setTheme('ace/theme/chrome')
+            }
         }
     }
 })

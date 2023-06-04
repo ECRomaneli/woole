@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func startConnectionWithServer(onConnectionStart func(pb.TunnelClient, context.Context, context.CancelFunc) error) {
+func startConnectionWithServer() {
 	for {
 		// Establish tunnel connection and retrieve request/response stream
 		client, ctx, cancelCtx, err := connectClient(config.EnableTLSTunnel)
@@ -26,7 +26,8 @@ func startConnectionWithServer(onConnectionStart func(pb.TunnelClient, context.C
 			continue
 		}
 
-		err = onConnectionStart(client, ctx, cancelCtx)
+		err = onTunnelStart(client, ctx, cancelCtx)
+
 		if err != nil {
 			recoverOrExit(err)
 		}

@@ -2,6 +2,7 @@ package template
 
 import (
 	"embed"
+	"regexp"
 	"strings"
 )
 
@@ -18,6 +19,9 @@ func (t Template) Apply(variables map[string]string) string {
 	for key, value := range variables {
 		result = strings.ReplaceAll(result, "{{"+key+"}}", value)
 	}
+
+	reg := regexp.MustCompile(`{{\s*\w+\s*}}`)
+	result = reg.ReplaceAllString(result, "")
 
 	return result
 }

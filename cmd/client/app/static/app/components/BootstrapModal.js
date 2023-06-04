@@ -1,11 +1,11 @@
 app.component('Modal', {
     template: /*html*/ `
-    <div ref="modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable" style="max-width: 1000px">
+    <div ref="modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <slot name="header">
-                        <div class="modal-title inline-flex" style="height: 24px">
+                        <div class="modal-title d-inline-flex">
                             <slot name="title"></slot>
                         </div>
                     </slot>

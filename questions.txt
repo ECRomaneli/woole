@@ -1,0 +1,5 @@
+yes - should I just use the URL in the buttons of the redirect????
+should the replay send the request to the server instead of send directly????
+workaround, reset every recconection - fix serverId bug when reconnecting with another server, send the sequential????
+yes - use logic to see if the URL is the same or not to determine whether the button is active or not.
+no need, not now - do the wooleParam in a way that stop working when the session changes cryptography?

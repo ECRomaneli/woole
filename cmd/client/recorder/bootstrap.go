@@ -19,6 +19,6 @@ func Start() {
 	if config.IsStandalone {
 		startStandalone()
 	} else {
-		startConnectionWithServer(onTunnelStart)
+		startConnectionWithServer()
 	}
 }

@@ -73,12 +73,16 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 }
 
 func replayHandler(req *webserver.Request, res *webserver.Response) {
-	record := records.FindById(req.Param("id"))
-	recorder.Replay(record.Request)
+	record := records.Get(req.Param("id"))
+	if record == nil {
+		res.Status(http.StatusNotFound).NoBody()
+	} else {
+		recorder.Replay(record.Request)
+	}
 }
 
 func curlHandler(req *webserver.Request, res *webserver.Response) {
-	record := records.FindById(req.Param("id"))
+	record := records.Get(req.Param("id"))
 	if record == nil {
 		res.Status(http.StatusNotFound).NoBody()
 	} else {
@@ -102,9 +106,13 @@ func clearHandler(req *webserver.Request, res *webserver.Response) {
 }
 
 func responseBodyHandler(req *webserver.Request, res *webserver.Response) {
-	record := records.FindById(req.Param("id"))
-	body := record.Response.Body
-	res.WriteJSON(decompress(record.Response.GetHttpHeader().Get("Content-Encoding"), body))
+	record := records.Get(req.Param("id"))
+	if record == nil {
+		res.Status(http.StatusNotFound).NoBody()
+	} else {
+		body := record.Response.Body
+		res.WriteJSON(decompress(record.Response.GetHttpHeader().Get("Content-Encoding"), body))
+	}
 }
 
 func decompress(contentEncoding string, data []byte) []byte {
