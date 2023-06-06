@@ -57,7 +57,7 @@ func EnhanceRecord(rec *pb.Record) *Record {
 	return &Record{ClientId: seqId.NextString(), Record: rec, Type: DEFAULT}
 }
 
-func (recs *Records) AddRecordAndCallListeners(rec *Record) {
+func (recs *Records) AddRecord(rec *Record) {
 	recs.mu.Lock()
 	defer recs.mu.Unlock()
 	recs.records[rec.ClientId] = rec
@@ -66,8 +66,15 @@ func (recs *Records) AddRecordAndCallListeners(rec *Record) {
 		recs.lastDeleted++
 		delete(recs.records, strconv.Itoa(recs.lastDeleted))
 	}
+}
 
+func (recs *Records) Publish(rec *Record) {
 	recs.Broker.Publish(rec)
+}
+
+func (recs *Records) AddRecordAndPublish(rec *Record) {
+	recs.AddRecord(rec)
+	recs.Publish(rec)
 }
 
 func (recs *Records) Get(id string) *Record {
@@ -133,11 +140,12 @@ func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 			Id:      rec.Id,
 			Request: rec.Request,
 			Response: &pb.Response{
-				Proto:   rec.Response.Proto,
-				Status:  rec.Response.Status,
-				Code:    rec.Response.Code,
-				Header:  rec.Response.Header,
-				Elapsed: rec.Response.Elapsed,
+				Proto:         rec.Response.Proto,
+				Status:        rec.Response.Status,
+				Code:          rec.Response.Code,
+				Header:        rec.Response.Header,
+				Elapsed:       rec.Response.Elapsed,
+				ServerElapsed: rec.Response.ServerElapsed,
 				/*Body: rec.Response.Body, Skipped */
 			},
 		},

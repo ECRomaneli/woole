@@ -8,23 +8,23 @@ import (
 )
 
 type Client struct {
-	rw               sync.RWMutex
-	Bearer           []byte
-	Id               string
-	seq              sequence.Seq
-	records          map[string]*Record
-	NewRecordChannel chan *Record
-	IdleTimeout      *time.Timer
-	IsIdle           bool
+	rw            sync.RWMutex
+	Bearer        []byte
+	Id            string
+	seq           sequence.Seq
+	records       map[string]*Record
+	RecordChannel chan *pb.Record
+	IdleTimeout   *time.Timer
+	IsIdle        bool
 }
 
 func NewClient(clientId string, bearer []byte) *Client {
 	client := &Client{
-		Id:               clientId,
-		NewRecordChannel: make(chan *Record, 32),
-		records:          make(map[string]*Record),
-		Bearer:           bearer,
-		IdleTimeout:      time.NewTimer(time.Minute),
+		Id:            clientId,
+		RecordChannel: make(chan *pb.Record, 32),
+		records:       make(map[string]*Record),
+		Bearer:        bearer,
+		IdleTimeout:   time.NewTimer(time.Minute),
 	}
 
 	if !client.Connect() {
@@ -37,7 +37,7 @@ func NewClient(clientId string, bearer []byte) *Client {
 func (cl *Client) AddRecord(rec *Record) (id string) {
 	rec.Id = cl.seq.NextString()
 	cl.putRecord(rec.Id, rec)
-	cl.NewRecordChannel <- rec
+	cl.RecordChannel <- &rec.Record
 	return rec.Id
 }
 
@@ -47,13 +47,17 @@ func (cl *Client) RemoveRecord(recordId string) *Record {
 	return removedRecord
 }
 
+func (cl *Client) SendServerElapsed(rec *Record) {
+	cl.RecordChannel <- rec.ThinClone(pb.Step_SERVER_ELAPSED)
+}
+
 func (cl *Client) SetRecordResponse(recordId string, response *pb.Response) {
 	record := cl.getRecord(recordId)
 
 	if record == nil {
 		return
 	}
-
+	record.Step = pb.Step_RESPONSE
 	record.Response = response
 	record.OnResponse.SendLast()
 }

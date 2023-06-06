@@ -53,6 +53,7 @@ message Response {
     map<string, StringList> header = 4;
     bytes body = 5;
     int64 elapsed = 6;
+    int64 serverElapsed = 7;
 }
 
 message Record {
@@ -69,7 +70,7 @@ message StringList {
 message Empty {}
 
 enum Step {
-    SEND_REQUEST = 0;
-    RECEIVE_RESPONSE = 1;
-    SEND_SERVER_RESPONSE = 2;
+    REQUEST = 0;
+    RESPONSE = 1;
+    SERVER_ELAPSED = 2;
 }

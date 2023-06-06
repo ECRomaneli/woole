@@ -14,10 +14,7 @@ type Record struct {
 }
 
 func NewRecord(req *pb.Request) *Record {
-	return &Record{
-		Record:     pb.Record{Request: req},
-		OnResponse: signal.New(),
-	}
+	return &Record{Record: pb.Record{Request: req}, OnResponse: signal.New()}
 }
 
 func (recs *Record) ToString(maxPathLength int) string {
@@ -36,5 +33,5 @@ func (recs *Record) ToString(maxPathLength int) string {
 		return str + " N/A"
 	}
 
-	return str + fmt.Sprintf(" %3d - %dms", recs.Response.Code, recs.Response.Elapsed)
+	return str + fmt.Sprintf(" %3d - c: %dms / s: %dms", recs.Response.Code, recs.Response.Elapsed, recs.Response.ServerElapsed)
 }
