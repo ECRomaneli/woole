@@ -1,5 +1,5 @@
 app.use({
-    install: (app, _) => {
+    install: (app) => {
         let listeners = [], 
             global = app.config.globalProperties
 
@@ -29,7 +29,7 @@ app.use({
             },
 
             off: (eventName, fn) => {
-                let list = listeners[eventName]
+                const list = listeners[eventName]
                 if (list === void 0) {
                     console.warn("There is no listeners for event " + eventName)
                     return
@@ -40,13 +40,13 @@ app.use({
                     return
                 }
 
-                let indexToRemove = list.indexOf(fn)
+                const indexToRemove = list.indexOf(fn)
                 if (indexToRemove === -1) {
                     console.warn("Listener not found, ignoring...")
                     return
                 }
 
-                listeners[eventName] = list.splice(list.indexOf(fn), 1)
+                list.splice(indexToRemove, 1)
             }
         }
     }
