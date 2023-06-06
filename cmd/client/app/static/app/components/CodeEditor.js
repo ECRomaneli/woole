@@ -13,8 +13,14 @@ app.component('CodeEditor', {
             appElement: document.getElementById('app')
         }
     },
-    mounted() { this.createEditor() },
-    beforeUnmount() { this.editor.destroy() },
+    mounted() {
+        this.createEditor()
+        this.$bus.on('theme.change', this.updateTheme)
+    },
+    beforeUnmount() {
+        this.editor.destroy()
+        this.$bus.off('theme.change', this.updateTheme)
+    },
     watch: {
         type: function (val) { this.setEditorMode(val) },
         code: function (val) { this.setCode(val) }
@@ -51,9 +57,8 @@ app.component('CodeEditor', {
         },
 
         setCode(code) {
-            this.updateTheme()
-            this.editor.setValue(code, -1) // -1 to scroll top
-            this.editor.clearSelection()
+            this.editor.setValue(code)
+            this.editor.gotoLine(1)
         },
 
         getLength() {
@@ -65,7 +70,6 @@ app.component('CodeEditor', {
         },
 
         forceUpdate() {
-            this.updateTheme()
             this.editor.renderer.updateFull()
         },
 

@@ -27,7 +27,15 @@ const app = Vue.createApp({
         },
 
         async sendRecord(record) {
-            this.$bus.once('stream.update', (rec) => this.$refs.sidebar.showRecord(rec))
+            const fn = (rec) => {
+                if (rec.type === 'replay') {
+                    this.$bus.off('stream.new-record', fn)
+                    this.$refs.sidebar.scrollTop()
+                    this.$refs.sidebar.showRecord(rec)
+                }
+            }
+
+            this.$bus.on('stream.new-record', fn)
             
             if (record.clientId !== void 0) {
                 await fetch('/record/' + record.clientId + '/replay').catch(this.catchAll)
@@ -71,11 +79,18 @@ const app = Vue.createApp({
                 }
             })
 
-            es.addEventListener('update', (event) => {
+            es.addEventListener('new-record', (event) => {
                 if (event.data) {
                     let rec = JSON.parse(event.data)
                     this.decodeBody(rec.request)
-                    this.$bus.trigger('stream.update', rec)
+                    this.$bus.trigger('stream.new-record', rec)
+                }
+            })
+
+            es.addEventListener('update-record', (event) => {
+                if (event.data) {
+                    let rec = JSON.parse(event.data)
+                    this.$bus.trigger('stream.update-record', rec)
                 }
             })
 

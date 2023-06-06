@@ -20,7 +20,7 @@ app.component('Sidebar', {
             </div>
             
             <div id="record-list" class="to-be-removed-h-100" :class="{ loading: recordList.length === 0 }">
-                <div class="scrollarea">
+                <div ref="scrollarea" class="scrollarea">
                     <sidebar-item
                         v-for="record in filteredRecordList"
                         :record="record"
@@ -57,7 +57,7 @@ app.component('Sidebar', {
             this.filter(this.recordList)
         })
 
-        this.$bus.on('stream.update', (rec) => {
+        this.$bus.on('stream.new-record', (rec) => {
             this.recordList.unshift(rec)
 
             if (this.recordList.length <= this.maxRecords) {
@@ -71,6 +71,16 @@ app.component('Sidebar', {
 
             this.filter(this.recordList)
         })
+
+        this.$bus.on('stream.update-record', (update) => {
+            this.recordList.some(rec => {
+                if (rec.clientId === update.clientId) {
+                    rec.step = update.step
+                    rec.response.serverElapsed = update.response.serverElapsed
+                    return true
+                }
+            })
+        })
     },
 
     watch: {
@@ -82,6 +92,10 @@ app.component('Sidebar', {
     methods: {
         isSelectedRecord(record) {
             return this.selectedRecord && this.selectedRecord.clientId === record.clientId
+        },
+
+        scrollTop() {
+            this.$refs.scrollarea.scrollTo(0, 0)
         },
 
         async showRecord(record) {
@@ -126,6 +140,7 @@ app.component('Sidebar', {
                 this.appElement.setAttribute('data-theme', 'dark')
                 localStorage.setItem('_woole_theme', 'moon')
             }
+            this.$bus.trigger('theme.change')
         }
     }
 })
@@ -140,14 +155,17 @@ app.component('SidebarItem', {
                     <span class="badge me-1" :class="methodBadge()">{{ request.method }}</span>
                     <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
-                <div class="opacity-50">
-                    <small class="fw-light">77ms /&nbsp;</small>
+                <div v-if="record.response.serverElapsed" class="opacity-50">
+                    <small class="fw-light">{{ record.response.elapsed }}ms /&nbsp;</small>
+                    <small class="fw-bolder">{{ record.response.serverElapsed }}ms</small>
+                </div>
+                <div v-else class="opacity-50">
                     <small class="fw-bolder">{{ record.response.elapsed }}ms</small>
                 </div>
             </div>
             <div class="mb-1 smallest font-monospace text-end">
                 <span>{{ ellipsis(request.path) }}</span>
-                <span v-if="request.query !== void 0" class="request-query badge" :title="request.query">?</span>
+                <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
             </div>
         </div>
     `,

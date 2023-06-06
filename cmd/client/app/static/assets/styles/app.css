@@ -157,10 +157,6 @@
     margin-top: calc(-1 * 1px);
 }
 
-#record-list .request-query:hover {
-    background-color: var(--background-color);
-}
-
 #record-list.loading {
     height: 100%;
     border-radius: 4px;
