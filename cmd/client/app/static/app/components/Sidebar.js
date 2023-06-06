@@ -3,13 +3,13 @@ app.component('Sidebar', {
         <nav id="sidebar" class="d-flex flex-column my-2 ms-2">
             <div class="d-flex mb-2">
                 <div class="d-flex me-2 sidebar-btn w-100" :class="{ active: !selectedRecord }" @click="showRecord()">
-                    <img class="svg-icon square-20" :src="$image.src('view-grid')" alt="settings">
+                    <img class="svg-icon square-20" :src="$image.src('view-grid')" alt="settings" title="Settings">
                 </div>
                 <div class="d-flex me-2 sidebar-btn w-100" @click="toggleTheme()">
-                    <img class="svg-icon square-20" :src="$image.src(themeImg)" alt="theme">
+                    <img class="svg-icon square-20" :src="$image.src(themeImg)" alt="theme" title="Theme">
                 </div>
                 <div class="d-flex sidebar-btn w-100" @click="$refs.reqEditor.show()">
-                    <img class="svg-icon square-20" :src="$image.src('file-signature')" alt="new request">
+                    <img class="svg-icon square-20" :src="$image.src('file-signature')" alt="new request" title="New Request">
                 </div>
             </div>
             <div class="d-flex mb-2">
@@ -147,27 +147,31 @@ app.component('Sidebar', {
 
 app.component('SidebarItem', {
     template: /*html*/ `
-        <div :client-id="record.clientId" class="record-item p-3 lh-sm">
+        <button :client-id="record.clientId" class="record-item p-3 lh-sm">
             <div class="d-flex w-100 mb-2 justify-content-between small">
                 <div>
-                    <div v-if="record.type === 'replay'" class="bg-replay-badge badge me-1"><img src="assets/images/play.svg" alt="replay" /></div>
-                    <div v-else-if="record.type === 'redirect'" class="bg-redirect-badge badge me-1"><img src="assets/images/windows.svg" alt="redirect" /></div>
+                    <div v-if="record.type === 'replay'" class="bg-replay-badge badge me-1" title="Replay">
+                        <img src="assets/images/play.svg" alt="replay" />
+                    </div>
+                    <div v-else-if="record.type === 'redirect'" class="bg-redirect-badge badge me-1" title="Redirect">
+                        <img src="assets/images/windows.svg" alt="redirect" />
+                    </div>
                     <span class="badge me-1" :class="methodBadge()">{{ request.method }}</span>
                     <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
                 <div v-if="record.response.serverElapsed" class="opacity-50">
-                    <small class="fw-light">{{ record.response.elapsed }}ms /&nbsp;</small>
-                    <small class="fw-bolder">{{ record.response.serverElapsed }}ms</small>
+                    <small class="fw-light" title="Client Elapsed Time">{{ record.response.elapsed }}ms /&nbsp;</small>
+                    <small class="fw-bolder" title="Server Elapsed Time">{{ record.response.serverElapsed }}ms</small>
                 </div>
                 <div v-else class="opacity-50">
-                    <small class="fw-bolder">{{ record.response.elapsed }}ms</small>
+                    <small class="fw-bolder" title="Client Elapsed Time">{{ record.response.elapsed }}ms</small>
                 </div>
             </div>
             <div class="mb-1 smallest font-monospace text-end">
                 <span>{{ ellipsis(request.path) }}</span>
                 <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
             </div>
-        </div>
+        </button>
     `,
     props: {
         record: Object

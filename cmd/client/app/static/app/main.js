@@ -106,14 +106,14 @@ const app = Vue.createApp({
         },
 
         decodeBody(item) {
-            if (item.body !== void 0) {
+            if (item.body) {
                 item.b64Body = item.body
                 item.body = atob(item.b64Body)
             }
         },
 
         encodeBody(item) {
-            if (item.b64Body !== void 0) {
+            if (item.b64Body) {
                 item.body = btoa(item.b64Body)
                 item.b64Body = void 0
             }
