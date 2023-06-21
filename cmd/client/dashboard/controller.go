@@ -57,16 +57,6 @@ func replayHandler(req *webserver.Request, res *webserver.Response) {
 	}
 }
 
-// REST -> [GET] /record/{id}/request/curl
-func curlHandler(req *webserver.Request, res *webserver.Response) {
-	record := records.Get(req.Param("id"))
-	if record == nil {
-		res.Status(http.StatusNotFound).NoBody()
-	} else {
-		res.WriteJSON(dumpCurl(record.Request))
-	}
-}
-
 // REST -> [POST] /record/request
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
 	newRequest := &pb.Request{}

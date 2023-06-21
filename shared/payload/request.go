@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )
@@ -59,22 +60,18 @@ func (req *Request) setUserIP(wsReq *webserver.Request) {
 func (req *Request) GetHttpHeader() http.Header {
 	httpHeader := http.Header{}
 
-	for key, stringList := range req.Header {
-		if stringList == nil {
-			httpHeader[key] = []string{}
-			continue
-		}
-		httpHeader[key] = stringList.Val
+	for key, value := range req.Header {
+		httpHeader[key] = strings.Split(value, ",")
 	}
 
 	return httpHeader
 }
 
 func (req *Request) setHttpHeader(header http.Header) {
-	req.Header = map[string]*StringList{}
+	req.Header = make(map[string]string)
 
 	for key, values := range header {
-		req.Header[key] = &StringList{Val: values}
+		req.Header[key] = strings.Join(values, ",")
 	}
 }
 
@@ -84,9 +81,14 @@ func (req *Request) Clone() *Request {
 		Method:     req.Method,
 		Url:        req.Url,
 		Path:       req.Path,
-		Header:     CloneStringMap(req.Header),
+		Header:     make(map[string]string),
 		Body:       req.Body,
 		RemoteAddr: req.RemoteAddr,
 	}
+
+	for key, value := range req.Header {
+		clone.Header[key] = value
+	}
+
 	return clone
 }

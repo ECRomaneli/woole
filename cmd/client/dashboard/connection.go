@@ -16,7 +16,6 @@ func setupServer() *webserver.Server {
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
 	server.Get("/record/{id}/replay", replayHandler)
-	server.Get("/record/{id}/request/curl", curlHandler)
 	server.Post("/record/request", newRequestHandler)
 	server.Delete("/record", clearHandler)
 

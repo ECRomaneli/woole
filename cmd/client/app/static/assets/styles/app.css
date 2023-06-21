@@ -203,7 +203,7 @@
     font-size: 14px;
     font-weight: bold;
     padding: 8px 16px;
-    border-width: 0 0 1px;
+    border-width: 0 0 2px;
     border-bottom-color: transparent;
     margin-bottom: -1px;
     transition: .15s ease-in-out all;
@@ -324,39 +324,41 @@
     color: var(--color) !important;
 }
 
-.table > tbody > tr:hover {
-    background-color: var(--border-color);
+.table.table-hover > tbody > tr:hover {
+    background-color: var(--active-background-color);
 }
 
-/* HEADER TABLE ======================= */
+/* MAP TABLE ======================= */
 
-.header-table [role="column:remove"] {
+.map-table [role="column:remove"] {
     width: 24px;
 }
 
-.header-table [role="column:name"] {
+.map-table [role="column:key"] {
     width: 150px;
 }
 
-.header-table textarea {
+.map-table textarea {
     outline: none;
     width: 100%;
     min-height: 100%;
     background: none;
     color: var(--color);
-    border: 1px solid transparent;
-    transition: .3s linear border-color;
+    border-width: 0;
+    padding-left: .5rem;
+    padding-right: .5rem;
+    border-radius: .1rem;
+    margin-bottom: -5px;
 }
 
-.header-table textarea:hover,
-.header-table textarea:focus {
-    border-bottom-color: var(--active-border-color);
+.map-table textarea:focus {
+    background-color: var(--border-color);
 }
 
-.header-table textarea.auto-resize {
+.map-table textarea.auto-resize {
     overflow: hidden;
     resize: none;
-    height: 25px;
+    height: 23px;
 }
 
 /* BASE64 VIEWER ====================== */
@@ -416,6 +418,30 @@
     border-color: var(--bs-gray);
 }
 
+/* CODE EDITOR ======================== */
+
+.editor-toolbar {
+    background-color: var(--border-color);
+}
+
+.editor-toolbar > button {
+    background: transparent;
+    cursor: default;
+    color: var(--color);
+    border: none;
+    border-radius: 0.5em;
+    font-size: .9em;
+    transition: .2s ease-in-out all;
+}
+
+.editor-toolbar button:hover {
+    background: var(--background-color);
+}
+
+.editor-toolbar button.active {
+    background: var(--active-background-color);
+}
+
 /* GENERICS =========================== */
 
 .c-pointer {
@@ -442,7 +468,7 @@
     }
 
     #body .box {
-        margin-right: 0 !important;
+        margin-right: 0!important;
         overflow: visible;
     }
 }

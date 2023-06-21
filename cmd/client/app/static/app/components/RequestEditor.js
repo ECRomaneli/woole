@@ -7,19 +7,40 @@ app.component('RequestEditor', {
             </template>
             
             <template #body v-if="request">
-                <div class="highlighted-group input-group">
+                <div class="highlighted-group input-group mb-3">
                     <select class="request-method input-group-text" name="method" v-model="request.method">
                         <option v-for="(method) in $constants.HTTP_METHODS" :value="method">{{ method }}</option>
                     </select>
-                    <input name="url" type="text" class="form-control" spellcheck="false" aria-label="url" v-model="request.url">
+                    <input name="url" type="text" class="form-control" spellcheck="false" aria-label="url" @blur="updateUrl()" v-model="request.url">
+                </div>
+
+                <ul class="inline-tabs">
+                    <li @click="tab = 'header'">
+                        <button class="tab" :class="{ active: tab === 'header' }">Header</button>
+                    </li>
+                    <li @click="tab = 'param'">
+                        <button class="tab" :class="{ active: tab === 'param' }">Params</button>
+                    </li>
+                    <li @click="tab = 'body'; $refs.codeEditor.forceUpdate()">
+                        <button class="tab" :class="{ active: tab === 'body' }">Body</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane" :class="{ active: tab === 'header' }">
+                        <map-table ref="headerEditor" :map="request.header" :read-only="false" @update="updateHeader" @remove="removeHeader"></map-table>
+                        <div class="ps-2"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
+                    </div>
+
+                    <div class="tab-pane" :class="{ active: tab === 'param' }">
+                        <map-table ref="queryParamsEditor" :map="request.queryParams" :read-only="false" @update="updateQueryParams" @remove="updateQueryParams"></map-table>
+                    </div>
+
+                    <div class="tab-pane mt-3" :class="{ active: tab === 'body' }">
+                        <code-editor ref="codeEditor" :code="request.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
+                    </div>
                 </div>
                 
-                <div class="h5 centered-title mt-4 mb-3">Headers</div>
-                <header-editor ref="headerEditor" :header="request.header" :read-only="false" @update="updateContent" @remove="removeContent"></header-editor>
-                <div class="ps-2"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
-                
-                <div class="h5 centered-title mt-4 mb-3">Body</div>
-                <code-editor ref="codeEditor" :code="request.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
             </template>
 
             <template #footer v-if="request">
@@ -28,11 +49,12 @@ app.component('RequestEditor', {
             </template>
         </modal>
     `,
-    inject: [ '$util', '$clone', '$constants', '$image' ],
+    inject: [ '$woole', '$clone', '$constants', '$image' ],
     props: { originalRequest: Object },
 
     data() {
         return {
+            tab: 'header',
             content: {},
             request: null,
             isAutoContentLengthEnabled: true
@@ -43,10 +65,10 @@ app.component('RequestEditor', {
         async submit() {
             this.request.b64Body = this.$refs.codeEditor.getCode()
             this.request.path = new URL(this.request.url, "http://dummy").pathname
-            this.request.header = this.$refs.headerEditor.getHeader()
+            this.request.header = this.$refs.headerEditor.toMap()
 
             if (this.isAutoContentLengthEnabled) {
-                this.request.header['Content-Length'] = { Val: [`${this.$refs.codeEditor.getLength()}`] }
+                this.request.header['Content-Length'] = this.$refs.codeEditor.getLength() + ''
             }
 
             this.$bus.trigger('record.new', { request: this.request })
@@ -55,26 +77,35 @@ app.component('RequestEditor', {
 
         prepareRequest() {
             if (!this.originalRequest) {
-                this.request = { method: "GET", header: [], proto: "HTTP/1.1"  }
+                this.request = { method: "GET", url: "", header: [], proto: "HTTP/1.1" }
                 return
             }
 
             this.request = this.$clone(this.originalRequest)
 
             let contentType = this.request.header['Content-Type']
-            this.updateContent({ name: "Content-Type", value: contentType ? contentType.Val.join(";") : "" })
+            this.updateHeader({ key: "Content-Type", value: contentType ? contentType : "" })
         },
 
-        removeRequest() { this.request = null },
+        removeRequest() { this.tab = 'header'; this.request = null },
 
-        updateContent(header) {
-            if (header.name.toLowerCase() === 'content-type') {
-                this.content = this.$util.parseContentType(header.value)
+        updateUrl() {
+            this.$woole.decodeQueryParams(this.request)
+        },
+
+        updateQueryParams() {
+            this.request.queryParams = this.$refs.queryParamsEditor.toMap()
+            this.$woole.encodeQueryParams(this.request)
+        },
+
+        updateHeader(header) {
+            if (header.key.toLowerCase() === 'content-type') {
+                this.content = this.$woole.parseContentType(header.value)
             }
         },
 
-        removeContent(header) {
-            if (header.name.toLowerCase() === 'content-type') {
+        removeHeader(header) {
+            if (header.key.toLowerCase() === 'content-type') {
                 this.content = {}
             }
         },

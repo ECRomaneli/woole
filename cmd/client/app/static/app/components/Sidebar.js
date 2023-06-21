@@ -1,6 +1,6 @@
 app.component('Sidebar', {
     template: /*html*/ `
-        <nav id="sidebar" class="d-flex flex-column my-2 ms-2">
+        <nav id="sidebar" class="d-flex flex-column m-2">
             <div class="d-flex mb-2">
                 <div class="d-flex me-2 sidebar-btn w-100" :class="{ active: !selectedRecord }" @click="showRecord()">
                     <img class="svg-icon square-20" :src="$image.src('view-grid')" alt="settings" title="Settings">
@@ -83,11 +83,7 @@ app.component('Sidebar', {
         })
     },
 
-    watch: {
-        inputSearch() {
-            this.filter(this.recordList)
-        }
-    },
+    watch: { inputSearch() { this.filter(this.recordList) } },
 
     methods: {
         isSelectedRecord(record) {
@@ -160,11 +156,11 @@ app.component('SidebarItem', {
                     <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
                 <div v-if="record.response.serverElapsed" class="opacity-50">
-                    <small class="fw-light" title="Client Elapsed Time">{{ record.response.elapsed }}ms /&nbsp;</small>
-                    <small class="fw-bolder" title="Server Elapsed Time">{{ record.response.serverElapsed }}ms</small>
+                    <small class="fw-light" title="Client Elapsed Time">{{ response.elapsed }}ms /&nbsp;</small>
+                    <small class="fw-bolder" title="Server Elapsed Time">{{ response.serverElapsed }}ms</small>
                 </div>
                 <div v-else class="opacity-50">
-                    <small class="fw-bolder" title="Client Elapsed Time">{{ record.response.elapsed }}ms</small>
+                    <small class="fw-bolder" title="Client Elapsed Time">{{ response.elapsed }}ms</small>
                 </div>
             </div>
             <div class="mb-1 smallest font-monospace text-end">
@@ -184,7 +180,9 @@ app.component('SidebarItem', {
         }
     },
     beforeMount() {
-        this.request.query = this.request.url.split('?')[1]
+        if (this.request.query === void 0) {
+            this.request.query = this.request.url.split('?')[1]
+        }
     },
     methods: {
         methodBadge() {
@@ -195,7 +193,7 @@ app.component('SidebarItem', {
         },
         ellipsis(path) {
             let maxLength = this.maxLength
-            let hasQuery = this.request.query !== void 0
+            let hasQuery = this.request.queryParams !== void 0
 
             if (hasQuery) { maxLength -= 4 }
             let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)

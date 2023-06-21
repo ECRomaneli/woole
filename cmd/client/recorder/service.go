@@ -139,7 +139,6 @@ func handleRedirections(record *adt.Record) {
 	params := make(map[string]string)
 	params["redirectUrl"] = location
 	params["hostname"] = app.GetSessionWhenAvailable().Hostname
-	params["originalUrl"] = location
 
 	newUrl, ok := util.ReplaceHostByUsingExampleStr(location, record.Request.Url)
 	if !ok {
@@ -160,23 +159,24 @@ func handleRedirections(record *adt.Record) {
 	httpHeader := record.Response.GetHttpHeader()
 	httpHeader.Set("Content-Type", "text/html")
 	httpHeader.Del("location")
+	httpHeader.Del("Content-Encoding")
 	httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
 	record.Response.SetHttpHeader(httpHeader)
 }
 
-func replaceUrlHeaderByCustomUrl(header map[string]*pb.StringList, headerName string) {
-	if header == nil || header[headerName] == nil {
+func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {
+	if header == nil {
 		return
 	}
 
-	rawUrl := header[headerName].Val[0]
+	rawUrl := header[headerName]
 	newUrl, ok := util.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
 
 	if !ok {
 		panic("Error when trying to replace the host of [" + rawUrl + "]")
 	}
 
-	header[headerName] = &pb.StringList{Val: []string{newUrl.String()}}
+	header[headerName] = newUrl.String()
 }
 
 func handleGRPCErrors(err error) bool {

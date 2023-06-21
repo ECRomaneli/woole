@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-	"fmt"
 	"io"
-	"strings"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder"
-	pb "woole/shared/payload"
 
 	"github.com/google/brotli/go/cbrotli"
 )
@@ -51,21 +48,6 @@ func decompress(contentEncoding string, data []byte) []byte {
 	panicIfNotNil(err)
 
 	return data
-}
-
-func dumpCurl(req *pb.Request) string {
-	var b strings.Builder
-	// Build cmd.
-	fmt.Fprintf(&b, "curl -X %s %s", req.Method, req.Url)
-	// Build headers.
-	for k, v := range req.GetHttpHeader() {
-		fmt.Fprintf(&b, " \\\n  -H '%s: %s'", k, strings.Join(v, " "))
-	}
-	// Build body.
-	if len(req.Body) > 0 {
-		fmt.Fprintf(&b, " \\\n  -d '%s'", req.Body)
-	}
-	return b.String()
 }
 
 func panicIfNotNil(err any) {

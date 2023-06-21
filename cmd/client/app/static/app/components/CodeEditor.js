@@ -1,5 +1,13 @@
 app.component('CodeEditor', {
-    template: /*html*/ `<div ref="container"></div>`,
+    template: /*html*/ `
+        <div>
+            <div class="editor-toolbar ps-2" v-if="pretty.enabled">
+                <button class="fw-light px-2 m-1" :class="{ active: tab === 'raw' }" @click="changeTab('raw')">Raw</button>
+                <button class="fw-light px-2 m-1" :class="{ active: tab === 'pretty' }" @click="changeTab('pretty')">Pretty</button>
+            </div>
+            <div ref="container"></div>
+        </div>
+    `,
     props: { type: String, code: String, readOnly: Boolean, minLines: Number, maxLines: Number },
     data() {
         return {
@@ -10,7 +18,12 @@ app.component('CodeEditor', {
                      'json5': [ 'json' ],
                         'sh': [ 'shellscript', 'sh' ]
             },
-            appElement: document.getElementById('app')
+            tab: 'raw',
+            pretty: {
+                enabled: this.enablePretty(),
+                code: null
+            },
+            themeElement: document.querySelector('[data-theme]')
         }
     },
     mounted() {
@@ -18,8 +31,8 @@ app.component('CodeEditor', {
         this.$bus.on('theme.change', this.updateTheme)
     },
     beforeUnmount() {
-        this.editor.destroy()
         this.$bus.off('theme.change', this.updateTheme)
+        this.editor.destroy()
     },
     watch: {
         type: function (val) { this.setEditorMode(val) },
@@ -45,9 +58,10 @@ app.component('CodeEditor', {
         },
 
         setEditorMode(type) {
+            this.pretty.enabled = this.enablePretty()
             if (type) {
                 for (const mode in this.typesByMode) {
-                    if (this.typesByMode[mode].some(t => type.indexOf(t) !== -1)) {
+                    if (this.typesByMode[mode].some(t => this.isType(t))) {
                         this.editor.session.setMode('ace/mode/' + mode)
                         return
                     }
@@ -56,7 +70,13 @@ app.component('CodeEditor', {
             this.editor.session.setMode('')
         },
 
+        getCode() {
+            return this.editor.getValue()
+        },
+
         setCode(code) {
+            this.tab = 'raw'
+            this.prettyCode = null
             this.editor.setValue(code)
             this.editor.gotoLine(1)
         },
@@ -65,20 +85,49 @@ app.component('CodeEditor', {
             return this.editor.getValue().length
         },
 
-        getCode() {
-            return this.editor.getValue()
-        },
-
         forceUpdate() {
             this.editor.renderer.updateFull()
         },
 
         updateTheme() {
-            if (this.appElement.getAttribute('data-theme') === 'dark') {
+            if (this.themeElement.getAttribute('data-theme') === 'dark') {
                 this.editor.setTheme('ace/theme/twilight')
             } else {
                 this.editor.setTheme('ace/theme/chrome')
             }
+        },
+
+        enablePretty() {
+            if (!this.type || !this.readOnly) { return false }
+            return this.isType('json')
+        },
+
+        beautify() {
+            if (this.isType('json')) {
+                try {
+                    this.pretty.code = JSON.stringify(JSON.parse(this.code), void 0, '\t')
+                } catch(err) {
+                    console.error(err)
+                    this.pretty.code = "Failed to parse JSON."
+                }
+            }
+        },
+
+        changeTab(tab) {
+            this.tab = tab
+            let code = this.code
+
+            if (tab === 'pretty') {
+                if (this.pretty.code === null) { this.beautify() }
+                code = this.pretty.code
+            }
+            
+            this.editor.setValue(code)
+            this.editor.gotoLine(1)
+        },
+
+        isType(type) {
+            return this.type.indexOf(type) !== -1
         }
     }
 })

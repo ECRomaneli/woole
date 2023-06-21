@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"time"
+	"woole/cmd/client/app"
 	pb "woole/shared/payload"
 
 	"google.golang.org/grpc"
@@ -93,13 +94,13 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 func recoverOrExit(err error) {
 	errStatus, ok := status.FromError(err)
 
-	if ok && isRecoverable(err) {
+	if ok && isRecoverable(err) && app.HasSession() {
 		log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
-		log.Error("[", config.TunnelUrl.String(), "] Retrying in 5 seconds...")
+		log.Warn("[", config.TunnelUrl.String(), "]", errStatus.Code().String()+", retrying in 5 seconds...")
 		<-time.After(5 * time.Second)
 	} else {
 		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
-		fmt.Println("Failed to connect with tunnel on " + config.TunnelUrl.String())
+		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel.")
 		os.Exit(1)
 	}
 }

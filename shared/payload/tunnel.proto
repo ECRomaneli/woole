@@ -41,7 +41,7 @@ message Request {
     string method = 2;
     string url = 3;
     string path = 4;
-    map<string, StringList> header = 5;
+    map<string, string> header = 5;
     bytes body = 6;
     string remoteAddr = 7;
 }
@@ -50,7 +50,7 @@ message Response {
     string proto = 1;
     string status = 2;
     int32 code = 3;
-    map<string, StringList> header = 4;
+    map<string, string> header = 4;
     bytes body = 5;
     int64 elapsed = 6;
     int64 serverElapsed = 7;
@@ -61,10 +61,6 @@ message Record {
     Request request = 2;
     Response response = 3;
     Step step = 4;
-}
-
-message StringList {
-    repeated string Val = 1;
 }
 
 message Empty {}

@@ -15,7 +15,7 @@
             <div class="code">{{redirectUrl}}</div>
         </div>
         <div class="h-flex">
-            <a class="link-btn" href='{{originalUrl}}'>Continue</a>
+            <a class="link-btn" href='{{redirectUrl}}'>Continue</a>
             <a class="link-btn toggle-{{enableCustomUrl}}" href='{{customUrl}}'>Try using "{{hostname}}"</a>
         </div>
     </div>
@@ -74,6 +74,7 @@
 
         .box > .code {
             background-color: #1a2028;
+            overflow-wrap: break-word;
         }
 
         .link-btn {

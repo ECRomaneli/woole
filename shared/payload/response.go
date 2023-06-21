@@ -3,6 +3,7 @@ package payload
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 )
 
 func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder, elapsed int64) *Response {
@@ -20,23 +21,18 @@ func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder, el
 func (res *Response) GetHttpHeader() http.Header {
 	httpHeader := http.Header{}
 
-	for key, stringList := range res.Header {
-		if stringList == nil {
-			httpHeader[key] = []string{}
-			continue
-		}
-		// if null > res.Header[key] = &StringList{}
-		httpHeader[key] = stringList.Val
+	for key, value := range res.Header {
+		httpHeader[key] = strings.Split(value, ",")
 	}
 
 	return httpHeader
 }
 
 func (res *Response) SetHttpHeader(header http.Header) {
-	res.Header = map[string]*StringList{}
+	res.Header = make(map[string]string)
 
 	for key, values := range header {
-		res.Header[key] = &StringList{Val: values}
+		res.Header[key] = strings.Join(values, ",")
 	}
 }
 
@@ -45,9 +41,14 @@ func (res *Response) Clone() *Response {
 		Proto:   res.Proto,
 		Status:  res.Status,
 		Code:    res.Code,
-		Header:  CloneStringMap(res.Header),
+		Header:  make(map[string]string),
 		Body:    res.Body,
 		Elapsed: res.Elapsed,
 	}
+
+	for key, value := range res.Header {
+		clone.Header[key] = value
+	}
+
 	return clone
 }

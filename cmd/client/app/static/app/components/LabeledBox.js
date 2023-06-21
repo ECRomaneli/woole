@@ -1,6 +1,7 @@
 app.component('Box', {
     template: /*html*/ `
-            <div ref="box" class="box px-2 pb-5" :class="getClasses()">
+        <div class="pe-2 pb-2">
+            <div ref="box" class="box px-2 pb-5 h-100" :class="mode.class">
                 <div class="d-flex justify-content-between align-items-center py-3 mb-3 border-bottom">
                     <div class="d-inline-flex pe-none">
                         <img class="svg-icon square-24 me-2 ms-2" :src="$image.src(labelImg)" :alt="label">
@@ -18,7 +19,7 @@ app.component('Box', {
         </div>
     `,
     inject: ['$image'],
-    props: { labelImg: String, label: String, class: String },
+    props: { labelImg: String, label: String },
     data() { return { mode: { img: "maximize", class: "" }  } },
 
     methods: { 
@@ -33,10 +34,6 @@ app.component('Box', {
 
             // Workaround to make ACE Editor re-wrap lines
             setTimeout(() => window.dispatchEvent(new Event('resize')), 10)
-        },
-
-        getClasses() {
-            return this.class + " " + this.mode.class
         }
     }
 })

@@ -1,6 +1,6 @@
 app.component('Dashboard', {
     template: /*html*/ `
-        <session-details-card class="w-100 mb-2" :session-details="sessionDetails"></session-details-card>
+        <session-details-card class="w-100" :session-details="sessionDetails"></session-details-card>
     `,
     props: { sessionDetails: Object }
 })

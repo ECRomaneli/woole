@@ -18,9 +18,9 @@
 <body>
     <main id="app">
         <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
-        <div id="body" class="pt-2 px-2">
+        <div id="body" class="pt-2">
             <dashboard v-if="!selectedRecord" :session-details="sessionDetails"></dashboard>
-            <record-viewer id="record-viewer" v-else :record="selectedRecord"></record-viewer>
+            <record-viewer v-else :record="selectedRecord"></record-viewer>
         </div>
     </main>
 
@@ -32,7 +32,8 @@
     <script src="app/main.js"></script>
 
     <!-- Providers -->
-    <script src="app/providers/Util.js"></script>
+    <script src="app/providers/Woole.js"></script>
+    <script src="app/providers/Map.js"></script>
     <script src="app/providers/Image.js"></script>
     <script src="app/providers/Constants.js"></script>
 
@@ -44,14 +45,14 @@
     <!-- Components -->
     <script src="app/components/BootstrapModal.js"></script>
     <script src="app/components/LabeledBox.js"></script>
-    <script src="app/components/HeaderEditor.js"></script>
+    <script src="app/components/MapTable.js"></script>
     <script src="app/components/CodeViewer.js"></script>
     <script src="app/components/CodeEditor.js"></script>
     <script src="app/components/RequestEditor.js"></script>
     <script src="app/components/Base64Viewer.js"></script>
     <script src="app/components/Sidebar.js"></script>
     <script src="app/components/Dashboard.js"></script>
-    <script src="app/components/RecordHandler.js"></script>
+    <script src="app/components/RecordViewer.js"></script>
 
     <!-- Mount App -->
     <script>app.mount('#app')</script>
