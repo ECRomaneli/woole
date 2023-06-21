@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"woole/cmd/server/app"
+	pb "woole/internal/pkg/payload"
+	"woole/pkg/timer"
 
 	"woole/cmd/server/recorder/adt"
-	pb "woole/shared/payload"
-	"woole/shared/util"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"google.golang.org/grpc/codes"
@@ -23,7 +23,7 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 
 	var err error
 
-	elapsed := util.Timer(func() {
+	elapsed := timer.Exec(func() {
 		defer client.RemoveRecord(record.Id)
 
 		select {

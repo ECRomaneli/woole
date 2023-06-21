@@ -1,13 +1,11 @@
 package payload
 
-import (
-	"woole/shared/util"
-)
+import "woole/internal/pkg/url"
 
 func (auth *Session) HttpUrl() string {
 	var port string
 
-	if util.GetDefaultPortStr("http") != auth.GetHttpPort() {
+	if url.GetDefaultPortStr("http") != auth.GetHttpPort() {
 		port = ":" + auth.GetHttpPort()
 	}
 
@@ -21,7 +19,7 @@ func (auth *Session) HttpsUrl() string {
 
 	var port string
 
-	if util.GetDefaultPortStr("https") != auth.GetHttpsPort() {
+	if url.GetDefaultPortStr("https") != auth.GetHttpsPort() {
 		port = ":" + auth.GetHttpsPort()
 	}
 

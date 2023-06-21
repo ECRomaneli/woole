@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder/adt"
-	pb "woole/shared/payload"
-	"woole/shared/util"
+	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/url"
+	"woole/pkg/timer"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -119,7 +120,7 @@ func doRequest(record *adt.Record) {
 func proxyRequest(req *pb.Request) *pb.Response {
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
-	elapsed := util.Timer(func() {
+	elapsed := timer.Exec(func() {
 		proxyHandler.ServeHTTP(recorder, req.ToHTTPRequest())
 	})
 
@@ -140,7 +141,7 @@ func handleRedirections(record *adt.Record) {
 	params["redirectUrl"] = location
 	params["hostname"] = app.GetSessionWhenAvailable().Hostname
 
-	newUrl, ok := util.ReplaceHostByUsingExampleStr(location, record.Request.Url)
+	newUrl, ok := url.ReplaceHostByUsingExampleStr(location, record.Request.Url)
 	if !ok {
 		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
 	}
@@ -170,7 +171,7 @@ func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {
 	}
 
 	rawUrl := header[headerName]
-	newUrl, ok := util.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
+	newUrl, ok := url.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
 
 	if !ok {
 		panic("Error when trying to replace the host of [" + rawUrl + "]")

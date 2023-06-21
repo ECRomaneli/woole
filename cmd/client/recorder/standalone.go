@@ -4,7 +4,7 @@ import (
 	"math"
 	"woole/cmd/client/app"
 	"woole/cmd/client/recorder/adt"
-	pb "woole/shared/payload"
+	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )

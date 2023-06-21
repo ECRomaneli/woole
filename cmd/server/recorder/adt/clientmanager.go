@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"sync"
-	"woole/shared/util/rand"
+	"woole/pkg/rand"
 )
 
 type ClientManager struct {

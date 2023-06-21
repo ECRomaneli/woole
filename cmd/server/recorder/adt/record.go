@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	pb "woole/shared/payload"
-	"woole/shared/util/signal"
+	pb "woole/internal/pkg/payload"
+	"woole/pkg/signal"
 )
 
 type Record struct {

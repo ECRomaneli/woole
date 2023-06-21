@@ -2,7 +2,7 @@ package recorder
 
 import (
 	"net"
-	pb "woole/shared/payload"
+	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"google.golang.org/grpc"

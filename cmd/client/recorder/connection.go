@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 	"woole/cmd/client/app"
-	pb "woole/shared/payload"
+	pb "woole/internal/pkg/payload"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

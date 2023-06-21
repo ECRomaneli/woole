@@ -3,8 +3,8 @@ package adt
 import (
 	"sync"
 	"time"
-	pb "woole/shared/payload"
-	"woole/shared/util/sequence"
+	pb "woole/internal/pkg/payload"
+	"woole/pkg/sequence"
 )
 
 type Client struct {

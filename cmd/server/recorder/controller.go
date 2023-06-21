@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 	"time"
-	pb "woole/shared/payload"
+	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )

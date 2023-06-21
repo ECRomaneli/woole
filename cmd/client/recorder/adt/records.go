@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"sync"
 
-	pb "woole/shared/payload"
-	"woole/shared/util/channel"
-	"woole/shared/util/sequence"
-	"woole/shared/util/signal"
+	pb "woole/internal/pkg/payload"
+	"woole/pkg/channel"
+	"woole/pkg/sequence"
+	"woole/pkg/signal"
 )
 
 var seqId sequence.Seq

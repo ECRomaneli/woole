@@ -9,12 +9,13 @@ import (
 	"net/url"
 	"os"
 	"sync"
-	"woole/shared/constants"
-	pb "woole/shared/payload"
-	"woole/shared/util"
-	"woole/shared/util/rand"
-	"woole/shared/util/signal"
-	"woole/shared/util/template"
+	"woole/internal/pkg/constants"
+	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/template"
+	"woole/pkg/rand"
+	"woole/pkg/signal"
+
+	iurl "woole/internal/pkg/url"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
@@ -116,11 +117,11 @@ func ReadConfig() *Config {
 	config = &Config{
 		ClientId:        *clientId,
 		ClientKey:       rand.RandMD5(*clientId),
-		HttpUrl:         util.RawUrlToUrl(*httpUrl, "http", defaultStandalonePort),
-		ProxyUrl:        util.RawUrlToUrl(*proxyUrl, "http", ""),
-		TunnelUrl:       util.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
-		CustomUrl:       util.RawUrlToUrl(*customUrl, "http", ""),
-		DashboardUrl:    util.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
+		HttpUrl:         iurl.RawUrlToUrl(*httpUrl, "http", defaultStandalonePort),
+		ProxyUrl:        iurl.RawUrlToUrl(*proxyUrl, "http", ""),
+		TunnelUrl:       iurl.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
+		CustomUrl:       iurl.RawUrlToUrl(*customUrl, "http", ""),
+		DashboardUrl:    iurl.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
 		MaxRecords:      *maxRecords,
 		tlsSkipVerify:   *tlsSkipVerify,
 		tlsCa:           *tlsCa,

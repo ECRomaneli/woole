@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"woole/shared/constants"
-	"woole/shared/util"
-	"woole/shared/util/rand"
+	"woole/internal/pkg/constants"
+	"woole/internal/pkg/url"
+	"woole/pkg/rand"
 
 	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
@@ -57,8 +57,8 @@ func ReadConfig() *Config {
 		return config
 	}
 
-	httpPort := flag.Int("http", util.GetDefaultPort("http"), "HTTP Port")
-	httpsPort := flag.Int("https", util.GetDefaultPort("https"), "HTTPS Port")
+	httpPort := flag.Int("http", url.GetDefaultPort("http"), "HTTP Port")
+	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "HTTPS Port")
 	logLevel := flag.String("log-level", "OFF", "Log Level")
 	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: Use "+ClientToken+".mysite.com to vary the subdomain as client ID")
 	serverKey := flag.String("key", "", "Key used to hash the bearer")

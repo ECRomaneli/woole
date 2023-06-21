@@ -54,7 +54,7 @@ func (b *Broker) start() {
 				select {
 				case sub <- msg:
 				default:
-					logger.GetInstance().Warn("The message was missed")
+					logger.GetInstance().Warn("broker: message missed")
 				}
 			}
 		}
@@ -71,7 +71,7 @@ func (b *Broker) Subscribe() (chan any, error) {
 		return listener, nil
 	}
 
-	return nil, errors.New("Trying to subscribe a stopped Broker")
+	return nil, errors.New("broker: trying to publish in a stopped broker")
 }
 
 func (b *Broker) Unsubscribe(listener chan any) {
@@ -92,7 +92,7 @@ func (b *Broker) Publish(msg any) error {
 		return nil
 	}
 
-	return errors.New("Trying to publish in a stopped Broker")
+	return errors.New("broker: trying to publish in a stopped broker")
 }
 
 func (b *Broker) Stop() {
