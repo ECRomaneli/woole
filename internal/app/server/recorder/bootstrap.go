@@ -1,8 +1,8 @@
 package recorder
 
 import (
-	"woole/cmd/server/app"
-	"woole/cmd/server/recorder/adt"
+	"woole/internal/app/server/app"
+	"woole/internal/app/server/recorder/adt"
 	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/console/logger"

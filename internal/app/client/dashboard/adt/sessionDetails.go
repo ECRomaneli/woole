@@ -1,7 +1,7 @@
 package adt
 
 import (
-	"woole/cmd/client/app"
+	"woole/internal/app/client/app"
 )
 
 type SessionDetails struct {

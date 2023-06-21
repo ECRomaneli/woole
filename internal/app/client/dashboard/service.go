@@ -5,8 +5,8 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
-	"woole/cmd/client/app"
-	"woole/cmd/client/recorder"
+	"woole/internal/app/client/app"
+	"woole/internal/app/client/recorder"
 
 	"github.com/google/brotli/go/cbrotli"
 )

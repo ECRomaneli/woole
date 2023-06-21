@@ -1,16 +1,14 @@
 package dashboard
 
 import (
-	"io/fs"
 	"net/http"
-	"woole/cmd/client/app"
+	"woole/web"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )
 
 func setupServer() *webserver.Server {
-	staticFolder, _ := fs.Sub(app.EmbeddedFS, "static")
-	server := webserver.NewServerWithFS(http.FS(staticFolder))
+	server := webserver.NewServerWithFS(http.FS(web.EmbeddedFS))
 
 	server.FileServer("/")
 	server.Get("/record/stream", connHandler)

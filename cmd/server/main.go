@@ -3,17 +3,13 @@ package main
 import (
 	"fmt"
 
-	"woole/cmd/server/app"
-	"woole/cmd/server/recorder"
+	"woole/internal/app/server/app"
+	"woole/internal/app/server/recorder"
 )
 
 var config = app.ReadConfig()
 
 func main() {
-	bootstrap()
-}
-
-func bootstrap() {
 	fmt.Println()
 	fmt.Println("===============")
 	fmt.Printf("  HTTP listening on http://%s:%s\n", config.HostnamePattern, config.HttpPort)

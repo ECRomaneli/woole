@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"woole/cmd/server/app"
+	"woole/internal/app/server/app"
 	pb "woole/internal/pkg/payload"
 	"woole/pkg/timer"
 
-	"woole/cmd/server/recorder/adt"
+	"woole/internal/app/server/recorder/adt"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"google.golang.org/grpc/codes"

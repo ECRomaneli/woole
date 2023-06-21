@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"time"
-	"woole/cmd/client/app"
+	"woole/internal/app/client/app"
 	pb "woole/internal/pkg/payload"
 
 	"google.golang.org/grpc"

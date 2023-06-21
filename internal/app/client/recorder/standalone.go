@@ -2,8 +2,8 @@ package recorder
 
 import (
 	"math"
-	"woole/cmd/client/app"
-	"woole/cmd/client/recorder/adt"
+	"woole/internal/app/client/app"
+	"woole/internal/app/client/recorder/adt"
 	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"

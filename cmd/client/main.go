@@ -2,18 +2,14 @@ package main
 
 import (
 	"fmt"
-	"woole/cmd/client/app"
-	"woole/cmd/client/dashboard"
-	"woole/cmd/client/recorder"
+	"woole/internal/app/client/app"
+	"woole/internal/app/client/dashboard"
+	"woole/internal/app/client/recorder"
 )
 
 var config = app.ReadConfig()
 
 func main() {
-	bootstrap()
-}
-
-func bootstrap() {
 	go printInfo()
 	go startDashboard()
 	recorder.Start()

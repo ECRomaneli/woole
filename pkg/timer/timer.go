@@ -7,5 +7,5 @@ type Elapsed time.Duration
 func Exec(fn func()) int64 {
 	start := time.Now()
 	fn()
-	return int64(time.Since(start))
+	return int64(time.Since(start).Truncate(time.Millisecond) / time.Millisecond)
 }

@@ -3,9 +3,9 @@ package dashboard
 import (
 	"encoding/json"
 	"net/http"
-	"woole/cmd/client/dashboard/adt"
-	"woole/cmd/client/recorder"
-	recorderAdt "woole/cmd/client/recorder/adt"
+	"woole/internal/app/client/dashboard/adt"
+	"woole/internal/app/client/recorder"
+	recorderAdt "woole/internal/app/client/recorder/adt"
 	pb "woole/internal/pkg/payload"
 
 	"github.com/ecromaneli-golang/http/webserver"
