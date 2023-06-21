@@ -129,7 +129,8 @@ func proxyRequest(req *tunnel.Request) *tunnel.Response {
 }
 
 func handleRedirections(record *adt.Record) {
-	location := record.Response.GetHttpHeader().Get("location")
+	res := record.Response
+	location := res.GetHeaderOrEmpty("Location")
 
 	if location == "" {
 		return
@@ -157,12 +158,10 @@ func handleRedirections(record *adt.Record) {
 	record.Response.Body = []byte(app.RedirectTemplate.Apply(params))
 	record.Response.Code = http.StatusOK
 
-	httpHeader := record.Response.GetHttpHeader()
-	httpHeader.Set("Content-Type", "text/html")
-	httpHeader.Del("location")
-	httpHeader.Del("Content-Encoding")
-	httpHeader.Set("Content-Length", strconv.Itoa(len(record.Response.Body)))
-	record.Response.SetHttpHeader(httpHeader)
+	res.SetHeader("Content-Type", "text/html")
+	res.DelHeader("Location")
+	res.DelHeader("Content-Encoding")
+	res.SetHeader("Content-Length", strconv.Itoa(len(record.Response.Body)))
 }
 
 func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {

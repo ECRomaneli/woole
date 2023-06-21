@@ -13,9 +13,30 @@ func (res *Response) FromResponseRecorder(httpRes *httptest.ResponseRecorder, el
 	res.Code = int32(httpRes.Code)
 	res.Body = httpRes.Body.Bytes()
 	res.Elapsed = elapsed
-	res.SetHttpHeader(httpRes.Header())
+	res.setHttpHeader(httpRes.Header())
 
 	return res
+}
+
+func (res *Response) GetHeaderOrEmpty(key string) string {
+	if res.Header == nil {
+		return ""
+	}
+	return res.Header[http.CanonicalHeaderKey(key)]
+}
+
+func (res *Response) SetHeader(key string, value string) {
+	if res.Header == nil {
+		res.Header = make(map[string]string)
+	}
+	res.Header[http.CanonicalHeaderKey(key)] = value
+}
+
+func (res *Response) DelHeader(key string) {
+	if res.Header == nil {
+		return
+	}
+	delete(res.Header, http.CanonicalHeaderKey(key))
 }
 
 func (res *Response) GetHttpHeader() http.Header {
@@ -28,7 +49,7 @@ func (res *Response) GetHttpHeader() http.Header {
 	return httpHeader
 }
 
-func (res *Response) SetHttpHeader(header http.Header) {
+func (res *Response) setHttpHeader(header http.Header) {
 	res.Header = make(map[string]string)
 
 	for key, values := range header {

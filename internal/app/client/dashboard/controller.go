@@ -80,7 +80,6 @@ func responseBodyHandler(req *webserver.Request, res *webserver.Response) {
 	if record == nil {
 		res.Status(http.StatusNotFound).NoBody()
 	} else {
-		body := record.Response.Body
-		res.WriteJSON(decompress(record.Response.GetHttpHeader().Get("Content-Encoding"), body))
+		res.WriteJSON(decompress(record.Response.GetHeaderOrEmpty("Content-Encoding"), record.Response.Body))
 	}
 }

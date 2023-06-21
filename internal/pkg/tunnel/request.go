@@ -57,6 +57,27 @@ func (req *Request) setUserIP(wsReq *webserver.Request) {
 	req.RemoteAddr = ipAddress
 }
 
+func (req *Request) GetHeaderOrEmpty(key string) string {
+	if req.Header == nil {
+		return ""
+	}
+	return req.Header[http.CanonicalHeaderKey(key)]
+}
+
+func (req *Request) SetHeader(key string, value string) {
+	if req.Header == nil {
+		req.Header = make(map[string]string)
+	}
+	req.Header[http.CanonicalHeaderKey(key)] = value
+}
+
+func (req *Request) DelHeader(key string) {
+	if req.Header == nil {
+		return
+	}
+	delete(req.Header, http.CanonicalHeaderKey(key))
+}
+
 func (req *Request) GetHttpHeader() http.Header {
 	httpHeader := http.Header{}
 
