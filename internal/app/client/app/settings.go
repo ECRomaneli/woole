@@ -9,8 +9,8 @@ import (
 	"os"
 	"sync"
 	"woole/internal/pkg/constants"
-	pb "woole/internal/pkg/payload"
 	"woole/internal/pkg/template"
+	"woole/internal/pkg/tunnel"
 	"woole/pkg/rand"
 	"woole/pkg/signal"
 	"woole/web"
@@ -48,10 +48,10 @@ const (
 )
 
 var (
-	RedirectTemplate               = template.FromFile(web.EmbeddedFS, "redirect.html")
-	config           *Config       = &Config{isRead: false}
-	session          *pb.Session   = &pb.Session{}
-	sessionInitiated signal.Signal = *signal.New()
+	RedirectTemplate                 = template.FromFile(web.EmbeddedFS, "redirect.html")
+	config           *Config         = &Config{isRead: false}
+	session          *tunnel.Session = &tunnel.Session{}
+	sessionInitiated signal.Signal   = *signal.New()
 	writingConfig    sync.Mutex
 )
 
@@ -60,12 +60,12 @@ func HasSession() bool {
 }
 
 // If no session was provided yet, the routine will wait for a session
-func GetSessionWhenAvailable() *pb.Session {
+func GetSessionWhenAvailable() *tunnel.Session {
 	<-sessionInitiated.Receive()
 	return session
 }
 
-func SetSession(serverSession *pb.Session) {
+func SetSession(serverSession *tunnel.Session) {
 	if !HasSession() {
 		defer sessionInitiated.SendLast()
 	}
@@ -152,8 +152,8 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	return credentials.NewTLS(tlsConfig)
 }
 
-func (cfg *Config) GetHandshake() *pb.Handshake {
-	return &pb.Handshake{
+func (cfg *Config) GetHandshake() *tunnel.Handshake {
+	return &tunnel.Handshake{
 		ClientId:     cfg.ClientId,
 		ClientKey:    cfg.ClientKey,
 		AllowReaders: cfg.AllowReaders,

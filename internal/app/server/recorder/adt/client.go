@@ -3,7 +3,7 @@ package adt
 import (
 	"sync"
 	"time"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 	"woole/pkg/sequence"
 )
 
@@ -13,7 +13,7 @@ type Client struct {
 	Id            string
 	seq           sequence.Seq
 	records       map[string]*Record
-	RecordChannel chan *pb.Record
+	RecordChannel chan *tunnel.Record
 	IdleTimeout   *time.Timer
 	IsIdle        bool
 }
@@ -21,7 +21,7 @@ type Client struct {
 func NewClient(clientId string, bearer []byte) *Client {
 	client := &Client{
 		Id:            clientId,
-		RecordChannel: make(chan *pb.Record, 32),
+		RecordChannel: make(chan *tunnel.Record, 32),
 		records:       make(map[string]*Record),
 		Bearer:        bearer,
 		IdleTimeout:   time.NewTimer(time.Minute),
@@ -48,16 +48,16 @@ func (cl *Client) RemoveRecord(recordId string) *Record {
 }
 
 func (cl *Client) SendServerElapsed(rec *Record) {
-	cl.RecordChannel <- rec.ThinClone(pb.Step_SERVER_ELAPSED)
+	cl.RecordChannel <- rec.ThinClone(tunnel.Step_SERVER_ELAPSED)
 }
 
-func (cl *Client) SetRecordResponse(recordId string, response *pb.Response) {
+func (cl *Client) SetRecordResponse(recordId string, response *tunnel.Response) {
 	record := cl.getRecord(recordId)
 
 	if record == nil {
 		return
 	}
-	record.Step = pb.Step_RESPONSE
+	record.Step = tunnel.Step_RESPONSE
 	record.Response = response
 	record.OnResponse.SendLast()
 }

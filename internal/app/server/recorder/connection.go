@@ -2,7 +2,7 @@ package recorder
 
 import (
 	"net"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"google.golang.org/grpc"
@@ -37,7 +37,7 @@ func serveTunnel() {
 
 	s := grpc.NewServer(opts...)
 
-	pb.RegisterTunnelServer(s, &Tunnel{})
+	tunnel.RegisterTunnelServer(s, &Tunnel{})
 
 	go func() {
 		if err := s.Serve(lis); err != nil {

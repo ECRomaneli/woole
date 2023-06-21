@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"sync"
 
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 	"woole/pkg/channel"
 	"woole/pkg/sequence"
 	"woole/pkg/signal"
@@ -22,7 +22,7 @@ const (
 )
 
 type Record struct {
-	*pb.Record
+	*tunnel.Record
 	ClientId string `json:"clientId,omitempty"`
 	Type     Type   `json:"type,omitempty"`
 }
@@ -48,12 +48,12 @@ func NewRecords(maxRecords uint) *Records {
 	return recs
 }
 
-func NewRecord(req *pb.Request, recType Type) *Record {
+func NewRecord(req *tunnel.Request, recType Type) *Record {
 	id := seqId.NextString()
-	return &Record{ClientId: id, Type: recType, Record: &pb.Record{Request: req}}
+	return &Record{ClientId: id, Type: recType, Record: &tunnel.Record{Request: req}}
 }
 
-func EnhanceRecord(rec *pb.Record) *Record {
+func EnhanceRecord(rec *tunnel.Record) *Record {
 	return &Record{ClientId: seqId.NextString(), Record: rec, Type: DEFAULT}
 }
 
@@ -136,10 +136,10 @@ func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 	return &Record{
 		ClientId: rec.ClientId,
 		Type:     rec.Type,
-		Record: &pb.Record{
+		Record: &tunnel.Record{
 			Id:      rec.Id,
 			Request: rec.Request,
-			Response: &pb.Response{
+			Response: &tunnel.Response{
 				Proto:         rec.Response.Proto,
 				Status:        rec.Response.Status,
 				Code:          rec.Response.Code,

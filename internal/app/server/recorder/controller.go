@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 	"time"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )
@@ -25,7 +25,7 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 }
 
 // RPC -> Tunnel(stream *TunnelServer)
-func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
+func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	// Receive the client handshake
 	hs, err := stream.Recv()
 
@@ -46,7 +46,7 @@ func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
 	defer log.Info(client.Id, "- Tunnel Disconnected")
 
 	// Send session
-	stream.Send(&pb.ServerMessage{Session: createSession(client)})
+	stream.Send(&tunnel.ServerMessage{Session: createSession(client)})
 
 	if !handleGRPCErrors(err) {
 		return err
@@ -64,8 +64,8 @@ func (_t *Tunnel) Tunnel(stream pb.Tunnel_TunnelServer) error {
 }
 
 // RPC -> TestConn()
-func (_t *Tunnel) TestConn(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
-	return new(pb.Empty), nil
+func (_t *Tunnel) TestConn(_ context.Context, _ *tunnel.Empty) (*tunnel.Empty, error) {
+	return new(tunnel.Empty), nil
 }
 
 func hasClient(clientId string) (string, error) {

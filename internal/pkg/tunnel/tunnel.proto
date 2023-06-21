@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "woole/payload";
+option go_package = "woole/internal/pkg/tunnel";
 
-package payload;
+package tunnel;
 
 service Tunnel {
     rpc Tunnel(stream ClientMessage) returns (stream ServerMessage) {}

@@ -1,4 +1,4 @@
-package payload
+package tunnel
 
 // Return only the necessary for the step
 func (rec *Record) ThinClone(step Step) *Record {

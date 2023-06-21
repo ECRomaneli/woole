@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder/adt"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 	"woole/internal/pkg/url"
 	"woole/pkg/timer"
 
@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Replay(request *pb.Request) {
+func Replay(request *tunnel.Request) {
 	record := adt.NewRecord(request, adt.REPLAY)
 	record.Response = proxyRequest(record.Request)
 	records.AddRecordAndPublish(record)
@@ -29,7 +29,7 @@ func GetRecords() *adt.Records {
 	return records
 }
 
-func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx context.CancelFunc) error {
+func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx context.CancelFunc) error {
 	defer cancelCtx()
 
 	// Start the tunnel stream
@@ -39,7 +39,7 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 	}
 
 	// Send the handshake
-	stream.Send(&pb.ClientMessage{Handshake: config.GetHandshake()})
+	stream.Send(&tunnel.ClientMessage{Handshake: config.GetHandshake()})
 
 	// Receive the session
 	serverMsg, err := stream.Recv()
@@ -67,24 +67,24 @@ func onTunnelStart(client pb.TunnelClient, ctx context.Context, cancelCtx contex
 	}
 }
 
-func handleServerRecord(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
+func handleServerRecord(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.Record) {
 	defer catchAllErrors(serverRecord)
 
 	switch serverRecord.Step {
-	case pb.Step_REQUEST:
+	case tunnel.Step_REQUEST:
 		handleServerRequest(stream, serverRecord)
-	case pb.Step_SERVER_ELAPSED:
+	case tunnel.Step_SERVER_ELAPSED:
 		handleServerElapsed(stream, serverRecord)
 	default:
 		log.Error("Record Step Not Allowed")
 	}
 }
 
-func handleServerRequest(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
+func handleServerRequest(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.Record) {
 	record := adt.EnhanceRecord(serverRecord)
 	doRequest(record)
 
-	err := stream.Send(&pb.ClientMessage{Record: record.ThinClone(pb.Step_RESPONSE)})
+	err := stream.Send(&tunnel.ClientMessage{Record: record.ThinClone(tunnel.Step_RESPONSE)})
 	if !handleGRPCErrors(err) {
 		log.Error("Failed to send response for Record[", record.Id, "].", err)
 	}
@@ -96,7 +96,7 @@ func handleServerRequest(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record)
 	}
 }
 
-func handleServerElapsed(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record) {
+func handleServerElapsed(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.Record) {
 	rec := records.GetByServerId(serverRecord.Id)
 
 	if rec == nil {
@@ -104,20 +104,20 @@ func handleServerElapsed(stream pb.Tunnel_TunnelClient, serverRecord *pb.Record)
 		return
 	}
 
-	rec.Step = pb.Step_SERVER_ELAPSED
+	rec.Step = tunnel.Step_SERVER_ELAPSED
 	rec.Response.ServerElapsed = serverRecord.Response.ServerElapsed
 	records.Publish(&adt.Record{ClientId: rec.ClientId, Record: serverRecord})
 }
 
 func doRequest(record *adt.Record) {
-	record.Step = pb.Step_RESPONSE
+	record.Step = tunnel.Step_RESPONSE
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
 	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
 	record.Response = proxyRequest(record.Request)
 	handleRedirections(record)
 }
 
-func proxyRequest(req *pb.Request) *pb.Response {
+func proxyRequest(req *tunnel.Request) *tunnel.Response {
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
 	elapsed := timer.Exec(func() {
@@ -125,7 +125,7 @@ func proxyRequest(req *pb.Request) *pb.Response {
 	})
 
 	// Save req and res data
-	return (&pb.Response{}).FromResponseRecorder(recorder, elapsed)
+	return (&tunnel.Response{}).FromResponseRecorder(recorder, elapsed)
 }
 
 func handleRedirections(record *adt.Record) {
@@ -194,7 +194,7 @@ func handleGRPCErrors(err error) bool {
 	}
 }
 
-func catchAllErrors(record *pb.Record) {
+func catchAllErrors(record *tunnel.Record) {
 	err := recover()
 
 	if err == nil {

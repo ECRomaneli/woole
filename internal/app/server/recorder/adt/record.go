@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strconv"
 
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 	"woole/pkg/signal"
 )
 
 type Record struct {
-	pb.Record
+	tunnel.Record
 	OnResponse *signal.Signal
 }
 
-func NewRecord(req *pb.Request) *Record {
-	return &Record{Record: pb.Record{Request: req}, OnResponse: signal.New()}
+func NewRecord(req *tunnel.Request) *Record {
+	return &Record{Record: tunnel.Record{Request: req}, OnResponse: signal.New()}
 }
 
 func (recs *Record) ToString(maxPathLength int) string {

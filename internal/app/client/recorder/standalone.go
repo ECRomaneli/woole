@@ -4,13 +4,13 @@ import (
 	"math"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder/adt"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )
 
 func startStandalone() {
-	app.SetSession(&pb.Session{
+	app.SetSession(&tunnel.Session{
 		ClientId:        "standalone",
 		HttpPort:        config.HttpUrl.Port(),
 		Hostname:        "localhost",
@@ -25,7 +25,7 @@ func startStandalone() {
 
 // REST = [ALL] /**
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	record := adt.NewRecord((&pb.Request{}).FromHTTPRequest(req), adt.DEFAULT)
+	record := adt.NewRecord((&tunnel.Request{}).FromHTTPRequest(req), adt.DEFAULT)
 	doRequest(record)
 
 	res.Headers(record.Response.GetHttpHeader()).Status(int(record.Response.Code)).Write(record.Response.Body)

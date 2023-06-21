@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"woole/internal/app/server/app"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 	"woole/pkg/timer"
 
 	"woole/internal/app/server/recorder/adt"
@@ -17,8 +17,8 @@ import (
 )
 
 func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record {
-	record := adt.NewRecord((&pb.Request{}).FromHTTPRequest(req))
-	record.Step = pb.Step_REQUEST
+	record := adt.NewRecord((&tunnel.Request{}).FromHTTPRequest(req))
+	record.Step = tunnel.Step_REQUEST
 	client.AddRecord(record)
 
 	var err error
@@ -36,7 +36,7 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 	})
 
 	if err != nil {
-		record.Response = &pb.Response{Code: http.StatusGatewayTimeout, ServerElapsed: elapsed}
+		record.Response = &tunnel.Response{Code: http.StatusGatewayTimeout, ServerElapsed: elapsed}
 		logRecord(client.Id, record)
 		panic(err)
 	}
@@ -47,9 +47,9 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 	return record
 }
 
-func sendServerMessage(stream pb.Tunnel_TunnelServer, client *adt.Client) {
+func sendServerMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client) {
 	for record := range client.RecordChannel {
-		err := stream.Send(&pb.ServerMessage{Record: record})
+		err := stream.Send(&tunnel.ServerMessage{Record: record})
 
 		if !handleGRPCErrors(err) {
 			return
@@ -57,7 +57,7 @@ func sendServerMessage(stream pb.Tunnel_TunnelServer, client *adt.Client) {
 	}
 }
 
-func receiveClientMessage(stream pb.Tunnel_TunnelServer, client *adt.Client) {
+func receiveClientMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client) {
 	for {
 		tunnelRes, err := stream.Recv()
 
@@ -65,7 +65,7 @@ func receiveClientMessage(stream pb.Tunnel_TunnelServer, client *adt.Client) {
 			return
 		}
 
-		if tunnelRes.Record.Step != pb.Step_RESPONSE {
+		if tunnelRes.Record.Step != tunnel.Step_RESPONSE {
 			log.Error("Wrong record step")
 			return
 		}
@@ -77,10 +77,10 @@ func receiveClientMessage(stream pb.Tunnel_TunnelServer, client *adt.Client) {
 	}
 }
 
-func createSession(client *adt.Client) *pb.Session {
+func createSession(client *adt.Client) *tunnel.Session {
 	hostname := strings.Replace(config.HostnamePattern, app.ClientToken, client.Id, 1)
 
-	auth := &pb.Session{
+	auth := &tunnel.Session{
 		ClientId:        client.Id,
 		Hostname:        hostname,
 		HttpPort:        config.HttpPort,
@@ -96,7 +96,7 @@ func createSession(client *adt.Client) *pb.Session {
 	return auth
 }
 
-func getClient(hs *pb.Handshake) (*adt.Client, error) {
+func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 	// Recover client session if exists
 	client, err := clientManager.RecoverSession(hs.ClientId, hs.Bearer)
 

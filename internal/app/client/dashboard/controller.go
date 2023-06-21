@@ -6,7 +6,7 @@ import (
 	"woole/internal/app/client/dashboard/adt"
 	"woole/internal/app/client/recorder"
 	recorderAdt "woole/internal/app/client/recorder/adt"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )
@@ -34,7 +34,7 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 			rec := msg.(*recorderAdt.Record)
 
 			var event *webserver.Event
-			if rec.Step == pb.Step_SERVER_ELAPSED {
+			if rec.Step == tunnel.Step_SERVER_ELAPSED {
 				event = &webserver.Event{Name: "update-record", Data: rec}
 			} else {
 				event = &webserver.Event{Name: "new-record", Data: rec.ThinCloneWithoutResponseBody()}
@@ -59,7 +59,7 @@ func replayHandler(req *webserver.Request, res *webserver.Response) {
 
 // REST -> [POST] /record/request
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
-	newRequest := &pb.Request{}
+	newRequest := &tunnel.Request{}
 	err := json.Unmarshal(req.Body(), newRequest)
 	if err != nil {
 		webserver.NewHTTPError(

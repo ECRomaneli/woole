@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 	"woole/internal/app/client/app"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -52,7 +52,7 @@ func createProxyHandler() http.HandlerFunc {
 	}
 }
 
-func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Context, context.CancelFunc, error) {
+func connectClient(enableTransportCredentials bool) (tunnel.TunnelClient, context.Context, context.CancelFunc, error) {
 	// Opts
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)))
@@ -76,8 +76,8 @@ func connectClient(enableTransportCredentials bool) (pb.TunnelClient, context.Co
 	cancelFn := func() { cancel(); conn.Close() }
 
 	// Test connection and retry without credentials if needed
-	client := pb.NewTunnelClient(conn)
-	_, err = client.TestConn(ctx, new(pb.Empty))
+	client := tunnel.NewTunnelClient(conn)
+	_, err = client.TestConn(ctx, new(tunnel.Empty))
 
 	if err != nil {
 		cancelFn()

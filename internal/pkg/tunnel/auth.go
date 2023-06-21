@@ -1,4 +1,4 @@
-package payload
+package tunnel
 
 import "woole/internal/pkg/url"
 

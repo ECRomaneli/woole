@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.12
-// source: shared/payload/tunnel.proto
+// source: internal/pkg/tunnel/tunnel.proto
 
-package payload
+package tunnel
 
 import (
 	context "context"
@@ -35,7 +35,7 @@ func NewTunnelClient(cc grpc.ClientConnInterface) TunnelClient {
 }
 
 func (c *tunnelClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Tunnel_TunnelClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Tunnel_ServiceDesc.Streams[0], "/payload.Tunnel/Tunnel", opts...)
+	stream, err := c.cc.NewStream(ctx, &Tunnel_ServiceDesc.Streams[0], "/tunnel.Tunnel/Tunnel", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (x *tunnelTunnelClient) Recv() (*ServerMessage, error) {
 
 func (c *tunnelClient) TestConn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/payload.Tunnel/TestConn", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/tunnel.Tunnel/TestConn", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func _Tunnel_TestConn_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/payload.Tunnel/TestConn",
+		FullMethod: "/tunnel.Tunnel/TestConn",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TunnelServer).TestConn(ctx, req.(*Empty))
@@ -154,7 +154,7 @@ func _Tunnel_TestConn_Handler(srv interface{}, ctx context.Context, dec func(int
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Tunnel_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "payload.Tunnel",
+	ServiceName: "tunnel.Tunnel",
 	HandlerType: (*TunnelServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -170,5 +170,5 @@ var Tunnel_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "shared/payload/tunnel.proto",
+	Metadata: "internal/pkg/tunnel/tunnel.proto",
 }

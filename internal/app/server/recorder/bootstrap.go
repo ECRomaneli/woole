@@ -3,7 +3,7 @@ package recorder
 import (
 	"woole/internal/app/server/app"
 	"woole/internal/app/server/recorder/adt"
-	pb "woole/internal/pkg/payload"
+	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/console/logger"
 )
@@ -14,7 +14,9 @@ var (
 	clientManager = adt.NewClientManager()
 )
 
-type Tunnel struct{ pb.UnimplementedTunnelServer }
+type Tunnel struct {
+	tunnel.UnimplementedTunnelServer
+}
 
 func Start() {
 	serveTunnel()
