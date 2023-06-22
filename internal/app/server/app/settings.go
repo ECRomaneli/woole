@@ -30,7 +30,7 @@ type Config struct {
 	TunnelResponseSize     int
 	TunnelResponseTimeout  int
 	serverKey              []byte
-	isRead                 bool
+	available              bool
 }
 
 const (
@@ -38,8 +38,8 @@ const (
 )
 
 var (
-	config        *Config = &Config{isRead: false}
-	writingConfig sync.Mutex
+	config   *Config = &Config{available: false}
+	configMu sync.Mutex
 )
 
 func (cfg *Config) HasTlsFiles() bool {
@@ -48,27 +48,27 @@ func (cfg *Config) HasTlsFiles() bool {
 
 // ReadConfig reads the arguments from the command line.
 func ReadConfig() *Config {
-	if !config.isRead {
-		writingConfig.Lock()
-		defer writingConfig.Unlock()
+	if !config.available {
+		configMu.Lock()
+		defer configMu.Unlock()
 	}
 
-	if config.isRead {
+	if config.available {
 		return config
 	}
 
-	httpPort := flag.Int("http", url.GetDefaultPort("http"), "HTTP Port")
-	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "HTTPS Port")
-	logLevel := flag.String("log-level", "OFF", "Log Level")
-	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: Use "+ClientToken+".mysite.com to vary the subdomain as client ID")
+	httpPort := flag.Int("http", url.GetDefaultPort("http"), "Port on which the server listens for HTTP requests")
+	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "Port on which the server listens for HTTPS requests")
+	logLevel := flag.String("log-level", "OFF", "Level of detail for the logs to be displayed")
+	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: "+ClientToken+".mysite.com to vary the subdomain")
 	serverKey := flag.String("key", "", "Key used to hash the bearer")
-	tlsCert := flag.String("tls-cert", "", "TLS cert/fullchain file path")
-	tlsKey := flag.String("tls-key", "", "TLS key/privkey file path")
-	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Tunnel Port")
+	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")
+	tlsKey := flag.String("tls-key", "", "Path to the TLS private key file")
+	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Port on which the gRPC tunnel listens")
 	tunnelReconnectTimeout := flag.Int("tunnel-reconnect-timeout", 10000, "Timeout to reconnect the stream when lose connection")
-	tunnelRequestSize := flag.Int("tunnel-request-size", math.MaxInt32, "Tunnel maximum request size in bytes. 0 = max value")
-	tunnelResponseSize := flag.Int("tunnel-response-size", 4*1024*1024, "Tunnel maximum response size in bytes. 0 = max value")
-	tunnelResponseTimeout := flag.Int("tunnel-response-timeout", 20000, "Timeout to receive a response from Client")
+	tunnelRequestSize := flag.Int("tunnel-request-size", math.MaxInt32, "Tunnel maximum request size in bytes")
+	tunnelResponseSize := flag.Int("tunnel-response-size", math.MaxInt32, "Tunnel maximum response size in bytes")
+	tunnelResponseTimeout := flag.Int("tunnel-response-timeout", 20000, "Timeout to receive a client response")
 
 	flag.Parse()
 
@@ -86,7 +86,7 @@ func ReadConfig() *Config {
 		TunnelRequestSize:      *tunnelRequestSize,
 		TunnelResponseSize:     *tunnelResponseSize,
 		TunnelResponseTimeout:  *tunnelResponseTimeout,
-		isRead:                 true,
+		available:              true,
 	}
 
 	if !strings.Contains(config.HostnamePattern, ClientToken) {

@@ -36,7 +36,7 @@ type Config struct {
 	EnableTLSTunnel bool
 	AllowReaders    bool
 	IsStandalone    bool
-	isRead          bool
+	available       bool
 }
 
 const (
@@ -49,10 +49,10 @@ const (
 
 var (
 	RedirectTemplate                 = template.FromFile(web.EmbeddedFS, "redirect.html")
-	config           *Config         = &Config{isRead: false}
+	config           *Config         = &Config{available: false}
 	session          *tunnel.Session = &tunnel.Session{}
 	sessionInitiated signal.Signal   = *signal.New()
-	writingConfig    sync.Mutex
+	configMu         sync.Mutex
 )
 
 func HasSession() bool {
@@ -73,35 +73,32 @@ func SetSession(serverSession *tunnel.Session) {
 }
 
 func ReadConfig() *Config {
-	if !config.isRead {
-		writingConfig.Lock()
-		defer writingConfig.Unlock()
+	if !config.available {
+		configMu.Lock()
+		defer configMu.Unlock()
 	}
 
-	if config.isRead {
+	if config.available {
 		return config
 	}
 
 	emptyStr := ""
 
-	clientId := flag.String("client", "", "Client is an unique key used to identify the client on server")
-	httpUrl := flag.String("http", defaultStandaloneMessage, "Standalone HTTP URL")
-	proxyUrl := flag.String("proxy", ":"+defaultProxyPort, "URL to Proxy")
-	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "Server Tunnel URL")
-	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Provide a customized URL when proxying URL")
-	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Dashboard Port")
-	maxRecords := flag.Int("records", 16, "Max Requests to Record")
-	logLevel := flag.String("log-level", "OFF", "Log Level")
+	clientId := flag.String("client", "", "Unique identifier of the client")
+	httpUrl := flag.String("http", defaultStandaloneMessage, "Port to start the standalone server (disables tunnel)")
+	proxyUrl := flag.String("proxy", ":"+defaultProxyPort, "URL of the target server to be proxied")
+	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "URL of the tunnel")
+	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Custom host to be used when proxying")
+	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Port on which the dashboard is available")
+	maxRecords := flag.Int("records", 64, "Max records to store (the overflow will be discarded)")
+	logLevel := flag.String("log-level", "OFF", "Level of detail for the logs to be displayed")
 	allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
-	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Do not validate the integrity of the Server's certificate")
-	tlsCa := flag.String("tls-ca", "", "TLS CA file path. Only for self-signed certificates")
+	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
+	tlsCa := flag.String("tls-ca", "", "Path to the TLS CA file. Only for self-signed certificates")
 
 	flag.Parse()
 
 	logger.SetLogLevelStr(*logLevel)
-
-	// Deprecated: To be removed in the first stable release
-	// http.DefaultTransport.(*http.Transport).TLSClientConfig = tlsConfig
 
 	if *customUrl == defaultCustomUrlMessage {
 		customUrl = proxyUrl
@@ -125,7 +122,7 @@ func ReadConfig() *Config {
 		EnableTLSTunnel: true,
 		AllowReaders:    *allowReaders,
 		IsStandalone:    httpUrl != &emptyStr,
-		isRead:          true,
+		available:       true,
 	}
 
 	session.ClientId = *clientId
