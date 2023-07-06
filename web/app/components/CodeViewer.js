@@ -6,7 +6,7 @@ app.component('CodeViewer', {
             <span class="h5 p-0">Code Viewer</span>
         </template>
         <template #body v-if="code">
-            <code-editor ref="editor" :type="type" :code="code" :readOnly="false" :minLines="10" :maxLines="Infinity" style="margin: -1rem"></code-editor>
+            <code-editor ref="editor" :type="type" :code="code" :readOnly="false" :minLines="10" :maxLines="Infinity"></code-editor>
         </template>
         <template #footer>
             <button v-if="code" type="button" class="btn btn-sm" @click="copyToClipboard()">{{ copyBtnText }}</button>

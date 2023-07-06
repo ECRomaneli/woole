@@ -74,7 +74,7 @@ app.component('RecordItem', {
             </div>
 
             <div class="tab-pane mt-3" :class="{ active: tab === 'body' }">
-                <code-editor ref="codeEditor" :type="content.type" :code="item.body" :readOnly="true" :minLines="2" :maxLines="40"></code-editor>
+                <code-editor ref="codeEditor" :type="content.type" :code="item.body" :readOnly="true" :minLines="2" :maxLines="39"></code-editor>
             </div>
 
             <div class="tab-pane mt-3" :class="{ active: tab === 'preview' }">
@@ -84,7 +84,7 @@ app.component('RecordItem', {
     `,
     inject: ['$woole'],
     props: { titleGroup: Array, item: Object },
-    data() { return { supportedPreviews: ['video', 'image'], tab: 'header' } },
+    data() { return { supportedPreviews: ['image', 'video', 'audio'], tab: 'header' } },
     beforeMount() { this.parseBody() },
     beforeUpdate() {
         this.parseBody()
@@ -104,15 +104,16 @@ app.component('RecordItem', {
             this.content = {}
             if (this.item.body === void 0 || this.item.body === null) { this.item.body = '' }
             if (!this.item.header) { return }
-            let contentType = this.item.header['Content-Type']
-            if (!contentType) { return }
-            this.content = this.$woole.parseContentType(contentType)
+            const contentType = this.item.header['Content-Type']
+            if (contentType) {
+                this.content = this.$woole.parseContentType(contentType)
+            }
         },
 
         hasHeader() { return this.item.header && Object.keys(this.item.header).length > 0 },
         hasParam() { return this.item.queryParams && Object.keys(this.item.queryParams).length > 0 },
         hasBody() { return this.item.body !== '' },
-        isPreviewSupported() { return this.supportedPreviews.indexOf(this.content.category) !== -1 }
+        isPreviewSupported() { return this.supportedPreviews.some(c => c === this.content.category) }
     }
     
 })

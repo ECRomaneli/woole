@@ -1,13 +1,19 @@
 app.component('CodeEditor', {
     template: /*html*/ `
-        <div>
+        <div class='editor-container'>
             <div class="editor-toolbar ps-2" v-if="pretty.enabled">
-                <button class="fw-light px-2 m-1" :class="{ active: tab === 'raw' }" @click="changeTab('raw')">Raw</button>
-                <button class="fw-light px-2 m-1" :class="{ active: tab === 'pretty' }" @click="changeTab('pretty')">Pretty</button>
+                <div v-if="readOnly">
+                    <button class="fw-light px-2 m-1" :class="{ active: tab === 'raw' }" @click="changeTab('raw')">Raw</button>
+                    <button class="fw-light px-2 m-1" :class="{ active: tab === 'pretty' }" @click="changeTab('pretty')">Pretty</button>
+                </div>
+                <div v-else>
+                    <button class="fw-light px-2 m-1" @click="beautify(); setCode(pretty.code, false)">Beautify</button>
+                </div>
             </div>
             <div ref="container"></div>
         </div>
     `,
+    inject: [ '$beautifier' ],
     props: { type: String, code: String, readOnly: Boolean, minLines: Number, maxLines: Number },
     data() {
         return {
@@ -46,6 +52,7 @@ app.component('CodeEditor', {
                 autoScrollEditorIntoView: true,
                 minLines: this.minLines,
                 maxLines: this.maxLines,
+                //height: '100%',
                 wrap: true
             })
             this.updateTheme()
@@ -74,9 +81,11 @@ app.component('CodeEditor', {
             return this.editor.getValue()
         },
 
-        setCode(code) {
-            this.tab = 'raw'
-            this.prettyCode = null
+        setCode(code, resetPretty) {
+            if (resetPretty !== false) {
+                this.tab = 'raw'
+                this.pretty.code = null
+            }
             this.editor.setValue(code)
             this.editor.gotoLine(1)
         },
@@ -98,19 +107,11 @@ app.component('CodeEditor', {
         },
 
         enablePretty() {
-            if (!this.type || !this.readOnly) { return false }
-            return this.isType('json')
+            return this.type && this.$beautifier.supports(this.type)
         },
 
         beautify() {
-            if (this.isType('json')) {
-                try {
-                    this.pretty.code = JSON.stringify(JSON.parse(this.code), void 0, '\t')
-                } catch(err) {
-                    console.error(err)
-                    this.pretty.code = "Failed to parse JSON."
-                }
-            }
+            this.pretty.code = this.$beautifier.beautify(this.type, this.getCode())
         },
 
         changeTab(tab) {

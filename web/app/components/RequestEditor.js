@@ -1,6 +1,6 @@
 app.component('RequestEditor', {
     template: /*html*/ `
-        <modal ref="modal" @show="prepareRequest()" @hide="removeRequest()">
+        <modal fit-height ref="modal" @show="prepareRequest()" @hide="removeRequest()">
             <template #title>
                 <img class="svg-icon square-24 me-2" :src="$image.src('request')" alt="request">
                 <span class="h5 m-0">Request</span>
@@ -29,7 +29,6 @@ app.component('RequestEditor', {
                 <div class="tab-content">
                     <div class="tab-pane" :class="{ active: tab === 'header' }">
                         <map-table ref="headerEditor" :map="request.header" :read-only="false" @update="updateHeader" @remove="removeHeader"></map-table>
-                        <div class="ps-2"><input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label></div>
                     </div>
 
                     <div class="tab-pane" :class="{ active: tab === 'param' }">
@@ -37,15 +36,22 @@ app.component('RequestEditor', {
                     </div>
 
                     <div class="tab-pane mt-3" :class="{ active: tab === 'body' }">
-                        <code-editor ref="codeEditor" :code="request.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="40"></code-editor>
+                        <code-editor ref="codeEditor" :code="request.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="39"></code-editor>
                     </div>
                 </div>
                 
             </template>
 
             <template #footer v-if="request">
-                <button type="button" class="btn btn-sm" @click="$refs.modal.hide()">Cancel</button>
-                <button type="button" class="btn btn-sm" @click="submit()">Submit</button>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div class="ps-2">
+                        <input type="checkbox" v-model="isAutoContentLengthEnabled"><label class="small-label">Calculate "Content-Length" on submit</label>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm me-2" @click="$refs.modal.hide()">Cancel</button>
+                        <button type="button" class="btn btn-sm" @click="submit()">Submit</button>
+                    </div>
+                </div>
             </template>
         </modal>
     `,

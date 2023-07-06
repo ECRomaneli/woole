@@ -17,8 +17,8 @@ app.component('MapTable', {
             <tbody v-else>
                 <tr v-for="(keyValuePair, index) in keyValuePairs" :key="index">
                     <td class="c-pointer" @click="removeKey(index)"><img class="svg-icon square-24" :src="$image.src('trash')" alt="remove key"></td>
-                    <td><textarea name="key" placeholder="Key" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, keyValuePair)" v-model="keyValuePair.key" spellcheck="false"></textarea></td>
-                    <td><textarea name="value" placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, keyValuePair)" v-model="keyValuePair.value" spellcheck="false"></textarea></td>
+                    <td><textarea name="key"   placeholder="Key"   class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, keyValuePair)" v-model="keyValuePair.key"></textarea></td>
+                    <td><textarea name="value" placeholder="Value" class="auto-resize" spellcheck="false" @focus="autoResize" @input="autoResize" @blur="onBlur($event, keyValuePair)" v-model="keyValuePair.value"></textarea></td>
                 </tr>
                 <tr class="c-pointer" @click="addKey()">
                     <td><img class="svg-icon square-24" :src="$image.src('plus')" alt="add key"></td>

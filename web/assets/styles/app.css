@@ -420,11 +420,18 @@
 
 /* CODE EDITOR ======================== */
 
+.editor-container {
+    height: 100%;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
 .editor-toolbar {
     background-color: var(--border-color);
 }
 
-.editor-toolbar > button {
+.editor-toolbar button {
     background: transparent;
     cursor: default;
     color: var(--color);
