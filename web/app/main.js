@@ -10,6 +10,12 @@ const app = Vue.createApp({
         this.$bus.on('record.clear', this.clearRecords)
     },
 
+    computed: {
+        host() {
+            return this.sessionDetails.https ? this.sessionDetails.https : this.sessionDetails.http
+        }
+    },
+
     methods: {
         async itemSelected(record) {
             if (record === null || record.isFetched || !record.response) {
@@ -58,7 +64,7 @@ const app = Vue.createApp({
         },
 
         setupStream() {
-            let es = new EventSource('record/stream')
+            const es = new EventSource('record/stream')
             let TenSecondErrorThreshold = 1
 
             es.addEventListener('session', (event) => {
@@ -70,6 +76,7 @@ const app = Vue.createApp({
                 if (event.data) {
                     let recs = JSON.parse(event.data)
                     recs.sort((a, b) => b.clientId - a.clientId).forEach((rec) => {
+                        rec.request.host = this.host
                         this.$woole.decodeQueryParams(rec.request)
                         this.$woole.decodeBody(rec.request)
                     })
@@ -80,6 +87,7 @@ const app = Vue.createApp({
             es.addEventListener('new-record', (event) => {
                 if (event.data) {
                     let rec = JSON.parse(event.data)
+                    rec.request.host = this.host
                     this.$woole.decodeQueryParams(rec.request)
                     this.$woole.decodeBody(rec.request)
                     this.$bus.trigger('stream.new-record', rec)

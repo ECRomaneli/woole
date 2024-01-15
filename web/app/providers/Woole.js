@@ -21,10 +21,11 @@ app.provide('$woole', {
     },
 
     decodeQueryParams(req) {
-        const rawQueryStr = req.url.split('?')[1]
-        if (rawQueryStr === void 0) { return }
+        const rawQueryArr = req.url.split('?')
+        if (rawQueryArr.length < 2) { return }
 
-        const rawQueryParams = rawQueryStr.split('&')
+        rawQueryArr.shift()
+        const rawQueryParams = rawQueryArr.join('?').split('&')
 
         const queryParams = {}
         for (const rawQueryParam of rawQueryParams) {
@@ -38,18 +39,14 @@ app.provide('$woole', {
     encodeQueryParams(req) {
         if (req.queryParams === void 0) { return }
 
-        let rawQueryParams = []
-        Object.keys(req.queryParams).forEach(key => {
-            if (key !== '') {
-                rawQueryParams.push(encodeURIComponent(key) + '=' + encodeURIComponent(req.queryParams[key]))
-            }
-        })
+        const queryParams = Object
+            .keys(req.queryParams)
+            .filter(key => key !== '')
+            .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(req.queryParams[key]))
+            .join('&')
 
         let url = req.url.split('?')[0]
-
-        if (rawQueryParams.length !== 0) {
-            url += '?' + rawQueryParams.join('&')
-        }
+        if (queryParams !== '') { url += '?' + queryParams }
 
         req.url = url
     },
@@ -70,7 +67,7 @@ app.provide('$woole', {
 
     parseRequestToCurl(req) {
         // Construct cURL command
-        let curlCommand = `curl -X ${req.method} ${req.url}`
+        let curlCommand = `curl -X ${req.method} ${req.host}${req.url}`
 
         // Add headers to cURL command
         Object.keys(req.header).forEach(header => {
