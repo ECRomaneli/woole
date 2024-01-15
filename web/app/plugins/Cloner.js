@@ -1,23 +1,38 @@
 app.use({
     install: (app) => {
-        const STRING = 'string', NUMBER = 'number', BOOLEAN = 'boolean'
-
-        function clone(obj) {
-            const typeOf = typeof obj
-
-            if (typeOf === STRING || typeOf === NUMBER || typeOf === BOOLEAN || obj === null || obj === void 0) {
-                return obj 
-            } 
-            
+        function clone(obj, memo = new WeakMap()) {
+            if (obj === null || typeof obj !== 'object') {
+                return obj;
+            }
+        
+            // Check if the object has already been cloned to avoid infinite loops
+            if (memo.has(obj)) {
+                return memo.get(obj);
+            }
+        
             if (Array.isArray(obj)) {
-                const listClone = []
-                for (const item of obj) { listClone.push(clone(item)) }
-                return listClone
+                // If the object is an array, create a new array and clone each element
+                const arrCopy = [];
+                memo.set(obj, arrCopy);
+            
+                for (let i = 0; i < obj.length; i++) {
+                    arrCopy[i] = deepClone(obj[i], memo);
+                }
+            
+                return arrCopy;
             }
 
-            const objClone = {}
-            for (const key of Object.keys(obj)) { objClone[key] = clone(obj[key]) }
-            return objClone
+            // If the object is a plain object, create a new object and clone each property
+            const objCopy = {};
+            memo.set(obj, objCopy);
+        
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    objCopy[key] = clone(obj[key], memo);
+                }
+            }
+    
+            return objCopy;
         }
 
         app.provide('$clone', clone)
