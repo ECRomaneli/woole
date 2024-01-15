@@ -7,10 +7,13 @@ app.component('RecordViewer', {
                     <button type="button" class="btn btn-sm" @click="$bus.trigger('record.replay', record)">Replay</button>
                     <button type="button" class="btn btn-sm" @click="$refs.reqEditor.show()">w/ Changes</button>
                 </div>
+                <a v-if="record.request.method.toLowerCase() === 'get'" class="btn me-2 lh-1" :href="getFullUrl()" target="_blank" title="Open in a new tab">
+                    <img class="svg-icon square-16" :src="$image.src('windows')" alt="redirect">
+                </a>
             </template>
             <template #body>
                 <record-item 
-                    :titleGroup="[record.request.method, record.request.url, record.request.proto]" 
+                    :titleGroup="[record.request.method, record.request.url, record.request.proto, getFullUrl()]" 
                     :item="record.request">
                 </record-item>
             </template>
@@ -27,7 +30,7 @@ app.component('RecordViewer', {
         <request-editor ref="reqEditor" :originalRequest="record.request"></request-editor>
         <code-viewer ref='curlViewer' type="shellscript" :code="record.request.curl"></code-viewer>
     `,
-    inject: ['$constants', '$woole'],
+    inject: ['$constants', '$woole', '$image'],
     props: { record: Object },
 
     methods: {
@@ -36,15 +39,24 @@ app.component('RecordViewer', {
                 this.$woole.parseRequestToCurl(this.record.request)
             }
             this.$refs.curlViewer.show()
-        }
+        },
+
+        getFullUrl() { return this.record.request.host + this.record.request.url }
     }
 })
 
 app.component('RecordItem', {
     template: /*html*/ `
-        <div class="highlighted-group input-group mb-3">
+        <div class="highlighted-group input-group mb-3" @mouseover="enableCopy = true" @mouseleave="enableCopy = false">
             <span class="input-group-text">{{ titleGroup[0] }}</span>
             <input type="text" class="form-control" disabled :value="titleGroup[1]">
+            
+            <button v-if="titleGroup[3]" class="btn img-btn" @click="$clipboard.writeText(titleGroup[3])" title="Copy">
+                <Transition name="fast-fade">
+                    <img v-show="enableCopy" class="svg-icon square-16 ms-2 me-2" :src="$image.src('copy')" alt="copy">
+                </Transition>
+            </button>
+            
             <span v-if="titleGroup[2]" class="input-group-text">{{ titleGroup[2] }}</span>
         </div>
 
@@ -56,7 +68,9 @@ app.component('RecordItem', {
                 <button class="tab" :class="{ active: tab === 'param' }">Params</button>
             </li>
             <li v-if="hasBody()" @click="tab = 'body'; $refs.codeEditor.forceUpdate()">
-                <button class="tab" :class="{ active: tab === 'body' }">Body</button>
+                <button class="tab" :class="{ active: tab === 'body' }">
+                    Body <span v-if="hasBody()" class="badge fw-light" style="font-size:.6rem">{{ bodySize }}</span>
+                </button>
             </li>
 
             <li v-if="isPreviewSupported()" @click="tab = 'preview'">
@@ -82,22 +96,42 @@ app.component('RecordItem', {
             </div>
         </div>
     `,
-    inject: ['$woole'],
+    inject: ['$woole', '$image', '$clipboard'],
     props: { titleGroup: Array, item: Object },
-    data() { return { supportedPreviews: ['image', 'video', 'audio'], tab: 'header' } },
+    data() { return { supportedPreviews: ['image', 'video', 'audio'], tab: 'header', enableCopy: false } },
     beforeMount() { this.parseBody() },
+    mounted() { this.selectAvailableTab() },
     beforeUpdate() {
         this.parseBody()
-        this.closeUnavailableTab()
+        this.selectAvailableTab()
+    },
+    computed: {
+        bodySize() {
+            let length = parseInt(this.item.header['Content-Length']) || this.body.length
+
+            if (!length) { return '0 B' }
+
+            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            let index = 0;
+        
+            while (length >= 1000 && index < units.length - 1) {
+                length /= 1024;
+                index++;
+            }
+        
+            return length.toFixed(2) + ' ' + units[index];
+        }
     },
     methods: { 
-        closeUnavailableTab() {
-            let tab = this.tab
-            if (tab === 'preview' && !this.isPreviewSupported()) { tab = 'body' }
-            if (tab === 'body' && !this.hasBody()) { tab = 'param' }
-            if (tab === 'param' && !this.hasParam()) { tab = 'header' }
-            if (tab === 'header' && !this.hasHeader()) { tab = '' }
-            this.tab = tab
+        selectAvailableTab() {
+            let availableTabs = []
+            this.isPreviewSupported()   && availableTabs.push('preview')
+            this.hasBody()              && availableTabs.push('body')
+            this.hasParam()             && availableTabs.push('param')
+            this.hasHeader()            && availableTabs.push('header')
+
+            if (availableTabs.some(tab => this.tab === tab)) { return }
+            this.tab = availableTabs.length ? availableTabs[0] : ''
         },
 
         parseBody() {
@@ -110,10 +144,16 @@ app.component('RecordItem', {
             }
         },
 
+        async copyUrl() {
+            await navigator.clipboard.writeText(this.titleGroup[1])
+        },
+
         hasHeader() { return this.item.header && Object.keys(this.item.header).length > 0 },
         hasParam() { return this.item.queryParams && Object.keys(this.item.queryParams).length > 0 },
         hasBody() { return this.item.body !== '' },
-        isPreviewSupported() { return this.supportedPreviews.some(c => c === this.content.category) }
+        isPreviewSupported() {
+            return this.supportedPreviews.some(c => c === this.content.category) && this.hasBody()
+        }
     }
     
 })

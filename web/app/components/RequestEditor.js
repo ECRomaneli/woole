@@ -90,7 +90,7 @@ app.component('RequestEditor', {
             this.request = this.$clone(this.originalRequest)
 
             let contentType = this.request.header['Content-Type']
-            this.updateHeader({ key: "Content-Type", value: contentType ? contentType : "" })
+            this.updateHeader({ key: "Content-Type", value: contentType || "" })
         },
 
         removeRequest() { this.tab = 'header'; this.request = null },
