@@ -14,11 +14,12 @@ app.component('CodeViewer', {
         </template>
     </modal>
     `,
+    inject: [ '$clipboard' ],
     props: { type: String, code: String },
     data() { return { copyBtnText: "Copy to Clipboard" } },
     methods: {
         async copyToClipboard() {
-            await navigator.clipboard.writeText(this.$refs.editor.getCode())
+            await this.$clipboard.writeText(this.$refs.editor.getCode())
             this.copyBtnText = "Copied!"
             setTimeout(() => this.copyBtnText = "Copy to Clipboard", 3000)
         },
