@@ -7,69 +7,66 @@ app.use({
                 EMPTY_STR = '',
                 STRING = 'string', 
                 NUMBER = 'number', 
-                BOOLEAN = 'boolean'
-
-        app.provide('$search', (objList, queryStr, exclude) => {
+                BOOLEAN = 'boolean',
+                BIGINT = 'bigint'
+        
+        function search(objList, queryStr, exclude) {
             if (objList === void 0 || objList === null) { return [] }
-            if (queryStr === void 0 || queryStr === null || queryStr === '') { return objList.slice() }
+            if (queryStr === void 0 || queryStr === null || queryStr.trim() === EMPTY_STR) { return objList.slice() }
     
-            let tokens = queryStr.trim().toLowerCase().split(TOKEN_SEPARATOR)
+            const tokens = queryStr.trim().toLowerCase().split(TOKEN_SEPARATOR)
 
-            if (tokens.length === 1) {
-                return objList.filter((obj) => findValue(obj, tokens[0], '', exclude))
-            }
-
-            let query = {
+            const query = {
                 key: tokens.shift().trim(),
-                value: tokens.join(TOKEN_SEPARATOR).trim()
+                value: tokens.join(TOKEN_SEPARATOR).trim() || void 0
             }
 
-            return objList.filter((obj) => findQuery(obj, query, '', exclude))
-        })
-    
-        function findQuery(obj, query, nestedKeys, excludedKeys) {
-            return getObjectKeys(obj).some((key) => {
-                let newNestedKeys = nestedKeys + KEY_SEPARATOR + key.toLowerCase()
-                if (excludedKeys !== void 0 && exclude(newNestedKeys, excludedKeys)) { return false }
-                
-                if (newNestedKeys.indexOf(query.key) === UNKNOWN) {
-                    return findQuery(obj[key], query, newNestedKeys, excludedKeys)
-                } else if (query.value !== EMPTY_STR && !match(query.value, '', obj[key])) {
-                    return findValue(obj[key], query.value, newNestedKeys, excludedKeys)
-                }
-        
-                return true
-            })
+            return objList.filter((obj) => findQuery(obj, query, EMPTY_STR, exclude))
         }
-        
-        function findValue(obj, value, nestedKeys, excludedKeys) {
+
+        function findQuery(obj, query, nestedKeys, excludedKeys, keyFound) {
             return getObjectKeys(obj).some((key) => {
-                let newNestedKeys = nestedKeys + KEY_SEPARATOR + key.toLowerCase()
-                if (excludedKeys !== void 0 && exclude(newNestedKeys, excludedKeys)) { return false }
+                const newNestedKeys = nestedKeys + KEY_SEPARATOR + key.toLowerCase()
+
+                if (isExcluded(newNestedKeys, excludedKeys)) { return false }
                 
-                if (match(value, newNestedKeys, obj[key])) { return true }
-                return findValue(obj[key], value, newNestedKeys, excludedKeys)
+                if (keyFound === void 0) {
+                    if (newNestedKeys.indexOf(query.key) === UNKNOWN) {
+                        return findQuery(obj[key], query, newNestedKeys, excludedKeys)
+                    }
+
+                    if (query.value === void 0) { return true }
+                }
+
+                return match(query.value, obj[key]) || findQuery(obj[key], query, newNestedKeys, excludedKeys, true)
             })
         }
 
-        function match(expectedValue, key, value) {
-            if (key.indexOf(expectedValue) !== UNKNOWN) { return true }
+        function match(expectedValue, value) {
+            if (value === null || value === void 0) { return false }
             
             const typeOf = typeof value
 
-            if (typeOf === STRING || typeOf === NUMBER || typeOf === BOOLEAN || value === null || value === void 0) {
+            if (typeOf === STRING) {
                 return `${value}`.toLowerCase().indexOf(expectedValue) !== UNKNOWN
-            } 
+            }
+
+            if (typeOf === NUMBER || typeOf === BIGINT || typeOf === BOOLEAN)  {
+                return `${value}`.indexOf(expectedValue) !== UNKNOWN
+            }
 
             return false
         }
         
-        function exclude(nestedKeys, excludedKeys) {
-            return excludedKeys.some((key) => nestedKeys.endsWith(key))
+        function isExcluded(nestedKeys, excludedKeys) {
+            return excludedKeys !== void 0 && excludedKeys.some((key) => nestedKeys.endsWith(key))
         }
         
         function getObjectKeys(obj) {
             return obj instanceof Object ? Object.keys(obj) : EMPTY_ARR
         }
+
+        app.provide('$search', search)
+        document.searchEngine = search
     }
 })
