@@ -110,6 +110,8 @@ func isRecoverable(err error) bool {
 	// e.g. server restart, load balance, etc
 	case codes.Unavailable:
 		return true
+	case codes.Internal:
+		return true
 	default:
 		return false
 	}
