@@ -2,6 +2,7 @@ app.use({
     install: (app, _) => {
         const   TOKEN_SEPARATOR = ':', 
                 KEY_SEPARATOR = '.', 
+                NOT_PREFIX = 'not '
                 UNKNOWN = -1, 
                 EMPTY_ARR = [], 
                 EMPTY_STR = '',
@@ -14,14 +15,8 @@ app.use({
             if (objList === void 0 || objList === null) { return [] }
             if (queryStr === void 0 || queryStr === null || queryStr.trim() === EMPTY_STR) { return objList.slice() }
     
-            const tokens = queryStr.trim().toLowerCase().split(TOKEN_SEPARATOR)
-
-            const query = {
-                key: tokens.shift().trim(),
-                value: tokens.join(TOKEN_SEPARATOR).trim() || void 0
-            }
-
-            return objList.filter((obj) => findQuery(obj, query, EMPTY_STR, exclude))
+            const query = getQuery(queryStr)
+            return objList.filter((obj) => query.not !== findQuery(obj, query, EMPTY_STR, exclude))
         }
 
         function findQuery(obj, query, nestedKeys, excludedKeys, keyFound) {
@@ -32,7 +27,8 @@ app.use({
                 
                 if (keyFound === void 0) {
                     if (newNestedKeys.indexOf(query.key) === UNKNOWN) {
-                        return findQuery(obj[key], query, newNestedKeys, excludedKeys)
+                        return findQuery(obj[key], query, newNestedKeys, excludedKeys) 
+                            || (query.value === void 0 && match(query.key, obj[key]))
                     }
 
                     if (query.value === void 0) { return true }
@@ -56,6 +52,17 @@ app.use({
             }
 
             return false
+        }
+
+        function getQuery(rawQuery) {
+            const query = { not: rawQuery.indexOf(NOT_PREFIX) === 0 }
+            if (query.not) { rawQuery = rawQuery.substr(NOT_PREFIX.length) }
+
+            const tokens = rawQuery.trim().toLowerCase().split(TOKEN_SEPARATOR)
+            query.key = tokens.shift().trim()
+            query.value = tokens.join(TOKEN_SEPARATOR).trim() || void 0
+
+            return query
         }
         
         function isExcluded(nestedKeys, excludedKeys) {
