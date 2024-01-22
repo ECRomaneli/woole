@@ -1,3 +1,3 @@
 app.provide('$image', {
-    src: (imgName) => 'assets/images/' + imgName + '.svg'
+    src: (imgName) => 'assets/images/' + imgName + '.min.svg'
 });
