@@ -1,5 +1,5 @@
 const app = Vue.createApp({
-    inject: ['$woole'],
+    inject: ['$woole', '$date'],
 
     data() { return { sessionDetails: {}, selectedRecord: null } },
 
@@ -75,11 +75,7 @@ const app = Vue.createApp({
             es.addEventListener('start', (event) => {
                 if (event.data) {
                     let recs = JSON.parse(event.data)
-                    recs.sort((a, b) => b.clientId - a.clientId).forEach((rec) => {
-                        rec.request.host = this.host
-                        this.$woole.decodeQueryParams(rec.request)
-                        this.$woole.decodeBody(rec.request)
-                    })
+                    recs.sort((a, b) => b.clientId - a.clientId).forEach(this.setupRecord)
                     this.$bus.trigger('stream.start', recs)
                 }
             })
@@ -87,9 +83,7 @@ const app = Vue.createApp({
             es.addEventListener('new-record', (event) => {
                 if (event.data) {
                     let rec = JSON.parse(event.data)
-                    rec.request.host = this.host
-                    this.$woole.decodeQueryParams(rec.request)
-                    this.$woole.decodeBody(rec.request)
+                    this.setupRecord(rec)
                     this.$bus.trigger('stream.new-record', rec)
                 }
             })
@@ -115,6 +109,13 @@ const app = Vue.createApp({
         catchAll(err) {
             console.warn("Error caught: " + err)
             return { ok: false }
+        },
+
+        setupRecord(rec) {
+            rec.request.host = this.host
+            rec.createdAt = this.$date.from(rec.createdAtMillis).format('MMM DD, hh:mm:ss A')
+            this.$woole.decodeQueryParams(rec.request)
+            this.$woole.decodeBody(rec.request)
         }
     }
 })

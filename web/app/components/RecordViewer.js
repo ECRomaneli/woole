@@ -8,7 +8,7 @@ app.component('RecordViewer', {
                     <button type="button" class="btn btn-sm" @click="$refs.reqEditor.show()">w/ Changes</button>
                 </div>
                 <a v-if="record.request.method.toLowerCase() === 'get'" class="btn me-2 lh-1" :href="getFullUrl()" target="_blank" title="Open in a new tab">
-                    <img class="svg-icon square-16" :src="$image.src('windows')" alt="redirect">
+                    <img class="svg-icon square-16 h-100" :src="$image.src('windows2')" alt="redirect">
                 </a>
             </template>
             <template #body>

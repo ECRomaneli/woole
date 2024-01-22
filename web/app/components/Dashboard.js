@@ -7,13 +7,15 @@ app.component('Dashboard', {
 
 app.component('SessionDetailsCard', {
     template: /*html*/ `
-        <box label="Session Datails" label-img="dashboard">
+        <box label="Session Details" label-img="dashboard">
             <template #body>
                 <table class="table table-striped table-hover" aria-label="Session Details">
                     <tbody>
                         <tr v-for="(value, key) in sessionDetails">
-                            <td class="highlight">{{ key }}</td>
-                            <td v-html="getValue(value)"></td>
+                            <template v-if='value'>
+                                <td class="highlight">{{ getKey(key) }}</td>
+                                <td v-html="getValue(value)"></td>
+                            </template>
                         </tr>
                     </tbody>
                 </table>
@@ -21,7 +23,24 @@ app.component('SessionDetailsCard', {
         </box>
     `,
     props: { sessionDetails: Object },
+    data() {
+        return {
+            keyMap: {
+                clientId: 'Client ID',
+                http: 'URL',
+                https: 'Secure URL',
+                proxying: 'Proxying',
+                dashboard: 'Dashboard',
+                tunnel: 'Tunnel URL',
+                maxRecords: 'Max Stored Records'
+            }
+        }
+    },
     methods: {
+        getKey(key) {
+            return this.keyMap[key] || key
+        },
+
         getValue(value) {
             if ((value + "").indexOf("://") !== -1) {
                 return '<a target="_blank" href="' + value + '">' + value + '</a>'

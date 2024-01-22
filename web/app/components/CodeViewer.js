@@ -2,7 +2,7 @@ app.component('CodeViewer', {
     template: /*html*/ `
     <modal ref="modal">
         <template #title>
-            <img class="svg-icon square-24 me-2" src="assets/images/request.svg" alt="request">
+            <img class="svg-icon square-24 me-2" :src="$image.src('request')" alt="request">
             <span class="h5 p-0">Code Viewer</span>
         </template>
         <template #body v-if="code">
@@ -14,7 +14,7 @@ app.component('CodeViewer', {
         </template>
     </modal>
     `,
-    inject: [ '$clipboard' ],
+    inject: [ '$clipboard', '$image' ],
     props: { type: String, code: String },
     data() { return { copyBtnText: "Copy to Clipboard" } },
     methods: {

@@ -66,17 +66,17 @@
 /* SIDEBAR ============================ */
 
 #sidebar {
-    width: var(--sidebar-width);
+    width: 290px;
     flex: 0 0 auto;
 }
 
 #sidebar>div:first-child {
-    height: var(--sidebar-1st-row-height);
+    height: 35px;
     flex: 0 0 auto;
 }
 
 #sidebar>div:nth-child(2) {
-    height: var(--sidebar-2nd-row-height);
+    height: 40px;
     flex: 0 0 auto;
 }
 
@@ -84,7 +84,7 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    min-width: 50px;
+    min-width: 40px;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -103,7 +103,6 @@
 }
 
 #sidebar .input-search {
-    font-family: var(--font-monospace);
     font-size: 14px;
     background-color: var(--background-color);
     color: var(--search-color);
@@ -155,7 +154,25 @@
 
 #record-list .record-item.active {
     border-top-width: 1px;
-    margin-top: calc(-1 * 1px);
+    margin-top: -1px;
+}
+
+#record-list .record-item .badge-group {
+    text-wrap: nowrap;
+    overflow: hidden;
+}
+
+#record-list .record-item .badge-group,
+#record-list .record-item .badge-group .badge {
+    border-radius: 2px;
+}
+
+#record-list .record-item .toggle-time {
+    width: 12px;
+}
+
+#record-list .record-item .opacity-50 {
+    text-wrap: nowrap;
 }
 
 #record-list.loading {
@@ -224,10 +241,11 @@
 /* BOX ================================ */
 
 .box {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     overflow: auto;
     background-color: var(--background-color);
-    padding: 0 0.5rem 3rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     transition: .3s cubic-bezier(0, 1, .3, 1) margin;
@@ -244,9 +262,12 @@
     z-index: 1000;
 }
 
+.box-body {
+    overflow-y: auto;
+}
+
 .box .maximize-btn,
 .box .redirect-btn {
-    margin-top: 3px;
     cursor: pointer;
 }
 
@@ -291,6 +312,8 @@
     cursor: default;
     font-size: 14px;
     font-weight: bold;
+    padding-top: 0;
+    padding-bottom: 0;
     background-color: var(--active-background-color);
     color: var(--color);
 }
@@ -428,7 +451,7 @@
     border-radius: 6px;
     background-color: var(--background-color);
     border-color: var(--border-color);
-    padding: 4px 18px;
+    padding: 2px 18px;
 }
 
 .btn:hover {

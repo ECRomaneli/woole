@@ -13,9 +13,9 @@ app.component('Sidebar', {
                 </div>
             </div>
             <div class="d-flex mb-2">
-                <input class="d-flex me-2 px-3 w-100 input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Search..." type="search" spellcheck="false">
+                <input class="d-flex me-2 px-3 w-100 input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Filter records" type="search" spellcheck="false">
                 <div class="d-flex sidebar-btn" @click="clearRecords()">
-                    <img class="svg-icon square-24" :src="$image.src('trash2')" alt="clear all" title="Clear All">
+                    <img class="svg-icon square-20" :src="$image.src('trash2')" alt="clear all" title="Clear All">
                 </div>
             </div>
             
@@ -54,22 +54,22 @@ app.component('Sidebar', {
             this.recordList = recs
             this.filteredRecordList = this.recordList.slice()
             this.showRecord()
-            this.filter(this.recordList)
+            this.setRecords(this.recordList)
         })
 
         this.$bus.on('stream.new-record', (rec) => {
             this.recordList.unshift(rec)
 
-            if (this.recordList.length <= this.maxRecords) {
-                this.filter([rec], true)
+            if (!this.maxRecords || this.recordList.length <= this.maxRecords) {
+                this.appendRecords([rec])
                 return
-            }
-
+            }                
+    
             while (this.recordList.length > this.maxRecords) {
                 this.recordList.pop()
             }
-
-            this.filter(this.recordList)
+            
+            this.setRecords(this.recordList)
         })
 
         this.$bus.on('stream.update-record', (update) => {
@@ -77,13 +77,16 @@ app.component('Sidebar', {
                 if (rec.clientId === update.clientId) {
                     rec.step = update.step
                     rec.response.serverElapsed = update.response.serverElapsed
+                    if (this.inputSearch.indexOf('serverElapsed') !== -1) {
+                        this.setRecords(this.recordList)
+                    }
                     return true
                 }
             })
         })
     },
 
-    watch: { inputSearch() { this.filter(this.recordList) } },
+    watch: { inputSearch() { this.setRecords(this.recordList) } },
 
     methods: {
         isSelectedRecord(record) {
@@ -113,14 +116,15 @@ app.component('Sidebar', {
             this.$bus.trigger('record.clear')
         },
 
-        filter(recordList, append) {
-            let filteredRecordList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
-            if (append) {
-                filteredRecordList.reverse()
-                filteredRecordList.forEach((rec) => this.filteredRecordList.unshift(rec))
-            } else {
-                this.filteredRecordList = filteredRecordList
-            }
+        setRecords(recordList) {
+            let newFilteredList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
+            this.filteredRecordList = newFilteredList
+        },
+
+        appendRecords(recordList) {
+            const newFilteredList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
+            newFilteredList.reverse()
+            newFilteredList.forEach((rec) => this.filteredRecordList.unshift(rec))
         },
 
         toggleTheme() {
@@ -143,24 +147,29 @@ app.component('Sidebar', {
 
 app.component('SidebarItem', {
     template: /*html*/ `
-        <button :client-id="record.clientId" class="record-item p-3 lh-sm">
-            <div class="d-flex w-100 mb-2 justify-content-between small">
-                <div>
-                    <div v-if="record.type === 'replay'" class="bg-replay-badge badge me-1" title="Replay">
-                        <img src="assets/images/play.svg" alt="replay" />
+        <button :client-id="record.clientId" class="record-item p-3 lh-sm" @mouseover="showToggle = true" @mouseleave="showToggle = false">
+            <div class="d-flex w-100 mb-1 justify-content-between small">
+                <div class="badge-group" dir="rtl">
+                    <span class="badge px-1" :class="statusBadge()">{{ response.code }}</span>
+                    <span class="badge px-1 me-1" :class="methodBadge()">{{ request.method }}</span>
+                    <div v-if="record.type === 'redirect'" class="bg-redirect-badge badge me-1" title="Redirect">
+                        <img :src="$image.src('windows')" alt="redirect" />
                     </div>
-                    <div v-else-if="record.type === 'redirect'" class="bg-redirect-badge badge me-1" title="Redirect">
-                        <img src="assets/images/windows.svg" alt="redirect" />
+                    <div v-else-if="record.type === 'replay'" class="bg-replay-badge badge me-1" title="Replay">
+                        <img :src="$image.src('play')" alt="replay" />
                     </div>
-                    <span class="badge me-1" :class="methodBadge()">{{ request.method }}</span>
-                    <span class="badge" :class="statusBadge()">{{ response.code }}</span>
                 </div>
-                <div v-if="record.response.serverElapsed" class="opacity-50">
-                    <small class="fw-light" title="Client Elapsed Time">{{ response.elapsed }}ms /&nbsp;</small>
-                    <small class="fw-bolder" title="Server Elapsed Time">{{ response.serverElapsed }}ms</small>
-                </div>
-                <div v-else class="opacity-50">
-                    <small class="fw-bolder" title="Client Elapsed Time">{{ response.elapsed }}ms</small>
+                <div class="opacity-50 ms-1">
+                    <img v-show="showToggle" :src="$image.src('change')" class="me-1 toggle-time" alt="toggle" @click="toggleInfo($event)" />
+                    <template v-if="showCreatedAt">
+                        <small class="fw-light">{{ createdAt[0] + ', ' }}</small>
+                        <small class="fw-bolder">{{ createdAt[1] }}</small>
+                    </template>
+                    <template v-else-if="record.response.serverElapsed">
+                        <small class="fw-light" title="Client Elapsed Time">{{ response.elapsed }}ms /&nbsp;</small>
+                        <small class="fw-bolder" title="Server Elapsed Time">{{ response.serverElapsed }}ms</small>
+                    </template>
+                    <small v-else class="fw-bolder" title="Client Elapsed Time">{{ response.elapsed }}ms</small>
                 </div>
             </div>
             <div class="mb-1 smallest font-monospace text-end">
@@ -169,6 +178,7 @@ app.component('SidebarItem', {
             </div>
         </button>
     `,
+    inject: [ '$image', '$date' ],
     props: {
         record: Object
     },
@@ -176,6 +186,9 @@ app.component('SidebarItem', {
         return {
             request: this.record.request,
             response: this.record.response,
+            createdAt: this.record.createdAt.split(', '),
+            showCreatedAt: true,
+            showToggle: false,
             maxLength: 30
         }
     },
@@ -198,6 +211,10 @@ app.component('SidebarItem', {
             if (hasQuery) { maxLength -= 4 }
             let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)
             return result + (hasQuery ? ' ' : '')
+        },
+        toggleInfo(e) {
+            e.stopPropagation()
+            this.showCreatedAt = !this.showCreatedAt
         }
     }
 })

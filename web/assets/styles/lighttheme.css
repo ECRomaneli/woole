@@ -24,10 +24,6 @@
     --search-color: #858e98;
     --hover-search-background-color: #ad884611;
     --hover-search-border-color: #ad8846;
-    
-    --sidebar-width: 290px;
-    --sidebar-1st-row-height: 35px;
-    --sidebar-2nd-row-height: 50px
 }
 
 #app[data-theme="light"] .inline-tabs {
