@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"woole/internal/pkg/tunnel"
 	"woole/pkg/channel"
@@ -23,8 +24,9 @@ const (
 
 type Record struct {
 	*tunnel.Record
-	ClientId string `json:"clientId,omitempty"`
-	Type     Type   `json:"type,omitempty"`
+	ClientId        string `json:"clientId,omitempty"`
+	Type            Type   `json:"type,omitempty"`
+	CreatedAtMillis int64  `json:"createdAtMillis,omitempty"`
 }
 
 type Records struct {
@@ -50,11 +52,13 @@ func NewRecords(maxRecords uint) *Records {
 
 func NewRecord(req *tunnel.Request, recType Type) *Record {
 	id := seqId.NextString()
-	return &Record{ClientId: id, Type: recType, Record: &tunnel.Record{Request: req}}
+	createdAt := time.Now().UnixMilli()
+	return &Record{ClientId: id, Type: recType, CreatedAtMillis: createdAt, Record: &tunnel.Record{Request: req}}
 }
 
 func EnhanceRecord(rec *tunnel.Record) *Record {
-	return &Record{ClientId: seqId.NextString(), Record: rec, Type: DEFAULT}
+	createdAt := time.Now().UnixMilli()
+	return &Record{ClientId: seqId.NextString(), CreatedAtMillis: createdAt, Record: rec, Type: DEFAULT}
 }
 
 func (recs *Records) AddRecord(rec *Record) {
@@ -62,7 +66,7 @@ func (recs *Records) AddRecord(rec *Record) {
 	defer recs.mu.Unlock()
 	recs.records[rec.ClientId] = rec
 
-	if len(recs.records) > int(recs.maxRecords) {
+	if recs.maxRecords > 0 && len(recs.records) > int(recs.maxRecords) {
 		recs.lastDeleted++
 		delete(recs.records, strconv.Itoa(recs.lastDeleted))
 	}
@@ -134,8 +138,9 @@ func (recs *Records) ThinCloneWithoutResponseBody() *[]Record {
 
 func (rec *Record) ThinCloneWithoutResponseBody() *Record {
 	return &Record{
-		ClientId: rec.ClientId,
-		Type:     rec.Type,
+		ClientId:        rec.ClientId,
+		Type:            rec.Type,
+		CreatedAtMillis: rec.CreatedAtMillis,
 		Record: &tunnel.Record{
 			Id:      rec.Id,
 			Request: rec.Request,

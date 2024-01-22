@@ -90,7 +90,7 @@ func ReadConfig() *Config {
 	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "URL of the tunnel")
 	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Custom host to be used when proxying")
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Port on which the dashboard is available")
-	maxRecords := flag.Int("records", 64, "Max records to store (the overflow will be discarded)")
+	maxRecords := flag.Int("records", 1000, "Max records to store. Use 0 for unlimited")
 	logLevel := flag.String("log-level", "OFF", "Level of detail for the logs to be displayed")
 	allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
