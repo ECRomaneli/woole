@@ -158,11 +158,10 @@
 }
 
 #record-list .record-item .badge-group {
-    text-wrap: nowrap;
+    white-space: nowrap;
     overflow: hidden;
 }
 
-#record-list .record-item .badge-group,
 #record-list .record-item .badge-group .badge {
     border-radius: 2px;
 }
@@ -172,7 +171,7 @@
 }
 
 #record-list .record-item .opacity-50 {
-    text-wrap: nowrap;
+    white-space: nowrap;
 }
 
 #record-list.loading {
