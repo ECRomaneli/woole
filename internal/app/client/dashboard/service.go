@@ -8,7 +8,7 @@ import (
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder"
 
-	"github.com/google/brotli/go/cbrotli"
+	"github.com/ecromaneli-golang/console/logger"
 )
 
 var records = recorder.GetRecords()
@@ -39,7 +39,8 @@ func decompress(contentEncoding string, data []byte) []byte {
 		reader, err = gzip.NewReader(bytes.NewReader(data))
 		panicIfNotNil(err)
 	} else if contentEncoding == "br" {
-		reader = cbrotli.NewReader(bytes.NewReader(data))
+		// reader = cbrotli.NewReader(bytes.NewReader(data))
+		logger.GetInstance().Error("brotli not supported yet")
 	} else if contentEncoding == "deflate" {
 		reader = flate.NewReader(bytes.NewReader(data))
 	}
