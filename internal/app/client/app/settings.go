@@ -91,7 +91,7 @@ func ReadConfig() *Config {
 	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Custom host to be used when proxying")
 	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Port on which the dashboard is available")
 	maxRecords := flag.Int("records", 1000, "Max records to store. Use 0 for unlimited")
-	logLevel := flag.String("log-level", "OFF", "Level of detail for the logs to be displayed")
+	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
 	allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
 	tlsCa := flag.String("tls-ca", "", "Path to the TLS CA file. Only for self-signed certificates")

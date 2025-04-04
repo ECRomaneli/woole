@@ -59,7 +59,7 @@ func ReadConfig() *Config {
 
 	httpPort := flag.Int("http", url.GetDefaultPort("http"), "Port on which the server listens for HTTP requests")
 	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "Port on which the server listens for HTTPS requests")
-	logLevel := flag.String("log-level", "OFF", "Level of detail for the logs to be displayed")
+	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
 	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: "+ClientToken+".mysite.com to vary the subdomain")
 	serverKey := flag.String("key", "", "Key used to hash the bearer")
 	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")

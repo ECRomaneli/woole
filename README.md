@@ -72,7 +72,7 @@ To log on console every request and response handled, set the `-log-level` to `I
 | `-client`      | An unique key used to identify the client on server
 | `-dashboard`   | Dashboard Port (default `8000`)
 | `-records`     | Max Requests to Record (default `16`)
-| `-log-level`   | Log Level (default `OFF`)
+| `-log-level`   | Log Level (default `INFO`)
 | `-allow-insecure-tls` | Allow Insecure TLS
 
 ### Proxy and Tunnel
@@ -132,7 +132,7 @@ To log on console every request and response handled, set the `-log-level` to `I
 | `-timeout`    | Timeout for receive a response from Client (default `10000`)
 | `-tls-cert`   | TLS cert/fullchain file path
 | `-tls-key`    | TLS key/privkey file path
-| `-log-level`  | Log Level (default `OFF`)
+| `-log-level`  | Log Level (default `INFO`)
 
 ### Pattern
 
