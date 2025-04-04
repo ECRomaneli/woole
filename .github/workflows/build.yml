@@ -46,14 +46,14 @@ jobs:
       - name: Build Client
         working-directory: ./cmd/client
         run: |
-          go build -o client${{ matrix.extension }} .
-          ./client${{ matrix.extension }} --help
+          go build -o woole${{ matrix.extension }} .
+          ./woole${{ matrix.extension }} --help
 
       - name: Build Server
         working-directory: ./cmd/server
         run: |
-          go build -o server${{ matrix.extension }} .
-          ./server${{ matrix.extension }} --help
+          go build -o woole-server${{ matrix.extension }} .
+          ./woole-server${{ matrix.extension }} --help
 
       # Create ZIP file
       - name: Zip binaries (Unix)
