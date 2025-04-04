@@ -1,0 +1,57 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-tunnel-response-timeout", "1000",
+                "-tunnel-reconnect-timeout", "0",
+                "-http", "8080"
+            ]
+        },
+        {
+            "name": "Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "github.com",
+                "-log-level", "TRACE",
+                "-client", "localhost",
+                "-custom-host", "https://github.com/"
+            ]
+        },
+        {
+            "name": "Server w/ Key",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-key", "<any-key>",
+                "-http", "8080"
+            ]
+        },
+        {
+            "name": "Server Help",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [ "--help" ]
+        },
+        {
+            "name": "Client Help",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [ "--help" ]
+        }
+    ]
+}

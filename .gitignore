@@ -10,7 +10,6 @@
 *.out
 .DS_STORE
 
-.vscode/
 .DS_Store
 
 # *.pb.go
