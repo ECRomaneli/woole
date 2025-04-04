@@ -107,7 +107,7 @@ app.component('RecordItem', {
     },
     computed: {
         bodySize() {
-            let length = parseInt(this.item.header['Content-Length']) || this.item.body.length
+            let length = parseInt(this.item.header && this.item.header['Content-Length']) || this.item.body.length
 
             if (!length) { return '0 B' }
 
