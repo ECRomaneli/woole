@@ -86,6 +86,7 @@ func createSession(client *adt.Client) *tunnel.Session {
 		HttpPort:        config.HttpPort,
 		MaxRequestSize:  int32(config.TunnelRequestSize),
 		MaxResponseSize: int32(config.TunnelResponseSize),
+		ResponseTimeout: int32(config.TunnelResponseTimeout),
 		Bearer:          client.Bearer,
 	}
 

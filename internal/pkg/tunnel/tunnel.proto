@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "woole/internal/pkg/tunnel";
+option go_package = "internal/pkg/tunnel";
 
 package tunnel;
 
@@ -34,6 +34,7 @@ message Session {
     bytes bearer = 5;
     int32 maxRequestSize = 6;
     int32 maxResponseSize = 7;
+    int32 responseTimeout = 8;
 }
 
 message Request {

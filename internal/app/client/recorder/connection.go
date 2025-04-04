@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -38,6 +39,8 @@ func startConnectionWithServer() {
 func createProxyHandler() http.HandlerFunc {
 	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
 
+	go setProxyTimeout()
+
 	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
 		log.Error(err, ":", req.Method, req.URL)
 		rw.WriteHeader(StatusInternalProxyError)
@@ -49,6 +52,17 @@ func createProxyHandler() http.HandlerFunc {
 		req.URL.Host = config.CustomUrl.Host
 		req.URL.Scheme = config.CustomUrl.Scheme
 		proxy.ServeHTTP(rw, req)
+	}
+}
+
+func setProxyTimeout() {
+	session := app.GetSessionWhenAvailable()
+
+	// Customize the Transport to include a timeout
+	http.DefaultTransport = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: time.Duration(session.ResponseTimeout) * time.Millisecond, // Set connection timeout
+		}).DialContext,
 	}
 }
 
@@ -65,7 +79,7 @@ func connectClient(enableTransportCredentials bool) (tunnel.TunnelClient, contex
 	}
 
 	// Dial server
-	conn, err := grpc.Dial(config.TunnelUrl.Host, opts...)
+	conn, err := grpc.NewClient(config.TunnelUrl.Host, opts...)
 	if err != nil {
 		conn.Close()
 		return nil, nil, nil, err

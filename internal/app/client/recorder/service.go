@@ -74,7 +74,7 @@ func handleServerRecord(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.
 	case tunnel.Step_REQUEST:
 		handleServerRequest(stream, serverRecord)
 	case tunnel.Step_SERVER_ELAPSED:
-		handleServerElapsed(stream, serverRecord)
+		handleServerElapsed(serverRecord)
 	default:
 		log.Error("Record Step Not Allowed")
 	}
@@ -96,7 +96,7 @@ func handleServerRequest(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel
 	}
 }
 
-func handleServerElapsed(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.Record) {
+func handleServerElapsed(serverRecord *tunnel.Record) {
 	rec := records.GetByServerId(serverRecord.Id)
 
 	if rec == nil {
