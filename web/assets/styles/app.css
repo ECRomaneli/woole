@@ -287,6 +287,7 @@
 .modal-content {
     background-color: var(--background-color);
     border-color: var(--border-color);
+    color: var(--color);
 }
 
 .modal-footer {
@@ -340,13 +341,14 @@
     margin: 14px 0;
 }
 
-.table > thead {
+.table > thead > tr > th {
     background-color: var(--border-color);
     color: var(--color);
     border-bottom: 1px solid var(--border-color);
 }
 
 .table > tbody > tr > td {
+    background-color: transparent;
     color: var(--body-color) !important;
 }
 

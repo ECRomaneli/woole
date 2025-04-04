@@ -102,7 +102,7 @@ app.component('CodeEditor', {
             if (this.themeElement.getAttribute('data-theme') === 'dark') {
                 this.editor.setTheme('ace/theme/twilight')
             } else {
-                this.editor.setTheme('ace/theme/chrome')
+                this.editor.setTheme('ace/theme/dawn')
             }
         },
 
