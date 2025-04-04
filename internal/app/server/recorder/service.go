@@ -113,17 +113,6 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 	// Create session
 	client = clientManager.Register(hs.ClientId, app.GenerateBearer(hs.ClientKey))
 
-	if len(hs.Bearer) != 0 {
-		// Verify if old session is equal to the new one
-		client, err = clientManager.RecoverSession(hs.ClientId, hs.Bearer)
-
-		if err != nil {
-			clientManager.Deregister(hs.ClientId)
-			log.Error(hs.ClientId, "-", err.Error())
-			return nil, err
-		}
-	}
-
 	log.Info(client.Id, "- Session Started")
 	clientManager.DeregisterIfIdle(client.Id, func() { log.Info(client.Id, "- Session Finished") })
 	return client, nil

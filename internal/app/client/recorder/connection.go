@@ -108,15 +108,15 @@ func connectClient(enableTransportCredentials bool) (tunnel.TunnelClient, contex
 func recoverOrExit(err error) {
 	errStatus, ok := status.FromError(err)
 
-	if ok && isRecoverable(err) && app.HasSession() {
-		log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
-		log.Warn("[", config.TunnelUrl.String(), "]", errStatus.Code().String()+", retrying in 5 seconds...")
-		<-time.After(5 * time.Second)
-	} else {
+	if !ok || !isRecoverable(err) || !app.HasSession() {
 		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
 		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel.")
 		os.Exit(1)
 	}
+
+	log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
+	log.Warn("[", config.TunnelUrl.String(), "]", errStatus.Code().String()+", retrying in 5 seconds...")
+	<-time.After(5 * time.Second)
 }
 
 func isRecoverable(err error) bool {

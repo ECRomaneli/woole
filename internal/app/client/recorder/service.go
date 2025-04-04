@@ -47,6 +47,10 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 		return err
 	}
 
+	if app.HasSession() {
+		log.Warn("[", config.TunnelUrl.String(), "] Connection reestablished")
+	}
+
 	app.SetSession(serverMsg.Session)
 
 	// Reset old IDs
