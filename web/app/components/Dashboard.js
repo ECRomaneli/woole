@@ -30,7 +30,7 @@ app.component('SessionDetailsCard', {
                 http: 'URL',
                 https: 'Secure URL',
                 proxying: 'Proxying',
-                dashboard: 'Dashboard',
+                sniffer: 'Sniffer',
                 tunnel: 'Tunnel URL',
                 maxRecords: 'Max Stored Records'
             }

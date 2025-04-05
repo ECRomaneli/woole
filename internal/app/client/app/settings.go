@@ -29,7 +29,7 @@ type Config struct {
 	HttpUrl         *url.URL
 	TunnelUrl       *url.URL
 	CustomUrl       *url.URL
-	DashboardUrl    *url.URL
+	SnifferUrl      *url.URL
 	MaxRecords      int
 	tlsSkipVerify   bool
 	tlsCa           string
@@ -41,7 +41,7 @@ type Config struct {
 
 const (
 	defaultProxyPort         = "80"
-	defaultDashboardPort     = "8000"
+	defaultSnifferPort       = "8000"
 	defaultStandalonePort    = "8080"
 	defaultStandaloneMessage = "[<hostname>]:<port>"
 	defaultCustomUrlMessage  = "[<scheme>://]<hostname>[:<port>]"
@@ -89,7 +89,7 @@ func ReadConfig() *Config {
 	proxyUrl := flag.String("proxy", ":"+defaultProxyPort, "URL of the target server to be proxied")
 	tunnelUrl := flag.String("tunnel", ":"+constants.DefaultTunnelPortStr, "URL of the tunnel")
 	customUrl := flag.String("custom-host", defaultCustomUrlMessage, "Custom host to be used when proxying")
-	dashboardPort := flag.String("dashboard", ":"+defaultDashboardPort, "Port on which the dashboard is available")
+	snifferPort := flag.String("sniffer", ":"+defaultSnifferPort, "Port on which the sniffing tool is available")
 	maxRecords := flag.Int("records", 1000, "Max records to store. Use 0 for unlimited")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
 	allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
@@ -115,7 +115,7 @@ func ReadConfig() *Config {
 		ProxyUrl:        iurl.RawUrlToUrl(*proxyUrl, "http", ""),
 		TunnelUrl:       iurl.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
 		CustomUrl:       iurl.RawUrlToUrl(*customUrl, "http", ""),
-		DashboardUrl:    iurl.RawUrlToUrl(*dashboardPort, "http", defaultDashboardPort),
+		SnifferUrl:      iurl.RawUrlToUrl(*snifferPort, "http", defaultSnifferPort),
 		MaxRecords:      *maxRecords,
 		tlsSkipVerify:   *tlsSkipVerify,
 		tlsCa:           *tlsCa,

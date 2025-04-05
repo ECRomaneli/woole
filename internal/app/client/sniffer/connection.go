@@ -1,4 +1,4 @@
-package dashboard
+package sniffer
 
 import (
 	"net/http"

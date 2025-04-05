@@ -1,4 +1,4 @@
-package dashboard
+package sniffer
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ var unsupportedContentEncodings = []string{
 }
 
 func ListenAndServe() error {
-	return setupServer().ListenAndServe(":" + config.DashboardUrl.Port())
+	return setupServer().ListenAndServe(":" + config.SnifferUrl.Port())
 }
 
 func decompress(contentEncoding string, data []byte) []byte {

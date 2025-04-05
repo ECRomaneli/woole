@@ -9,7 +9,7 @@ type SessionDetails struct {
 	HTTP       string `json:"http"`
 	HTTPS      string `json:"https"`
 	Proxying   string `json:"proxying"`
-	Dashboard  string `json:"dashboard"`
+	Sniffer    string `json:"sniffer"`
 	Tunnel     string `json:"tunnel"`
 	MaxRecords int    `json:"maxRecords"`
 }
@@ -23,7 +23,7 @@ func NewSessionDetails() *SessionDetails {
 		HTTP:       session.HttpUrl(),
 		HTTPS:      session.HttpsUrl(),
 		Proxying:   config.CustomUrl.String(),
-		Dashboard:  config.DashboardUrl.String(),
+		Sniffer:    config.SnifferUrl.String(),
 		MaxRecords: config.MaxRecords,
 	}
 

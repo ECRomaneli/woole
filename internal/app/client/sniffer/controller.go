@@ -1,11 +1,11 @@
-package dashboard
+package sniffer
 
 import (
 	"encoding/json"
 	"net/http"
-	"woole/internal/app/client/dashboard/adt"
 	"woole/internal/app/client/recorder"
 	recorderAdt "woole/internal/app/client/recorder/adt"
+	"woole/internal/app/client/sniffer/adt"
 	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"

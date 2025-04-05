@@ -3,20 +3,20 @@ package main
 import (
 	"fmt"
 	"woole/internal/app/client/app"
-	"woole/internal/app/client/dashboard"
 	"woole/internal/app/client/recorder"
+	"woole/internal/app/client/sniffer"
 )
 
 var config = app.ReadConfig()
 
 func main() {
 	go printInfo()
-	go startDashboard()
+	go startSnifferTool()
 	recorder.Start()
 }
 
-func startDashboard() {
-	panic(dashboard.ListenAndServe())
+func startSnifferTool() {
+	panic(sniffer.ListenAndServe())
 }
 
 func printInfo() {
@@ -31,7 +31,7 @@ func printInfo() {
 	}
 
 	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
-	fmt.Printf("Dashboard: %s\n", config.DashboardUrl.String())
+	fmt.Printf("  Sniffer: %s\n", config.SnifferUrl.String())
 
 	fmt.Println("===============")
 	fmt.Println()
