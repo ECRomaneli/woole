@@ -2,7 +2,7 @@ FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git
 
-ARG VERSION=main
+ARG VERSION=master
 ARG MODULE=client
 ARG ARGS=""
 
