@@ -21,7 +21,6 @@
             "program": "${workspaceFolder}/cmd/client",
             "args": [
                 "-proxy", "github.com",
-                "-log-level", "TRACE",
                 "-client", "localhost",
                 "-custom-host", "https://github.com/"
             ]
@@ -35,6 +34,18 @@
             "args": [
                 "-key", "<any-key>",
                 "-http", "8080"
+            ]
+        },
+        {
+            "name": "Standalone Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-http", "80",
+                "-proxy", "github.com",
+                "-custom-host", "https://github.com/"
             ]
         },
         {
