@@ -27,12 +27,30 @@
 ## Summary
 
 - [How it Works](#how-it-works)
+- [Releases](#releases)
 - [Client](#client)
+  - [Basic Usage](#basic-usage)
+  - [Available Options](#available-options)
+  - [URL Patterns](#url-patterns)
+  - [Proxy](#proxy)
+  - [Client ID](#client-id)
+  - [Standalone Mode](#standalone-mode)
+  - [Tunnel](#tunnel)
+  - [Troubleshooting](#troubleshooting)
+  - [Sniffing Tool](#sniffing-tool)
+    - [Features](#features)
+    - [Fuzzy Search](#fuzzy-search)
+    - [Hierarchical Structure](#hierarchical-structure)
 - [Server](#server)
+  - [Basic Usage](#basic-usage-1)
+  - [Available Options](#available-options-1)
+  - [Hostname Pattern](#hostname-pattern)
+  - [Using HTTPS](#using-https)
 - [Build](#build)
 - [Docker](#docker)
-- [Releases](#releases)
+- [Author](#author)
 - [Disclaimer](#disclaimer)
+- [License](#license)
 
 ## How it Works
 
@@ -169,7 +187,7 @@ The default value is the proxy URL.
 ### Client ID
 
 The `-client` is optional. However, when creating the URL, the provided client ID will be prioritized.
-Read more about the URL and how the client is used by the server in the [Server Pattern Section](#pattern).
+Read more about the URL and how the client is used by the server in the [Server Hostname Pattern](#hostname-pattern) section.
 
 ### Standalone Mode
 
@@ -316,7 +334,7 @@ The https://woole.me website was created to provide a free-to-use Woole Server. 
 | `-tunnel-response-size` | Tunnel maximum response size in bytes (default `math.MaxInt32`)            |
 | `-tunnel-response-timeout` | Timeout to receive a client response (default `20000`ms) 
 
-### Pattern
+### Hostname Pattern
 
 The `pattern` is used to define the host format and where the [Client ID](#client-id) will be displayed in the URL. Example, `{client}.woole.me` will generate URLs such as:
 - client-name-here.woole.me;

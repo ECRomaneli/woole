@@ -59,12 +59,12 @@ jobs:
       - name: Zip binaries (Unix)
         if: runner.os != 'Windows'
         run: |
-          zip -j woole-${{ matrix.osName }}-${{ matrix.arch }}.zip ./cmd/client/client ./cmd/server/server
+          zip -j woole-${{ matrix.osName }}-${{ matrix.arch }}.zip ./cmd/client/woole ./cmd/server/woole-server
 
       - name: Zip binaries (Windows)
         if: runner.os == 'Windows'
         run: |
-          Compress-Archive -Path (Resolve-Path ./cmd/client/client.exe), (Resolve-Path ./cmd/server/server.exe) -DestinationPath "woole-${{ matrix.osName }}-${{ matrix.arch }}.zip"
+          Compress-Archive -Path (Resolve-Path ./cmd/client/woole.exe), (Resolve-Path ./cmd/server/woole-server.exe) -DestinationPath "woole-${{ matrix.osName }}-${{ matrix.arch }}.zip"
 
       # Upload ZIP to release
       - name: Upload Release Asset
