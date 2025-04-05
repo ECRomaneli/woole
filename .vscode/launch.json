@@ -20,9 +20,8 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/client",
             "args": [
-                "-proxy", "github.com",
-                "-client", "localhost",
-                "-custom-host", "https://github.com/"
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost"
             ]
         },
         {
@@ -44,8 +43,7 @@
             "program": "${workspaceFolder}/cmd/client",
             "args": [
                 "-http", "80",
-                "-proxy", "github.com",
-                "-custom-host", "https://github.com/"
+                "-proxy", "https://www.w3schools.com/"
             ]
         },
         {
