@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "internal/pkg/tunnel";
+
+package tunnel;
+
+service Tunnel {
+    rpc Tunnel(stream ClientMessage) returns (stream ServerMessage) {}
+    rpc TestConn(Empty) returns (Empty) {}
+}
+
+message ServerMessage {
+    Record record = 1;
+    Session session = 2;
+}
+
+message ClientMessage {
+    Record record = 1;
+    Handshake handshake = 2;
+}
+
+message Handshake {
+    string clientId = 1;
+    bytes clientKey = 2;
+    bool allowReaders = 3;
+    bytes bearer = 4;
+}
+
+message Session {
+    string clientId = 1;
+    string hostname = 2;
+    string httpPort = 3;
+    string httpsPort = 4;
+    bytes bearer = 5;
+    int32 maxRequestSize = 6;
+    int32 maxResponseSize = 7;
+    int32 responseTimeout = 8;
+}
+
+message Request {
+    string proto = 1;
+    string method = 2;
+    string url = 3;
+    string path = 4;
+    map<string, string> header = 5;
+    bytes body = 6;
+    string remoteAddr = 7;
+}
+
+message Response {
+    string proto = 1;
+    string status = 2;
+    int32 code = 3;
+    map<string, string> header = 4;
+    bytes body = 5;
+    int64 elapsed = 6;
+    int64 serverElapsed = 7;
+}
+
+message Record {
+    string id = 1;
+    Request request = 2;
+    Response response = 3;
+    Step step = 4;
+}
+
+message Empty {}
+
+enum Step {
+    REQUEST = 0;
+    RESPONSE = 1;
+    SERVER_ELAPSED = 2;
+}

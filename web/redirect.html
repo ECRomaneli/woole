@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset='utf-8'>
+    <title>Woole - Redirecting</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+</head>
+
+<body>
+    <nav>WOOLE</nav>
+    <div class="container v-flex">
+        <div class="box">
+            <div class="title">Trying to redirect to</div>
+            <div class="code">{{redirectUrl}}</div>
+        </div>
+        <div class="h-flex">
+            <a class="link-btn" href='{{redirectUrl}}'>Continue</a>
+            <a class="link-btn toggle-{{enableCustomUrl}}" href='{{customUrl}}'>Try using "{{hostname}}"</a>
+        </div>
+    </div>
+
+    <style>
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+            background-color: #111;
+            color: #a9b1b9;
+            margin: 0;
+        }
+
+        nav {
+            text-align: center;
+            padding: 12px;
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 20px;
+            background-color: #0d1117;
+            border-bottom: 1px solid #1d2126;
+        }
+
+        .v-flex, .h-flex {
+            display: flex;
+        }
+
+        .v-flex {
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .box {
+            max-width: 800px;
+            background-color: #0d1117;
+        }
+
+        .box, .link-btn {
+            border: 1px solid #1a2028;
+            border-radius: 4px;
+            margin: 0 10px 20px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .box > * {
+            padding: 20px;
+        }
+
+        .box > .title {
+            font-weight: 500;
+        }
+
+        .box > .code {
+            background-color: #1a2028;
+            overflow-wrap: break-word;
+        }
+
+        .link-btn {
+            text-decoration: none;
+            color: #a9b1b9 !important;
+            font-weight: 500;
+            padding: 10px 20px;
+            width: 100%;
+            cursor: pointer;
+            background-color: #0d1117;
+            transition: .1s linear all;
+        }
+
+        .link-btn:hover {
+            background-color: #161b22;
+            border-color: #30363d;
+        }
+
+        .toggle-false {
+            opacity: .3;
+            cursor: default;
+            background-color: #0d1117 !important;
+            border-color: #222 !important;
+        }
+
+    </style>
+</body>
+
+</html>

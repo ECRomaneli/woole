@@ -10,5 +10,10 @@
 *.out
 .DS_STORE
 
-.vscode/
 .DS_Store
+
+# Binaries
+cmd/server/server*
+cmd/client/client*
+
+# *.pb.go

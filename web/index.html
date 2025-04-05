@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" href="assets/images/dashboard.min.svg" type="image/svg+xml">
+
+    <title>Sniffing Tool</title>
+    
+    <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/styles/app.css" rel="stylesheet">
+    <link href="assets/styles/darktheme.css" rel="stylesheet">
+    <link href="assets/styles/lighttheme.css" rel="stylesheet">
+</head>
+
+<body>
+    <main id="app">
+        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
+        <div id="body" class="pt-2">
+            <dashboard v-if="!selectedRecord" :session-details="sessionDetails"></dashboard>
+            <record-viewer v-else :record="selectedRecord"></record-viewer>
+        </div>
+    </main>
+
+    <!-- Vendors -->
+    <script src="assets/vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="assets/vendor/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="assets/vendor/js-beautify/beautify.min.js"></script>
+    <script src="assets/vendor/js-beautify/beautify-html.min.js"></script>
+    <script src="assets/vendor/js-beautify/beautify-css.min.js"></script>
+    
+    <!-- App -->
+    <script src="assets/vendor/vue/vue.global.prod.js"></script>
+    <script src="app/main.js"></script>
+
+    <!-- Providers -->
+    <script src="app/providers/Woole.js"></script>
+    <script src="app/providers/Map.js"></script>
+    <script src="app/providers/Image.js"></script>
+    <script src="app/providers/Constants.js"></script>
+    <script src="app/providers/Clipboard.js"></script>
+
+    <!-- Plugins -->
+    <script src="app/plugins/SearchEngine.js"></script>
+    <script src="app/plugins/Beautifier.js"></script>
+    <script src="app/plugins/EventBus.js"></script>
+    <script src="app/plugins/Clone.js"></script>
+    <script src="app/plugins/Date.js"></script>
+
+    <!-- Components -->
+    <script src="app/components/BootstrapModal.js"></script>
+    <script src="app/components/LabeledBox.js"></script>
+    <script src="app/components/MapTable.js"></script>
+    <script src="app/components/CodeViewer.js"></script>
+    <script src="app/components/CodeEditor.js"></script>
+    <script src="app/components/RequestEditor.js"></script>
+    <script src="app/components/Base64Viewer.js"></script>
+    <script src="app/components/Sidebar.js"></script>
+    <script src="app/components/Dashboard.js"></script>
+    <script src="app/components/RecordViewer.js"></script>
+
+    <!-- Mount App -->
+    <script>app.mount('#app')</script>
+</body>
+
+</html>

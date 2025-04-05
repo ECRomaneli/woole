@@ -2,42 +2,37 @@ package main
 
 import (
 	"fmt"
-	"woole/cmd/client/app"
-	"woole/cmd/client/dashboard"
-	"woole/cmd/client/recorder"
-
-	"github.com/ecromaneli-golang/console/logger"
+	"woole/internal/app/client/app"
+	"woole/internal/app/client/recorder"
+	"woole/internal/app/client/sniffer"
 )
 
 var config = app.ReadConfig()
 
 func main() {
-	bootstrap()
-}
-
-func bootstrap() {
 	go printInfo()
-	go func() { panic(dashboard.ListenAndServe()) }()
+	go startSnifferTool()
 	recorder.Start()
 }
 
+func startSnifferTool() {
+	panic(sniffer.ListenAndServe())
+}
+
 func printInfo() {
-	<-app.Authenticated.Receive()
+	session := app.GetSessionWhenAvailable()
 
 	fmt.Println()
 	fmt.Println("===============")
-	fmt.Printf(" HTTP URL: %s\n", app.Auth.Http)
+	fmt.Printf(" HTTP URL: %s\n", session.HttpUrl())
 
-	if len(app.Auth.Https) != 0 {
-		fmt.Printf("HTTPS URL: %s\n", app.Auth.Https)
+	if session.HttpsPort != "" {
+		fmt.Printf("HTTPS URL: %s\n", session.HttpsUrl())
 	}
 
-	fmt.Printf(" Proxying: %s\n", config.ProxyURL())
-	fmt.Printf("Dashboard: http://localhost:%s\n", config.DashboardPort)
+	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
+	fmt.Printf("  Sniffer: %s\n", config.SnifferUrl.String())
 
-	if logger.GetInstance().IsDebugEnabled() {
-		fmt.Printf("   Bearer: %s\n", app.Auth.Bearer)
-	}
 	fmt.Println("===============")
 	fmt.Println()
 }
