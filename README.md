@@ -127,7 +127,7 @@ Proxying:  https://github.com/ECRomaneli/woole
 #### Using the tunnel to connect with an external server
 
 ```sh
-./woole -proxy https://github.com/ECRomaneli/woole -tunnel grpc://woole.me:8001
+./woole -proxy https://github.com/ECRomaneli/woole -tunnel woole.me
 
 ===============
  HTTP URL: http://x5ck9p8e.woole.me
@@ -146,7 +146,7 @@ HTTPS URL: https://x5ck9p8e.woole.me (Only with TLS configured)
 | `-client`           | Unique identifier of the client                                            |
 | `-http`             | Port to start the standalone server (disables tunnel)                      |
 | `-proxy`            | URL of the target server to be proxied (default `:80`)                     |
-| `-tunnel`           | URL of the tunnel (default `:8001`)                                        |
+| `-tunnel`           | URL of the tunnel (default `:9653`)                                        |
 | `-custom-host`      | Custom host to be used when proxying                                        |
 | `-sniffer`          | Port on which the sniffer is available (default `:8000`)                |
 | `-records`          | Max records to store. Use `0` for unlimited (default `1000`)              |
@@ -198,7 +198,7 @@ To enable it, provide the port using the option `-http`. If a custom name is pro
 #### Example
 
 ```sh
-./woole -http :80 -proxy <interval-or-external-url>
+./woole -http :80 -proxy <internal-or-external-url>
 
 # Or, if a custom domain name was configured
 
@@ -211,10 +211,13 @@ When using the Standalone mode, the tunnel related options are going to be ignor
 
 To use the tunneling tool, a server must be configured and provided using the `tunnel` option.
 
-A single server allows many client connections at the same time. Once configured, copy the Tunnel URL provided by the server and use it as `tunnel`. Consult the [Server Section](#server) for more details on how to create and configure a server. The URL follows [this pattern](#url-patterns) but the `grpc` protocol is used instead of the `http`.
+A single server allows many client connections at the same time. Once configured, copy the Tunnel URL provided by the server and use it as `tunnel`. Consult the [Server Section](#server) for more details on how to create and configure a server. The URL follows [this pattern](#url-patterns) but the default protocol is `grpc` and the default port is `9653`.
 
 ```sh
-./woole [...] -tunnel grpc://woole.me:8001
+./woole [...] -tunnel woole.me
+
+# OR, WITH A CUSTOMIZED PORT
+./woole [...] -tunnel woole.me:<tunnel-port>
 ```
 
 If the objective is to only use the sniffing tool and the reverse proxy, without the tunnel, consider using the [Standalone Mode](#standalone-mode).
@@ -278,7 +281,7 @@ Note that the value does not need to match the entire field.
 
 #### Hierarchical Structure
 
-```js
+```
 request
 ├── proto: string (Protocol)
 ├── method: string (HTTP Verbs)
@@ -304,7 +307,7 @@ response
 
 With Woole, you can create **YOUR** own server. But before setup your Woole Server, be sure that your server port is open and the firewall (if configurable) has the HTTP, HTTPS and Tunnel port configured. Consult the server provider documentation to know how to configure that. Domains and hostings are not provided by Woole Server.
 
-The https://woole.me website was created to provide a free-to-use Woole Server. Just use the tunnel URL `grpc://woole.me:8001`. The virtual machine is not so powerful so use with moderation. Note that the website disponibility can change without further advise.
+The https://woole.me website was created to provide a free-to-use Woole Server. Just use the tunnel URL `woole.me`. The virtual machine is not so powerful so use with moderation. Note that the website disponibility can change without further advise.
 
 ### Basic Usage
 
@@ -312,10 +315,15 @@ The https://woole.me website was created to provide a free-to-use Woole Server. 
     ./woole-server 
 
     ===============
-    HTTP listening on http://{client}
-    Tunnel listening on http://{client}:8001
+      HTTP listening on http://{client}
+     HTTPS listening on https://{client}
+    Tunnel listening on grpc://10.0.0.7:9653
     ===============
 ```
+
+*If the server resolves the address to a loopback IP, the resolved IP will be displayed. Otherwise, a default placeholder in the format `grpc://<hostname-or-ip>:9653` will be used. The `hostname`, if any, can be used instead of the IP.*
+
+*To provide an HTTPS server, the server must be certified. Consult the [Using HTTPS](#using-https) section for more details.*
 
 ### Available Options
 
@@ -324,7 +332,7 @@ The https://woole.me website was created to provide a free-to-use Woole Server. 
 | `-pattern`              | Set the server hostname pattern. Example: `{client}.mysite.com`            |
 | `-http`                 | Port on which the server listens for HTTP requests (default `80`)          |
 | `-https`                | Port on which the server listens for HTTPS requests (default `443`)        |
-| `-tunnel`               | Port on which the gRPC tunnel listens (default `8001`)                     |
+| `-tunnel`               | Port on which the gRPC tunnel listens (default `9653`)                     |
 | `-key`                  | Key used to hash the bearer                                                |
 | `-tls-cert`             | Path to the TLS certificate or fullchain file                              |
 | `-tls-key`              | Path to the TLS private key file                                           |
@@ -358,7 +366,15 @@ Otherwise, if the name is not provided, an 8 digits hash will be used instead:
 
 ### Using HTTPS
 
-The HTTPS URL is only available for certified servers. Provide the certification path and the key path using `-tls-cert` and `-tls-key` respectively. The HTTPS port can be changed using `-https`.
+The HTTPS URL is only available for certified servers. Provide the certification path and the key path using `-tls-cert` and `-tls-key` respectively. The HTTPS port can be changed using the `-https` option.
+
+#### Example
+
+```sh
+    ./woole-server \
+        -tls-cert "/etc/tls/woole.me/fullchain.pem" \
+        -tls-key "/etc/tls/woole.me/privkey.pem"
+```
 
 ## Build
 
@@ -412,10 +428,10 @@ To build and run the Woole server:
 
 2. Run the server:
    ```sh
-   docker run --rm -p 8001:8001 -p 80:80 woole-server $ARGS
+   docker run --rm -p 9653:9653 -p 80:80 woole-server $ARGS
    ```
 
-   - The server will be available on ports `8001` (tunnel) and `80` (HTTP).
+   - The server will be available on ports `9653` (tunnel) and `80` (HTTP).
    - Replace `$ARGS` with any additional arguments you want to pass to the server (see the [Server Options](#server) section).
 
 #### Client
@@ -444,14 +460,14 @@ To build and run the Woole client:
 
 ```sh
  docker build -t woole-server --build-arg MODULE=server -f Dockerfile .
- docker run --rm -p 8001:8001 -p 80:80 woole-server
+ docker run --rm -p 9653:9653 -p 80:80 woole-server
 ```
 
 #### Client with a configured tunnel
 
 ```sh
  docker build -t woole -f Dockerfile .
- docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://woole.me:8001
+ docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://woole.me:9653
 ```
 
 If the server and client are running in the same machine, remember to put the tunnel URL to a network visible on both containers.
@@ -460,10 +476,10 @@ Example:
 
 ```sh
 # Run the server and export the tunnel and HTTP port
-docker run --rm -p 8001:8001 -p 80:80 woole-server
+docker run --rm -p 9653:9653 -p 80:80 woole-server
 
 # Access the tunnel through the server exported tunnel port using the host IP address (localhost will not work because the container is isolated)
-docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://<host-ip-address>:8001
+docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://<host-ip-address>:9653
 ```
 
 *The docker option `--network host` can also be used. However, it is not recommended for security reasons.*

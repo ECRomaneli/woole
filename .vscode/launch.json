@@ -25,6 +25,18 @@
             ]
         },
         {
+            "name": "Client 2",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost",
+                "-sniffer", ":8002"
+            ]
+        },
+        {
             "name": "Server w/ Key",
             "type": "go",
             "request": "launch",
