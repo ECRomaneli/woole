@@ -48,7 +48,7 @@ func RawUrlToUrl(rawUrl string, defaultSchema string, defaultPort string) *url.U
 	}
 
 	// Pattern: "[<scheme>://]<hostname>"
-	if !strings.Contains(url.Host, ":") && defaultPort != "" {
+	if len(url.Port()) == 0 && defaultPort != "" {
 		url.Host += ":" + defaultPort
 	}
 
