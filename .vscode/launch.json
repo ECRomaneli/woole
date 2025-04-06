@@ -47,6 +47,17 @@
             ]
         },
         {
+            "name": "woole.me Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-tunnel", "woole.me"
+            ]
+        },
+        {
             "name": "Server Help",
             "type": "go",
             "request": "launch",
