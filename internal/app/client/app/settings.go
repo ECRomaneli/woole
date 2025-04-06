@@ -150,8 +150,14 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 }
 
 func (cfg *Config) GetHandshake() *tunnel.Handshake {
+	clientId := cfg.ClientId
+
+	if HasSession() {
+		clientId = session.ClientId
+	}
+
 	return &tunnel.Handshake{
-		ClientId:     cfg.ClientId,
+		ClientId:     clientId,
 		ClientKey:    cfg.ClientKey,
 		AllowReaders: cfg.AllowReaders,
 		Bearer:       session.Bearer,
