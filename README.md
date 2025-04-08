@@ -1,27 +1,12 @@
-<p align='center'>
-    <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
-        <img src="https://i.postimg.cc/XJs1WfVc/logo.png" alt='Woole'>
-    </a>
-</p>
+<p align="center"><a href="https://github.com/ECRomaneli/woole"><img src="https://i.postimg.cc/44W825Fd/logo.png" alt='Woole'></a></p>
 <p align='center'>
     The Wormhole (or just Woole) is an Open-Source reverse-proxy, sniffing, and tunneling tool developed in Go
 </p>
-<p align='center'>
-    <a href="https://github.com/ECRomaneli/woole/tags" style='text-decoration:none'>
-        <img src="https://img.shields.io/github/v/tag/ecromaneli/woole?label=version&sort=semver&style=for-the-badge" alt="Version">
-    </a>
-    &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/commits/master" style='text-decoration:none'>
-        <img src="https://img.shields.io/github/last-commit/ecromaneli/woole?style=for-the-badge" alt="Last Commit">
-    </a>
-    &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/blob/master/LICENSE" style='text-decoration:none'>
-        <img src="https://img.shields.io/github/license/ecromaneli/woole?style=for-the-badge" alt="License">
-    </a>
-    &nbsp;
-    <a href="https://github.com/ECRomaneli/woole/issues" style='text-decoration:none'>
-        <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge" alt="Contributions Welcome">
-    </a>
+<p align="center">
+<a href="https://github.com/ECRomaneli/woole/releases"><img src="https://img.shields.io/github/v/tag/ecromaneli/woole?label=version&sort=semver&style=for-the-badge" alt="Version"></a>
+<a href="https://github.com/ECRomaneli/woole/commits/master"><img src="https://img.shields.io/github/last-commit/ecromaneli/woole?style=for-the-badge" alt="Last Commit"></a>
+<a href="https://github.com/ECRomaneli/woole/blob/master/LICENSE"><img src="https://img.shields.io/github/license/ecromaneli/woole?style=for-the-badge" alt="License"></a>
+<a href="https://github.com/ECRomaneli/woole/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge" alt="Contributions Welcome"></a>
 </p>
 
 ## Summary
@@ -31,7 +16,6 @@
 - [Client](#client)
   - [Basic Usage](#basic-usage)
   - [Available Options](#available-options)
-  - [URL Patterns](#url-patterns)
   - [Proxy](#proxy)
   - [Client ID](#client-id)
   - [Standalone Mode](#standalone-mode)
@@ -48,6 +32,10 @@
   - [Using HTTPS](#using-https)
 - [Build](#build)
 - [Docker](#docker)
+- [Custom Types](#custom-types)
+    - [URL Patterns](#url-patterns)
+    - [Duration Format](#duration-format)
+    - [Size Format](#size-format)
 - [Author](#author)
 - [Disclaimer](#disclaimer)
 - [License](#license)
@@ -117,7 +105,7 @@ Pre-built binaries for the client and server are available in the [Releases](htt
 ./woole -http :80 -proxy https://github.com/ECRomaneli/woole
 
 ===============
-HTTP URL:  http://localhost:80
+HTTP URL:  http://localhost
 Proxying:  https://github.com/ECRomaneli/woole
  Sniffer:  http://localhost:8000
 ===============
@@ -127,11 +115,11 @@ Proxying:  https://github.com/ECRomaneli/woole
 #### Using the tunnel to connect with an external server
 
 ```sh
-./woole -proxy https://github.com/ECRomaneli/woole -tunnel grpc://woole.me:8001
+./woole -proxy https://github.com/ECRomaneli/woole -tunnel woole.me
 
 ===============
  HTTP URL: http://x5ck9p8e.woole.me
-HTTPS URL: https://x5ck9p8e.woole.me (Only with TLS configured)
+HTTPS URL: https://x5ck9p8e.woole.me
  Proxying: https://github.com/ECRomaneli/woole
   Sniffer: http://localhost:8000
 ===============
@@ -141,28 +129,20 @@ HTTPS URL: https://x5ck9p8e.woole.me (Only with TLS configured)
 
 ### Available Options
 
-| Option              | Description                                                                 |
-|---------------------|-----------------------------------------------------------------------------|
-| `-client`           | Unique identifier of the client                                            |
-| `-http`             | Port to start the standalone server (disables tunnel)                      |
-| `-proxy`            | URL of the target server to be proxied (default `:80`)                     |
-| `-tunnel`           | URL of the tunnel (default `:8001`)                                        |
-| `-custom-host`      | Custom host to be used when proxying                                        |
-| `-sniffer`          | Port on which the sniffer is available (default `:8000`)                |
-| `-records`          | Max records to store. Use `0` for unlimited (default `1000`)              |
-| `-log-level`        | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-tls-skip-verify`  | Disables the validation of the integrity of the Server's certificate       |
-| `-tls-ca`           | Path to the TLS CA file (only for self-signed certificates)                |
-
-### URL Patterns
-
-All options that requires URLs or ports **MUST** follow one of the patterns below:
-
-- `protocol`://`host`:`port`;
-- `protocol`://`host` (default port `80`);
-- `host`:`port`, (default protocol `HTTP`);
-- `host`, (default protocol `HTTP` and port `80`);
-- :`port`, where the colon is important (default protocol `HTTP` and host `localhost`).
+| Option                  | Description                                                                |
+|-------------------------|----------------------------------------------------------------------------|
+| `-client`               | Unique identifier of the client                                            |
+| `-http`                 | Port to start the standalone server (disables tunnel)                      |
+| `-proxy`                | URL of the target server to be proxied (default `80`)                      |
+| `-tunnel`               | URL of the tunnel (default `9653`)                                         |
+| `-custom-host`          | Custom host to be used when proxying                                       |
+| `-sniffer`              | Port on which the sniffer is available (default `8000`)                    |
+| `-records`              | Max records to store. Use `0` for unlimited (default `1000`)               |
+| `-log-level`            | Level of detail for the logs to be displayed (default `INFO`)              |
+| `-tls-skip-verify`      | Disables the validation of the integrity of the Server's certificate       |
+| `-tls-ca`               | Path to the TLS CA file (only for self-signed certificates)                |
+| `-reconnect-attempts`   | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
+| `-reconnect-interval`   | Time between reconnection attempts. [Duration format](#duration-format) (default `5s`) |
 
 ### Proxy
 
@@ -171,7 +151,7 @@ Woole is capable to proxy local and online HTTP and HTTPS webservers. Custom nam
 Define the URL to proxy using the option `-proxy`. The URL must follows one of [these patterns](#url-patterns):
 
 ```sh
-./woole -proxy :<port>
+./woole -proxy <port>
 ```
 
 #### Custom Host
@@ -180,7 +160,8 @@ The option `custom-host` can be used along with the proxy to customize the host 
 The default value is the proxy URL.
 
 ```sh
-./woole -proxy localhost:8080 -custom-host mywebsite.com
+# Proxying "http://localhost:8080" but sending mywebsite.com as header
+./woole -proxy 8080 -custom-host mywebsite.com
 ```
 
 
@@ -198,7 +179,7 @@ To enable it, provide the port using the option `-http`. If a custom name is pro
 #### Example
 
 ```sh
-./woole -http :80 -proxy <interval-or-external-url>
+./woole -http 80 -proxy <internal-or-external-url>
 
 # Or, if a custom domain name was configured
 
@@ -211,10 +192,13 @@ When using the Standalone mode, the tunnel related options are going to be ignor
 
 To use the tunneling tool, a server must be configured and provided using the `tunnel` option.
 
-A single server allows many client connections at the same time. Once configured, copy the Tunnel URL provided by the server and use it as `tunnel`. Consult the [Server Section](#server) for more details on how to create and configure a server. The URL follows [this pattern](#url-patterns) but the `grpc` protocol is used instead of the `http`.
+A single server allows many client connections at the same time. Once configured, copy the Tunnel URL provided by the server and use it as `tunnel`. Consult the [Server Section](#server) for more details on how to create and configure a server. The URL follows [this pattern](#url-patterns) but the default protocol is `grpc` and the default port is `9653`.
 
 ```sh
-./woole [...] -tunnel grpc://woole.me:8001
+./woole [...] -tunnel woole.me
+
+# OR, WITH A CUSTOMIZED PORT
+./woole [...] -tunnel woole.me:<tunnel-port>
 ```
 
 If the objective is to only use the sniffing tool and the reverse proxy, without the tunnel, consider using the [Standalone Mode](#standalone-mode).
@@ -244,10 +228,10 @@ Some browsers and websites utilize efficient caching mechanisms to minimize unne
 The sniffing tool is accessible through the port configured using the `sniffer` option (default port is available in the [options list](#available-options)). To change the port use:
 
 ```sh
-./woole [...] -sniffer :9094
+./woole [...] -sniffer 9094
 ```
 
-#### Features:
+#### Features
 - Light/Dark Theme;
 - Fuzzy Search (status, host, url, name, headers, request body, cookies);
 - Media preview (audio, video [chunks are not supported], and images);
@@ -256,7 +240,7 @@ The sniffing tool is accessible through the port configured using the `sniffer` 
 - ACE Editor as viewer for the request and response body;
 - Beautify XML, HTML, JSON, javascript, and CSS bodies.
 
-#### Fuzzy Search:
+#### Fuzzy Search
 
 The search uses the pattern `root.parent.child: value` recursively where one or more levels can be used starting from the root parent or not. The value is optional. The root parent is not required, the search can start by any level.
 
@@ -278,7 +262,7 @@ Note that the value does not need to match the entire field.
 
 #### Hierarchical Structure
 
-```js
+```
 request
 ├── proto: string (Protocol)
 ├── method: string (HTTP Verbs)
@@ -300,11 +284,19 @@ response
 └── serverElapsed: int
 ```
 
-## Server
+## Woole.me Server
 
-With Woole, you can create **YOUR** own server. But before setup your Woole Server, be sure that your server port is open and the firewall (if configurable) has the HTTP, HTTPS and Tunnel port configured. Consult the server provider documentation to know how to configure that. Domains and hostings are not provided by Woole Server.
+The https://woole.me website was created to offer a free-to-use Woole Server. Simply connect using the tunnel URL `woole.me`.
 
-The https://woole.me website was created to provide a free-to-use Woole Server. Just use the tunnel URL `grpc://woole.me:8001`. The virtual machine is not so powerful so use with moderation. Note that the website disponibility can change without further advise.
+Please note that the virtual machine has limited resources, so we kindly ask that you use it in moderation. The server will always run the latest released version of Woole.
+
+Keep in mind that the website’s availability may change without prior notice.
+
+## Local or Hosted Server
+
+Woole allows the creation of custom servers. Before setting up a Woole Server, ensure that the necessary ports (HTTP, HTTPS, and Tunnel) are open and properly configured in the firewall, if applicable. Refer to the server provider’s documentation for specific configuration instructions.
+
+Please note that domains and hosting services are not included with Woole Server.
 
 ### Basic Usage
 
@@ -312,34 +304,42 @@ The https://woole.me website was created to provide a free-to-use Woole Server. 
     ./woole-server 
 
     ===============
-    HTTP listening on http://{client}
-    Tunnel listening on http://{client}:8001
+      HTTP listening on http://{client}.custom.pattern
+     HTTPS listening on https://{client}.custom.pattern
+    Tunnel listening on grpc://10.0.0.7:9653
     ===============
 ```
 
+*If the server resolves the address to a loopback IP, the resolved IP will be displayed. Otherwise, a default placeholder in the format `grpc://<hostname-or-ip>:9653` will be used. The `hostname`, if any, can be used instead of the IP.*
+
+*To provide an HTTPS server, the server must be certified. Consult the [Using HTTPS](#using-https) section for more details.*
+
 ### Available Options
 
-| Option                  | Description                                                                 |
-|-------------------------|-----------------------------------------------------------------------------|
-| `-pattern`              | Set the server hostname pattern. Example: `{client}.mysite.com`            |
-| `-http`                 | Port on which the server listens for HTTP requests (default `80`)          |
-| `-https`                | Port on which the server listens for HTTPS requests (default `443`)        |
-| `-tunnel`               | Port on which the gRPC tunnel listens (default `8001`)                     |
-| `-key`                  | Key used to hash the bearer                                                |
-| `-tls-cert`             | Path to the TLS certificate or fullchain file                              |
-| `-tls-key`              | Path to the TLS private key file                                           |
-| `-log-level`            | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-tunnel-reconnect-timeout` | Timeout to reconnect the stream when the connection is lost (default `10000`ms) |
-| `-tunnel-request-size`  | Tunnel maximum request size in bytes (default `math.MaxInt32`)             |
-| `-tunnel-response-size` | Tunnel maximum response size in bytes (default `math.MaxInt32`)            |
-| `-tunnel-response-timeout` | Timeout to receive a client response (default `20000`ms) 
+| Option                      | Description                                                                 |
+|-----------------------------|-----------------------------------------------------------------------------|
+| `-pattern`                  | Set the server hostname pattern. Example: `{client}.mysite.com`            |
+| `-http`                     | Port on which the server listens for HTTP requests (default `80`)          |
+| `-https`                    | Port on which the server listens for HTTPS requests (default `443`)        |
+| `-tunnel`                   | Port on which the gRPC tunnel listens (default `9653`)                     |
+| `-key`                      | Key used to hash the bearer                                                |
+| `-tls-cert`                 | Path to the TLS certificate or fullchain file                              |
+| `-tls-key`                  | Path to the TLS private key file                                           |
+| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
+| `-tunnel-reconnect-timeout` | Timeout to reconnect the stream when the connection is lost. [Duration format](#duration-format) (default `10s`) |
+| `-tunnel-request-size`      | Tunnel maximum request size. [Size format](#size-format) (default `2GB`, limited by gRPC)  |
+| `-tunnel-response-size`     | Tunnel maximum response size. [Size format](#size-format) (default `2GB`, limited by gRPC) |
+| `-tunnel-response-timeout`  | Timeout to receive a client response. [Duration format](#duration-format) (default `10s`)      |
+| `-tunnel-connection-timeout`| Timeout for client connections. [Duration format](#duration-format) (default `unset`)          |
 
 ### Hostname Pattern
 
-The `pattern` is used to define the host format and where the [Client ID](#client-id) will be displayed in the URL. Example, `{client}.woole.me` will generate URLs such as:
-- client-name-here.woole.me;
-- test.woole.me
-- l2rhwi87aira.woole.me;
+The `pattern` is used to define the host format and where the [Client ID](#client-id) will be displayed in the URL. Example, `{client}.pattern.here` will generate URLs such as:
+- https://clientid.pattern.here;
+- https://test.pattern.here
+- https://l2rhwi87aira.pattern.here;
+
+*If using a host, configure it to allow the `*.pattern.here` DNS records.*
 
 #### Custom URL Rules
 
@@ -349,16 +349,24 @@ If no name is provided, an 8 digits hash will be returned instead.
 
 #### Example
 
-Using the server pattern https://{client}.woole.me and the [Client ID](#client-id) `test` will return the following URL:
-- https://test.woole.me, if the name test is not in use right now OR
-- https://test-3ld8f.woole.me, with a 5 digits hash.
+Using the server pattern "https://{client}.pattern.here" and the [Client ID](#client-id) `test` will return the following URL:
+- https://test.pattern.here, if the name test is not in use right now OR
+- https://test-3ld8f.pattern.here, with a 5 digits hash.
 
 Otherwise, if the name is not provided, an 8 digits hash will be used instead:
-- https://2hv9e4lf.woole.me
+- https://2hv9e4lf.pattern.here
 
 ### Using HTTPS
 
-The HTTPS URL is only available for certified servers. Provide the certification path and the key path using `-tls-cert` and `-tls-key` respectively. The HTTPS port can be changed using `-https`.
+The HTTPS URL is only available for certified servers. Provide the certification path and the key path using `-tls-cert` and `-tls-key` respectively. The HTTPS port can be changed using the `-https` option.
+
+#### Example
+
+```sh
+    ./woole-server \
+        -tls-cert "/etc/tls/domain/fullchain.pem" \
+        -tls-key "/etc/tls/domain/privkey.pem"
+```
 
 ## Build
 
@@ -368,15 +376,13 @@ Manually:
     git clone --depth 1 https://github.com/ecromaneli/woole.git
 
     # to build the client
-    cd woole/cmd/client
-    go build -o woole
-    chmod +x woole
+    go build -o ./bin/woole ./cmd/client
+    chmod +x ./bin/woole
 
     # to build the server
     cd woole/cmd/server
-    go build -o woole-server
-    chmod +x woole-server
-
+    go build -o ./bin/woole-server ./cmd/server
+    chmod +x ./bin/woole-server
 ```
 
 Now, just run the executable using the options above. You can also use `-help` to see the available options.
@@ -412,10 +418,10 @@ To build and run the Woole server:
 
 2. Run the server:
    ```sh
-   docker run --rm -p 8001:8001 -p 80:80 woole-server $ARGS
+   docker run --rm -p 9653:9653 -p 80:80 woole-server $ARGS
    ```
 
-   - The server will be available on ports `8001` (tunnel) and `80` (HTTP).
+   - The server will be available on ports `9653` (tunnel) and `80` (HTTP).
    - Replace `$ARGS` with any additional arguments you want to pass to the server (see the [Server Options](#server) section).
 
 #### Client
@@ -444,14 +450,14 @@ To build and run the Woole client:
 
 ```sh
  docker build -t woole-server --build-arg MODULE=server -f Dockerfile .
- docker run --rm -p 8001:8001 -p 80:80 woole-server
+ docker run --rm -p 9653:9653 -p 80:80 woole-server
 ```
 
 #### Client with a configured tunnel
 
 ```sh
  docker build -t woole -f Dockerfile .
- docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://woole.me:8001
+ docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel woole.me
 ```
 
 If the server and client are running in the same machine, remember to put the tunnel URL to a network visible on both containers.
@@ -460,15 +466,69 @@ Example:
 
 ```sh
 # Run the server and export the tunnel and HTTP port
-docker run --rm -p 8001:8001 -p 80:80 woole-server
+docker run --rm -p 9653:9653 -p 80:80 woole-server
 
 # Access the tunnel through the server exported tunnel port using the host IP address (localhost will not work because the container is isolated)
-docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://<host-ip-address>:8001
+docker run --rm -p 8000:8000 woole -proxy http://localhost:8080 -tunnel grpc://<host-ip-address>:9653
 ```
 
 *The docker option `--network host` can also be used. However, it is not recommended for security reasons.*
 
 For more information on available options, refer to the [Client](#client) and [Server](#server) sections.
+
+## Special Types
+
+### URL Patterns
+
+All options that requires URLs **MUST** follow one of the patterns below:
+
+- `protocol`://`host`:`port`;
+- `protocol`://`host` (default port `80`);
+- `host`:`port`, (default protocol `HTTP`);
+- `host`, (default protocol `HTTP` and port `80`);
+- `port`, only digits (default protocol `HTTP` and host `localhost`).
+
+### Duration Format
+
+The **Duration Format** allows you to specify time intervals using a combination of numeric values and time unit qualifiers. This format is used in options like `-reconnect-interval` and other timeout-related configurations.
+
+#### Supported Qualifiers
+- `d` - Days
+- `h` - Hours
+- `m` or `min` - Minutes
+- `s` - Seconds
+- `ms` - Milliseconds
+- `ns` - Nanoseconds
+
+#### Examples
+| Input String               | Description                             | Equivalent Duration         |
+|----------------------------|-----------------------------------------|-----------------------------|
+| `1d`                       | 1 day                                   | 24 hours                    |
+| `2h 30m`                   | 2 hours and 30 minutes                  | 2 hours, 30 minutes         |
+| `45s`                      | 45 seconds                              | 45 seconds                  |
+| `100ms`                    | 100 milliseconds                        | 100 milliseconds            |
+| `1h 15min 10s`             | 1 hour, 15 minutes, and 10 seconds      | 1 hour, 15 minutes, 10 secs |
+| `0`                        | Zero duration                           | 0                           |
+
+### Size Format
+
+The **Size Format** allows you to specify sizes in bytes using a combination of numeric values and unit qualifiers. This format is used in options like `-tunnel-request-size` and `-tunnel-response-size`.
+
+#### Supported Qualifiers
+- `b` - Bytes
+- `kb` - Kilobytes (1 KB = 1024 bytes)
+- `mb` - Megabytes (1 MB = 1024 KB)
+- `gb` - Gigabytes (1 GB = 1024 MB)
+- `tb` - Terabytes (1 TB = 1024 GB)
+
+#### Examples
+| Input String     | Description  | Equivalent Size                     |
+|------------------|--------------|-------------------------------------|
+| `1024b`          | 1024 bytes   | 1024 bytes                          |
+| `1kb`            | 1 kilobyte   | 1024 bytes                          |
+| `2mb`            | 2 megabytes  | 2 * 1024 * 1024 bytes               |
+| `1gb`            | 1 gigabyte   | 1 * 1024 * 1024 * 1024 bytes        |
+| `1tb`            | 1 terabyte   | 1 * 1024 * 1024 * 1024 * 1024 bytes |
 
 ## Author
 

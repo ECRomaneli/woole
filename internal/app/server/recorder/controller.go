@@ -26,6 +26,10 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 
 // RPC -> Tunnel(stream *TunnelServer)
 func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
+
+	// Get the stream context
+	ctx := stream.Context()
+
 	// Receive the client handshake
 	hs, err := stream.Recv()
 
@@ -42,8 +46,11 @@ func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	client.Connect()
 	log.Info(client.Id, "- Tunnel Connected")
 
-	defer client.DisconnectAfter(time.Duration(config.TunnelReconnectTimeout) * time.Millisecond)
-	defer log.Info(client.Id, "- Tunnel Disconnected")
+	if config.TunnelConnectionTimeout != 0 {
+		cancelableCtx, cancel := context.WithDeadline(stream.Context(), time.Now().Add(config.TunnelConnectionTimeout))
+		ctx = cancelableCtx
+		defer cancel()
+	}
 
 	// Send session
 	stream.Send(&tunnel.ServerMessage{Session: createSession(client)})
@@ -59,8 +66,17 @@ func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	go sendServerMessage(stream, client)
 
 	// Wait the end-of-stream
-	<-stream.Context().Done()
-	return nil
+	<-ctx.Done()
+
+	if ctx.Err() != context.DeadlineExceeded {
+		log.Info(client.Id, "- Tunnel Disconnected")
+		client.SetIdleTimeout(config.TunnelReconnectTimeout)
+	} else {
+		log.Info(client.Id, "- Tunnel Expired")
+		client.SetIdleTimeout(0)
+	}
+
+	return ctx.Err()
 }
 
 // RPC -> TestConn()

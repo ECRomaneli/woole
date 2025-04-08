@@ -29,13 +29,18 @@ func GetRecords() *adt.Records {
 	return records
 }
 
-func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx context.CancelFunc) error {
+// onTunnelStart starts the connection with the server via a gRPC tunnel.
+//
+// Returns:
+// - A boolean indicating whether the connection was successfully established.
+// - An error if the connection failed or was interrupted.
+func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx context.CancelFunc) (bool, error) {
 	defer cancelCtx()
 
 	// Start the tunnel stream
 	stream, err := client.Tunnel(ctx)
 	if !handleGRPCErrors(err) {
-		return err
+		return false, err
 	}
 
 	// Send the handshake
@@ -44,11 +49,11 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 	// Receive the session
 	serverMsg, err := stream.Recv()
 	if !handleGRPCErrors(err) {
-		return err
+		return false, err
 	}
 
 	if app.HasSession() {
-		log.Warn("[", config.TunnelUrl.String(), "] Connection reestablished")
+		log.Info("[", config.TunnelUrl.String(), "]", "Connection Reestablished")
 	}
 
 	app.SetSession(serverMsg.Session)
@@ -62,7 +67,7 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 
 		if err != nil {
 			if !handleGRPCErrors(err) {
-				return err
+				return true, err
 			}
 			continue
 		}
@@ -72,7 +77,7 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 }
 
 func handleServerRecord(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel.Record) {
-	defer catchAllErrors(serverRecord)
+	defer catchAllErrors()
 
 	switch serverRecord.Step {
 	case tunnel.Step_REQUEST:
@@ -197,7 +202,7 @@ func handleGRPCErrors(err error) bool {
 	}
 }
 
-func catchAllErrors(record *tunnel.Record) {
+func catchAllErrors() {
 	err := recover()
 
 	if err == nil {

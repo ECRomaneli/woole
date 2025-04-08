@@ -32,12 +32,17 @@ func GetDefaultPortStr(scheme string) string {
 
 func RawUrlToUrl(rawUrl string, defaultSchema string, defaultPort string) *url.URL {
 
+	// Pattern: "<port>"
+	if IsNumeric(rawUrl) {
+		rawUrl = ":" + rawUrl
+	}
+
 	// Pattern: ":<port>"
 	if strings.Index(rawUrl, ":") == 0 {
 		rawUrl = "localhost" + rawUrl
 	}
 
-	// Pattern: "<hostname>[:port]"
+	// Pattern: "<hostname>[:port]" or "port"
 	if !strings.Contains(rawUrl, "://") {
 		rawUrl = defaultSchema + "://" + rawUrl
 	}
@@ -47,8 +52,8 @@ func RawUrlToUrl(rawUrl string, defaultSchema string, defaultPort string) *url.U
 		panic(fmt.Sprintf("Unexpected Url format: %s. Error: %s", rawUrl, err.Error()))
 	}
 
-	// Pattern: "[<scheme>://]<hostname>"
-	if !strings.Contains(url.Host, ":") && defaultPort != "" {
+	// Pattern: "<scheme>://<hostname>"
+	if len(url.Port()) == 0 && defaultPort != "" {
 		url.Host += ":" + defaultPort
 	}
 
@@ -75,4 +80,19 @@ func ReplaceHostByUsingExampleStr(rawUrl string, customSchemeHostOpaque string) 
 	}
 
 	return ReplaceHostByUsingExampleUrl(rawUrl, parsedUrl)
+}
+
+// IsNumeric checks if a string contains only numeric characters.
+func IsNumeric(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	for _, char := range s {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+
+	return true
 }

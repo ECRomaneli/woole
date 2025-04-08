@@ -8,7 +8,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/server",
             "args": [
-                "-tunnel-response-timeout", "1000",
+                "-tunnel-response-timeout", "1s",
                 "-tunnel-reconnect-timeout", "0",
                 "-http", "8080"
             ]
@@ -25,6 +25,32 @@
             ]
         },
         {
+            "name": "Client 2",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost",
+                "-sniffer", "8002"
+            ]
+        },
+        {
+            "name": "Fast Attempt Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost",
+                "-sniffer", "8002",
+                "-reconnect-attempts", "3",
+                "-reconnect-interval", "1s",
+            ]
+        },
+        {
             "name": "Server w/ Key",
             "type": "go",
             "request": "launch",
@@ -36,6 +62,18 @@
             ]
         },
         {
+            "name": "5s Conn Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-key", "<any-key>",
+                "-http", "8080",
+                "-tunnel-connection-timeout", "5s",
+            ]
+        },
+        {
             "name": "Standalone Client",
             "type": "go",
             "request": "launch",
@@ -44,6 +82,17 @@
             "args": [
                 "-http", "80",
                 "-proxy", "https://www.w3schools.com/"
+            ]
+        },
+        {
+            "name": "woole.me Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-tunnel", "woole.me"
             ]
         },
         {

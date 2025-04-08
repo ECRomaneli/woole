@@ -17,21 +17,28 @@ func NewClientManager() *ClientManager {
 	return &ClientManager{clients: make(map[string]*Client)}
 }
 
-func (cm *ClientManager) Register(clientId string, bearer []byte) *Client {
+func (cm *ClientManager) Register(clientId string, bearer []byte, newBearer []byte) (*Client, error) {
 	clientId = cm.generateClientId(clientId)
 
-	client := NewClient(clientId, bearer)
+	if len(bearer) != 0 && !cm.bearerEquals(bearer, newBearer) {
+		return nil, errors.New("failed to authenticate client from other server")
+	}
+
+	client := NewClient(clientId, newBearer)
 	cm.put(clientId, client)
 
-	return client
+	return client, nil
 }
 
 func (cm *ClientManager) Deregister(clientId string) {
-	close(cm.clients[clientId].RecordChannel)
+	client := cm.clients[clientId]
+
+	client.IdleTimeout.Stop()
+	close(client.RecordChannel)
 	cm.put(clientId, nil)
 }
 
-func (cm *ClientManager) DeregisterIfIdle(clientId string, callback func()) {
+func (cm *ClientManager) DeregisterOnTimeout(clientId string, callback func()) {
 	client := cm.clients[clientId]
 
 	go func() {
@@ -42,13 +49,17 @@ func (cm *ClientManager) DeregisterIfIdle(clientId string, callback func()) {
 }
 
 func (cm *ClientManager) RecoverSession(clientId string, bearer []byte) (*Client, error) {
+	if len(bearer) == 0 {
+		return nil, nil
+	}
+
 	client := cm.Get(clientId)
 
 	if client == nil {
 		return nil, nil
 	}
 
-	if !bytes.Equal(client.Bearer, bearer) {
+	if !cm.bearerEquals(client.Bearer, bearer) {
 		return nil, errors.New("failed to authenticate the client")
 	}
 
@@ -61,6 +72,14 @@ func (cm *ClientManager) Get(clientId string) *Client {
 
 func (cm *ClientManager) Exists(clientId string) bool {
 	return cm.clients[clientId] != nil
+}
+
+func (cm *ClientManager) bearerEquals(bearer1 []byte, bearer2 []byte) bool {
+	if len(bearer1) == 0 || len(bearer2) == 0 {
+		return false
+	}
+
+	return bytes.Equal(bearer1, bearer2)
 }
 
 func (cm *ClientManager) generateClientId(clientId string) string {

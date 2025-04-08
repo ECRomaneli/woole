@@ -62,7 +62,7 @@ func (cl *Client) SetRecordResponse(recordId string, response *tunnel.Response) 
 	record.OnResponse.SendLast()
 }
 
-func (cl *Client) DisconnectAfter(duration time.Duration) bool {
+func (cl *Client) SetIdleTimeout(duration time.Duration) bool {
 	cl.IsIdle = true
 	return cl.IdleTimeout.Reset(duration)
 }

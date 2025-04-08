@@ -28,7 +28,7 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 
 		select {
 		case <-record.OnResponse.Receive():
-		case <-time.After(time.Duration(config.TunnelResponseTimeout) * time.Millisecond):
+		case <-time.After(config.TunnelResponseTimeout):
 			err = webserver.NewHTTPError(http.StatusGatewayTimeout, client.Id+" Record("+record.Id+") - Server timeout reached")
 		case <-req.Raw.Context().Done():
 			err = webserver.NewHTTPError(http.StatusGatewayTimeout, client.Id+" Record("+record.Id+") - The request is no longer available")
@@ -86,7 +86,7 @@ func createSession(client *adt.Client) *tunnel.Session {
 		HttpPort:        config.HttpPort,
 		MaxRequestSize:  int32(config.TunnelRequestSize),
 		MaxResponseSize: int32(config.TunnelResponseSize),
-		ResponseTimeout: int32(config.TunnelResponseTimeout),
+		ResponseTimeout: int64(config.TunnelResponseTimeout),
 		Bearer:          client.Bearer,
 	}
 
@@ -110,11 +110,16 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 		return client, nil
 	}
 
-	// Create session
-	client = clientManager.Register(hs.ClientId, app.GenerateBearer(hs.ClientKey))
+	// Create session or try recover from other server with the same key
+	client, err = clientManager.Register(hs.ClientId, hs.Bearer, app.GenerateBearer(hs.ClientKey))
+
+	if err != nil {
+		log.Error(hs.ClientId, "-", err.Error())
+		return nil, err
+	}
 
 	log.Info(client.Id, "- Session Started")
-	clientManager.DeregisterIfIdle(client.Id, func() { log.Info(client.Id, "- Session Finished") })
+	clientManager.DeregisterOnTimeout(client.Id, func() { log.Info(client.Id, "- Session Finished") })
 	return client, nil
 }
 

@@ -34,7 +34,7 @@ message Session {
     bytes bearer = 5;
     int32 maxRequestSize = 6;
     int32 maxResponseSize = 7;
-    int32 responseTimeout = 8;
+    int64 responseTimeout = 8;
 }
 
 message Request {
