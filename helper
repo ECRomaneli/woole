@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# filepath: /home/romaneli/projects/git/woole/compile
+
+# Function to build a module
+build_module() {
+    module=$1
+    shift # Remove the first argument (module) to pass the rest as arguments
+    if [[ $module == "server" || $module == "client" ]]; then
+        echo "Building $module..."
+        go build -o ./bin/$module ./cmd/$module "$@"
+        if [[ $? -eq 0 ]]; then
+            echo "$module built successfully!"
+        else
+            echo "Failed to build $module."
+            exit 1
+        fi
+    else
+        echo "Invalid module: $module. Use 'server' or 'client'."
+        exit 1
+    fi
+}
+
+# Function to run a module
+run_module() {
+    module=$1
+    shift # Remove the first argument (module) to pass the rest as arguments
+    if [[ $module == "server" || $module == "client" ]]; then
+        echo "Running $module..."
+        go run ./cmd/$module "$@"
+    else
+        echo "Invalid module: $module. Use 'server' or 'client'."
+        exit 1
+    fi
+}
+
+# Function to execute a built binary
+exec_module() {
+    module=$1
+    shift # Remove the first argument (module) to pass the rest as arguments
+    if [[ $module == "server" || $module == "client" ]]; then
+        binary="./bin/$module"
+        if [[ -f $binary ]]; then
+            echo "Executing $module binary..."
+            $binary "$@"
+        else
+            echo "Binary for $module not found. Build it first using '-build'."
+            exit 1
+        fi
+    else
+        echo "Invalid module: $module. Use 'server' or 'client'."
+        exit 1
+    fi
+}
+
+# Function to compile protobuf files
+compile_protobuf() {
+    echo "Compiling protobuf files..."
+    protoc --go_out=. --go-grpc_out=. internal/pkg/tunnel/tunnel.proto
+    if [[ $? -eq 0 ]]; then
+        echo "Protobuf files compiled successfully!"
+    else
+        echo "Failed to compile protobuf files."
+        exit 1
+    fi
+}
+
+command=$1
+module=$2
+shift 2 # Remove the first two arguments (command and module) to pass the rest as arguments
+
+case $command in
+    build|-build|--build)
+        build_module $module "$@"
+        ;;
+    run|-run|--run)
+        run_module $module "$@"
+        ;;
+    exec|-exec|--exec)
+        exec_module $module "$@"
+        ;;
+    protoc|-protoc|--protoc)
+        compile_protobuf
+        ;;
+    protoc|-protoc|--protoc)
+        compile_protobuf
+        ;;
+    help|-help|--help)
+        echo "Usage: $0 -build {module} [args...] | -run {module} [args...] | -exec {module} [args...] | -protoc"
+        echo "Commands:"
+        echo "  -build {module}   Build the specified module (server or client)."
+        echo "  -run {module}     Run the specified module (server or client)."
+        echo "  -exec {module}    Execute the built binary of the specified module (server or client)."
+        echo "  -protoc           Compile protobuf files."
+        exit 0
+        ;;
+    *)
+        echo "Invalid command: $command. Use '-build', '-run', '-exec', or '-protoc'."
+        exit 1
+        ;;
+esac

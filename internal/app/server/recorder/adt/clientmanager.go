@@ -31,11 +31,14 @@ func (cm *ClientManager) Register(clientId string, bearer []byte, newBearer []by
 }
 
 func (cm *ClientManager) Deregister(clientId string) {
-	close(cm.clients[clientId].RecordChannel)
+	client := cm.clients[clientId]
+
+	client.IdleTimeout.Stop()
+	close(client.RecordChannel)
 	cm.put(clientId, nil)
 }
 
-func (cm *ClientManager) DeregisterIfIdle(clientId string, callback func()) {
+func (cm *ClientManager) DeregisterOnTimeout(clientId string, callback func()) {
 	client := cm.clients[clientId]
 
 	go func() {

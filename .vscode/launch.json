@@ -8,7 +8,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/server",
             "args": [
-                "-tunnel-response-timeout", "1000",
+                "-tunnel-response-timeout", "1s",
                 "-tunnel-reconnect-timeout", "0",
                 "-http", "8080"
             ]
@@ -33,7 +33,21 @@
             "args": [
                 "-proxy", "https://www.w3schools.com/",
                 "-client", "localhost",
-                "-sniffer", ":8002"
+                "-sniffer", "8002"
+            ]
+        },
+        {
+            "name": "Fast Attempt Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost",
+                "-sniffer", "8002",
+                "-reconnect-attempts", "3",
+                "-reconnect-interval", "1s",
             ]
         },
         {
@@ -45,6 +59,18 @@
             "args": [
                 "-key", "<any-key>",
                 "-http", "8080"
+            ]
+        },
+        {
+            "name": "5s Conn Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-key", "<any-key>",
+                "-http", "8080",
+                "-tunnel-connection-timeout", "5s",
             ]
         },
         {

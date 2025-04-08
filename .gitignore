@@ -13,7 +13,6 @@
 .DS_Store
 
 # Binaries
-cmd/server/server*
-cmd/client/client*
+bin/*
 
 # *.pb.go

@@ -19,21 +19,32 @@ import (
 )
 
 func startConnectionWithServer() {
-	for {
+	firstConn := true
+	var err error
+
+	for attempt := 0; attempt <= config.MaxReconnectAttempts; attempt++ {
+		if firstConn {
+			firstConn = false
+		} else {
+			recoverOrExit(err)
+		}
+
 		// Establish tunnel connection and retrieve request/response stream
-		client, ctx, cancelCtx, err := connectClient(config.EnableTLSTunnel)
+		client, ctx, cancelCtx, connErr := connectClient(config.EnableTLSTunnel)
+		err = connErr
 
 		if err != nil {
-			recoverOrExit(err)
 			continue
 		}
 
-		err = onTunnelStart(client, ctx, cancelCtx)
+		connEstablished, tunnelErr := onTunnelStart(client, ctx, cancelCtx)
+		err = tunnelErr
 
-		if err != nil {
-			recoverOrExit(err)
+		if connEstablished {
+			attempt = 0
 		}
 	}
+	recoverOrExit(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)))
 }
 
 func createProxyHandler() http.HandlerFunc {
@@ -61,7 +72,7 @@ func setProxyTimeout() {
 	// Customize the Transport to include a timeout
 	http.DefaultTransport = &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout: time.Duration(session.ResponseTimeout) * time.Millisecond, // Set connection timeout
+			Timeout: time.Duration(session.ResponseTimeout), // Set connection timeout
 		}).DialContext,
 	}
 }
@@ -110,13 +121,17 @@ func recoverOrExit(err error) {
 
 	if !ok || !isRecoverable(err) || !app.HasSession() {
 		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
-		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel.")
+		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel")
 		os.Exit(1)
 	}
 
 	log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
-	log.Warn("[", config.TunnelUrl.String(), "]", errStatus.Code().String()+", retrying in 5 seconds...")
-	<-time.After(5 * time.Second)
+	if config.ReconnectInterval > 0 {
+		log.Warn("[", config.TunnelUrl.String(), "]", "Trying to reconnect in", config.ReconnectIntervalStr, "...")
+		<-time.After(config.ReconnectInterval)
+	} else {
+		log.Warn("[", config.TunnelUrl.String(), "]", "Trying to reconnect...")
+	}
 }
 
 func isRecoverable(err error) bool {
