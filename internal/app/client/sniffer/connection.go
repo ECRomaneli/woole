@@ -2,7 +2,7 @@ package sniffer
 
 import (
 	"net/http"
-	"woole/web"
+	web "woole/web/client"
 
 	"github.com/ecromaneli-golang/http/webserver"
 )

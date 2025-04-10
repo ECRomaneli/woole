@@ -2,14 +2,17 @@ package recorder
 
 import (
 	"net"
+	"net/http"
 	"woole/internal/pkg/tunnel"
+
+	web "woole/web/server"
 
 	"github.com/ecromaneli-golang/http/webserver"
 	"google.golang.org/grpc"
 )
 
 func serveWebServer() {
-	server := webserver.NewServer()
+	server := webserver.NewServerWithFS(http.FS(web.EmbeddedFS))
 
 	server.All(config.HostnamePattern+"/**", recorderHandler)
 

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Woole Server</title>
+    <link rel="icon" href="assets/images/dashboard.min.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --background-color: #0d1117;
+            --text-color: #a9b1b9;
+            --border-color: #21262d;
+            --box-background: #161b22;
+            --highlight-color: #f78166;
+            --button-hover: #13233a;
+            --code-font: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            
+            /* Syntax highlighting colors */
+            --comment-color: #8b949e;
+            --command-color: #7ee787;
+            --flag-color: #79c0ff;
+            --string-color: #a5d6ff;
+            --variable-color: #d2a8ff;
+            --bracket-color: #ff7b72;
+            --operator-color: #ff7b72;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 2rem;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            margin-top: 0;
+            margin-bottom: 2.5rem;
+        }
+        
+        .code-block {
+            background-color: var(--box-background);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 0.75rem;
+            text-align: left;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: var(--code-font);
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Syntax highlighting classes */
+        .comment { color: var(--comment-color); font-style: italic; }
+        .command { color: var(--command-color); font-weight: bold; }
+        .flag { color: var(--flag-color); }
+        .string { color: var(--string-color); }
+        .variable { color: var(--variable-color); }
+        .bracket { color: var(--bracket-color); }
+        .operator { color: var(--operator-color); }
+        
+        .button {
+            background-color: var(--box-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem 0.5rem 0 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .button:hover {
+            background-color: var(--button-hover);
+            border-color: var(--highlight-color);
+        }
+        
+        .footer {
+            margin-top: 4rem;
+            font-size: 0.8rem;
+        }
+        
+        .copy-button {
+            background-color: transparent;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+        
+        .copy-button:hover {
+            background-color: var(--border-color);
+        }
+        
+        .code-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .code-section-title {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://i.postimg.cc/44W825Fd/logo.png" alt="Woole Logo" class="logo">
+        
+        <p class="tagline">
+            Woole (a shortened form of "Wormhole") is an open-source project for reverse proxying, sniffing, and tunneling, developed in Go.
+        </p>
+        
+        <p class="code-section-title">Connect to this server</p>
+        <div class="code-wrapper">
+            <div class="code-block">
+                <pre id="client-command"><span class="comment"># Using the client</span>
+<span class="command">woole</span> <span class="flag">-tunnel</span> <span class="string" id="client-host"></span> <span class="flag">-client</span> <span class="string">{{clientId}}</span> <span class="flag">-proxy</span> <span class="string">{url_to_proxy}</span></pre>
+            </div>
+            <button class="copy-button" data-command="client" title="Copy to clipboard"></button>
+        </div>
+        
+        <p class="code-section-title">Using Docker</p>
+        <div class="code-wrapper">
+            <div class="code-block">
+                <pre id="docker-command"><span class="comment"># Using Docker</span>
+<span class="command">docker</span> <span class="flag">run</span> <span class="flag">--rm</span> <span class="flag">-p</span> <span class="string">8000:8000</span> <span class="command">woole</span> <span class="flag">-tunnel</span> <span class="string" id="docker-host"></span> <span class="flag">-client</span> <span class="string">{{clientId}}</span> <span class="flag">-proxy</span> <span class="string">{url_to_proxy}</span></pre>
+            </div>
+            <button class="copy-button" data-command="docker" title="Copy to clipboard"></button>
+        </div>
+        
+        <div class="button-container">
+            <a href="https://github.com/ECRomaneli/woole" target="_blank" class="button">GitHub Repository</a>
+            <a href="https://github.com/ECRomaneli/woole/releases" target="_blank" class="button">Download Woole Client</a>
+            <a href="https://github.com/ECRomaneli/woole/tree/master#docker" target="_blank" class="button">Setup Docker Client</a>
+        </div>
+        
+        <div class="footer">
+            <p>Created by <a href="https://github.com/ECRomaneli" style="color: var(--highlight-color); text-decoration: none;">Emerson Capuchi Romaneli</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Current URL and host
+            const currentUrl = window.location.origin + window.location.pathname;
+            const currentHost = window.location.hostname + ":{{tunnelPort}}";
+            
+            // Set dynamic content
+            document.getElementById('client-host').textContent = currentHost;
+            document.getElementById('docker-host').textContent = currentHost;
+            
+            // Command templates
+            const commands = {
+                client: `woole -tunnel ${currentHost} -proxy {url_to_proxy}`,
+                docker: `docker run --rm -p 8000:8000 woole -tunnel ${currentHost} -proxy {url_to_proxy}`,
+            };
+            
+            // SVG templates
+            const svgIcons = {
+                copy: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 1.75C2.5 1.33579 2.83579 1 3.25 1H9.25C9.66421 1 10 1.33579 10 1.75V3H12.75C13.1642 3 13.5 3.33579 13.5 3.75V14.25C13.5 14.6642 13.1642 15 12.75 15H3.25C2.83579 15 2.5 14.6642 2.5 14.25V1.75ZM4 5V13.5H12V4.5H10V11.75C10 12.1642 9.66421 12.5 9.25 12.5H4.75C4.33579 12.5 4 12.1642 4 11.75V5ZM8.5 2.5H4V11H8.5V2.5Z" fill="currentColor"/></svg>',
+                check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" fill="currentColor"/></svg>'
+            };
+
+            // Buttons handler
+            const buttons = document.querySelectorAll('.copy-button')
+            
+            buttons.forEach(button => {
+                button.innerHTML = svgIcons.copy
+                button.addEventListener('click', function () {
+                    const commandType = this.getAttribute('data-command');
+                    const commandText = commands[commandType];
+                    
+                    navigator.clipboard.writeText(commandText)
+                        .then(() => {
+                            this.innerHTML = svgIcons.check;
+                            setTimeout(() => {
+                                this.innerHTML = svgIcons.copy;
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                        });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

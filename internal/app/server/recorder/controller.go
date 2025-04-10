@@ -11,9 +11,14 @@ import (
 
 // REST -> [ALL] /**
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	clientId, err := hasClient(req.Param("client"))
-	panicIfNotNil(err)
-
+	clientIdStr := req.Param("client")
+	clientId, err := hasClient(clientIdStr)
+	if err != nil {
+		help := getHelpPage(clientIdStr)
+		res.Headers(help.GetHttpHeader()).Status(int(help.Code)).Write(help.Body)
+		log.Error(err)
+		return
+	}
 	client := clientManager.Get(clientId)
 	if client.IsIdle {
 		panic("Trying to use an idle client")
@@ -95,7 +100,7 @@ func hasClient(clientId string) (string, error) {
 
 	if !clientManager.Exists(clientId) {
 		message := "The client '" + clientId + "' is not in use"
-		return clientId, webserver.NewHTTPError(http.StatusForbidden, message)
+		return clientId, webserver.NewHTTPError(http.StatusAccepted, message)
 	}
 
 	return clientId, nil
