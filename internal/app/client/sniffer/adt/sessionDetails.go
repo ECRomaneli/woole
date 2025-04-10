@@ -12,6 +12,7 @@ type SessionDetails struct {
 	Sniffer    string `json:"sniffer"`
 	Tunnel     string `json:"tunnel"`
 	MaxRecords int    `json:"maxRecords"`
+	ExpireAt   string `json:"expireAt"`
 }
 
 func NewSessionDetails() *SessionDetails {
@@ -25,6 +26,7 @@ func NewSessionDetails() *SessionDetails {
 		Proxying:   config.CustomUrl.String(),
 		Sniffer:    config.SnifferUrl.String(),
 		MaxRecords: config.MaxRecords,
+		ExpireAt:   app.ExpireAt(),
 	}
 
 	if !config.IsStandalone {

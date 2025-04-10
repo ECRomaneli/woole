@@ -2,6 +2,33 @@
 
 # filepath: /home/romaneli/projects/git/woole/compile
 
+# Function to generate ECC key pair
+generate_key() {
+    rm -rf keys # Remove the existing keys directory if it exists
+    mkdir -p keys # Create the keys directory if it doesn't exist
+    private_key="keys/private_key.pem"
+    public_key="keys/public_key.pem"
+
+    echo "Generating ECC key pair..."
+    # Generate the private key
+    openssl ecparam -genkey -name prime256v1 -noout -out $private_key
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to generate private key."
+        exit 1
+    fi
+
+    # Generate the public key
+    openssl ec -in $private_key -pubout -out $public_key
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to generate public key."
+        exit 1
+    fi
+
+    echo "ECC key pair generated successfully!"
+    echo "Private key: $private_key"
+    echo "Public key: $public_key"
+}
+
 # Function to build a module
 build_module() {
     module=$1
@@ -82,20 +109,21 @@ case $command in
     protoc|-protoc|--protoc)
         compile_protobuf
         ;;
-    protoc|-protoc|--protoc)
-        compile_protobuf
+    keygen|-keygen|--keygen)
+        generate_key
         ;;
     help|-help|--help)
-        echo "Usage: $0 -build {module} [args...] | -run {module} [args...] | -exec {module} [args...] | -protoc"
+        echo "Usage: $0 -build {module} [args...] | -run {module} [args...] | -exec {module} [args...] | -protoc | -keygen"
         echo "Commands:"
         echo "  -build {module}   Build the specified module (server or client)."
         echo "  -run {module}     Run the specified module (server or client)."
         echo "  -exec {module}    Execute the built binary of the specified module (server or client)."
         echo "  -protoc           Compile protobuf files."
+        echo "  -keygen           Generate an ECC key pair for testing."
         exit 0
         ;;
     *)
-        echo "Invalid command: $command. Use '-build', '-run', '-exec', or '-protoc'."
+        echo "Invalid command: $command. Use '-build', '-run', '-exec', '-protoc', or '-keygen'."
         exit 1
         ;;
 esac

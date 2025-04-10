@@ -77,13 +77,14 @@ func receiveClientMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client)
 	}
 }
 
-func createSession(client *adt.Client) *tunnel.Session {
+func createSession(client *adt.Client, expireAt int64) *tunnel.Session {
 	hostname := strings.Replace(config.HostnamePattern, app.ClientToken, client.Id, 1)
 
 	auth := &tunnel.Session{
 		ClientId:        client.Id,
 		Hostname:        hostname,
 		HttpPort:        config.HttpPort,
+		ExpireAt:        expireAt,
 		MaxRequestSize:  int32(config.TunnelRequestSize),
 		MaxResponseSize: int32(config.TunnelResponseSize),
 		ResponseTimeout: int64(config.TunnelResponseTimeout),
@@ -98,6 +99,12 @@ func createSession(client *adt.Client) *tunnel.Session {
 }
 
 func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
+	err := app.AuthClient(hs.PublicKey)
+	if err != nil {
+		log.Error(hs.ClientId, "-", err.Error())
+		return nil, err
+	}
+
 	// Recover client session if exists
 	client, err := clientManager.RecoverSession(hs.ClientId, hs.Bearer)
 

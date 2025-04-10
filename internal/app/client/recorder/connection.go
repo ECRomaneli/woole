@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func startConnectionWithServer() {
+func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.Context, context.CancelFunc) (bool, error)) {
 	firstConn := true
 	var err error
 
@@ -37,7 +37,7 @@ func startConnectionWithServer() {
 			continue
 		}
 
-		connEstablished, tunnelErr := onTunnelStart(client, ctx, cancelCtx)
+		connEstablished, tunnelErr := contextHandler(client, ctx, cancelCtx)
 		err = tunnelErr
 
 		if connEstablished {
@@ -72,7 +72,7 @@ func setProxyTimeout() {
 	// Customize the Transport to include a timeout
 	http.DefaultTransport = &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout: time.Duration(session.ResponseTimeout), // Set connection timeout
+			Timeout: time.Duration(session.ResponseTimeout),
 		}).DialContext,
 	}
 }
