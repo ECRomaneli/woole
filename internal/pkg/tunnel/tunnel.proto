@@ -36,6 +36,7 @@ message Session {
     int32 maxRequestSize = 6;
     int32 maxResponseSize = 7;
     int64 responseTimeout = 8;
+    int64 expireAt = 9;
 }
 
 message Request {

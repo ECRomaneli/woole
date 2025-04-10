@@ -32,6 +32,7 @@ func printInfo() {
 
 	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
 	fmt.Printf("  Sniffer: %s\n", config.SnifferUrl.String())
+	fmt.Printf("Expire At: %s\n", app.ExpireAt())
 
 	fmt.Println("===============")
 	fmt.Println()

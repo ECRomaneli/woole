@@ -46,14 +46,18 @@ func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	client.Connect()
 	log.Info(client.Id, "- Tunnel Connected")
 
+	var expireAt int64 = 0
+
 	if config.TunnelConnectionTimeout != 0 {
-		cancelableCtx, cancel := context.WithDeadline(stream.Context(), time.Now().Add(config.TunnelConnectionTimeout))
+		deadline := time.Now().Add(config.TunnelConnectionTimeout)
+		expireAt = deadline.Unix()
+		cancelableCtx, cancel := context.WithDeadline(stream.Context(), deadline)
 		ctx = cancelableCtx
 		defer cancel()
 	}
 
 	// Send session
-	stream.Send(&tunnel.ServerMessage{Session: createSession(client)})
+	stream.Send(&tunnel.ServerMessage{Session: createSession(client, expireAt)})
 
 	if !handleGRPCErrors(err) {
 		return err

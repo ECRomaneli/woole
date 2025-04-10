@@ -52,11 +52,17 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 		return false, err
 	}
 
+	var expireAt string
 	if app.HasSession() {
 		log.Info("[", config.TunnelUrl.String(), "]", "Connection Reestablished")
+		expireAt = app.ExpireAt()
 	}
 
 	app.SetSession(serverMsg.Session)
+
+	if expireAt != "" && app.ExpireAt() != expireAt {
+		log.Info("[", config.TunnelUrl.String(), "]", "New Session ExpireAt:", app.ExpireAt())
+	}
 
 	// Reset old IDs
 	records.ResetServerIds()

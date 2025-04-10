@@ -32,7 +32,8 @@ app.component('SessionDetailsCard', {
                 proxying: 'Proxying',
                 sniffer: 'Sniffer',
                 tunnel: 'Tunnel URL',
-                maxRecords: 'Max Stored Records'
+                maxRecords: 'Max Stored Records',
+                expireAt: 'Expire At'
             }
         }
     },

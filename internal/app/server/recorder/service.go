@@ -77,13 +77,14 @@ func receiveClientMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client)
 	}
 }
 
-func createSession(client *adt.Client) *tunnel.Session {
+func createSession(client *adt.Client, expireAt int64) *tunnel.Session {
 	hostname := strings.Replace(config.HostnamePattern, app.ClientToken, client.Id, 1)
 
 	auth := &tunnel.Session{
 		ClientId:        client.Id,
 		Hostname:        hostname,
 		HttpPort:        config.HttpPort,
+		ExpireAt:        expireAt,
 		MaxRequestSize:  int32(config.TunnelRequestSize),
 		MaxResponseSize: int32(config.TunnelResponseSize),
 		ResponseTimeout: int64(config.TunnelResponseTimeout),
