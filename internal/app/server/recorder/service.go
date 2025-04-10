@@ -98,6 +98,12 @@ func createSession(client *adt.Client) *tunnel.Session {
 }
 
 func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
+	err := app.AuthClient(hs.PublicKey)
+	if err != nil {
+		log.Error(hs.ClientId, "-", err.Error())
+		return nil, err
+	}
+
 	// Recover client session if exists
 	client, err := clientManager.RecoverSession(hs.ClientId, hs.Bearer)
 

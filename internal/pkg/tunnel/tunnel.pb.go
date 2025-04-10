@@ -188,6 +188,7 @@ type Handshake struct {
 	ClientKey    []byte `protobuf:"bytes,2,opt,name=clientKey,proto3" json:"clientKey,omitempty"`
 	AllowReaders bool   `protobuf:"varint,3,opt,name=allowReaders,proto3" json:"allowReaders,omitempty"`
 	Bearer       []byte `protobuf:"bytes,4,opt,name=bearer,proto3" json:"bearer,omitempty"`
+	PublicKey    []byte `protobuf:"bytes,5,opt,name=publicKey,proto3" json:"publicKey,omitempty"`
 }
 
 func (x *Handshake) Reset() {
@@ -246,6 +247,13 @@ func (x *Handshake) GetAllowReaders() bool {
 func (x *Handshake) GetBearer() []byte {
 	if x != nil {
 		return x.Bearer
+	}
+	return nil
+}
+
+func (x *Handshake) GetPublicKey() []byte {
+	if x != nil {
+		return x.PublicKey
 	}
 	return nil
 }

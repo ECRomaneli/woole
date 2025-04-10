@@ -30,6 +30,7 @@
   - [Available Options](#available-options-1)
   - [Hostname Pattern](#hostname-pattern)
   - [Using HTTPS](#using-https)
+  - [Server w/ ECC Authentication](#server-with-ecc-authentication)
 - [Build](#build)
 - [Docker](#docker)
 - [Custom Types](#custom-types)
@@ -48,7 +49,7 @@ Woole provides two modules: the server and the client. The server sets up an HTT
 
 <p align='center'>
     <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
-        <img src="https://i.postimg.cc/VkkFygg7/diagram.png" alt='Diagram'>
+        <img src="https://i.postimg.cc/xT2bh1jC/woole-arch.png" alt='woole architecture'>
     </a>
 </p>
 
@@ -141,6 +142,7 @@ HTTPS URL: https://x5ck9p8e.woole.me
 | `-log-level`            | Level of detail for the logs to be displayed (default `INFO`)              |
 | `-tls-skip-verify`      | Disables the validation of the integrity of the Server's certificate       |
 | `-tls-ca`               | Path to the TLS CA file (only for self-signed certificates)                |
+| `-server-key`           | Path to the ECC public key used to authenticate with the server (default disabled)   |
 | `-reconnect-attempts`   | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
 | `-reconnect-interval`   | Time between reconnection attempts. [Duration format](#duration-format) (default `5s`) |
 
@@ -258,7 +260,7 @@ and to search for `XML` bodies:
 response.header.Content-Type: xml
 ```
 
-Note that the value does not need to match the entire field.
+Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer. 
 
 #### Hierarchical Structure
 
@@ -279,7 +281,6 @@ response
 ├── header
 │   ├── name_1: string
 │   └── name_n: string
-├── body: text
 ├── elapsed: int
 └── serverElapsed: int
 ```
@@ -322,9 +323,10 @@ Please note that domains and hosting services are not included with Woole Server
 | `-http`                     | Port on which the server listens for HTTP requests (default `80`)          |
 | `-https`                    | Port on which the server listens for HTTPS requests (default `443`)        |
 | `-tunnel`                   | Port on which the gRPC tunnel listens (default `9653`)                     |
-| `-key`                      | Key used to hash the bearer                                                |
+| `-seed`                     | Key used to hash the client bearer                                                |
 | `-tls-cert`                 | Path to the TLS certificate or fullchain file                              |
 | `-tls-key`                  | Path to the TLS private key file                                           |
+| `-priv-key`                 | Path to the ECC private key used to validate clients (default disabled)  |
 | `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
 | `-tunnel-reconnect-timeout` | Timeout to reconnect the stream when the connection is lost. [Duration format](#duration-format) (default `10s`) |
 | `-tunnel-request-size`      | Tunnel maximum request size. [Size format](#size-format) (default `2GB`, limited by gRPC)  |
@@ -368,6 +370,30 @@ The HTTPS URL is only available for certified servers. Provide the certification
         -tls-key "/etc/tls/domain/privkey.pem"
 ```
 
+### Server with ECC Authentication
+
+To use the server authentication, generate a pair of ECC (Elliptic Curve Cryptography) keys. Follow the steps below:
+
+#### **Using OpenSSL**
+
+1. **Generate the Private Key**:
+   ```sh
+   openssl ecparam -genkey -name prime256v1 -noout -out private_key.pem
+   ```
+   - This command generates a private key using the `prime256v1` curve.
+
+2. **Generate the Public Key**:
+   ```sh
+   openssl ec -in private_key.pem -pubout -out public_key.pem
+   ```
+   - This command extracts the public key from the private key.
+
+#### **Key Usage**
+- **Server**:
+  - Use the private key (`private_key.pem`) with the `-priv-key` option to validate client connections.
+- **Client**:
+  - Share the public key with the allowed clients and use the `-server-key` option to authenticate with the server.
+
 ## Build
 
 Manually:
@@ -389,7 +415,9 @@ Now, just run the executable using the options above. You can also use `-help` t
 
 ## Docker
 
-Woole can be run using Docker for easier setup and usage. The Dockerfile supports building images for both the client and the server. Follow the instructions below to build and run the images.
+Woole can be built and run using Docker for easier setup and usage. The Dockerfile supports building images for both the client and the server. The [Dockerfile](https://github.com/ECRomaneli/woole/blob/master/docker/Dockerfile) is available under the `docker` folder in the root path of the project.
+
+Follow the instructions below to build and run the images.
 
 ### Dockerfile Arguments
 
@@ -541,3 +569,7 @@ The Woole project, the woole.me website and all its contributors are not respons
 ## License
 
 [MIT License](https://github.com/ECRomaneli/woole/blob/master/LICENSE)
+
+Mostrar no client data de expiração
+Landing Page no /
+mostrar info no client, expire date, timeout

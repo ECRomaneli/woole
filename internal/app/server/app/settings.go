@@ -1,11 +1,16 @@
 package app
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha512"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,7 +37,8 @@ type Config struct {
 	TunnelResponseTimeout   time.Duration
 	TunnelReconnectTimeout  time.Duration
 	TunnelConnectionTimeout time.Duration
-	serverKey               []byte
+	privateKey              *ecdsa.PrivateKey
+	seed                    []byte
 	available               bool
 }
 
@@ -64,7 +70,8 @@ func ReadConfig() *Config {
 	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "Port on which the server listens for HTTPS requests")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
 	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: "+ClientToken+".mysite.com to vary the subdomain")
-	serverKey := flag.String("key", "", "Key used to hash the bearer")
+	seed := flag.String("seed", "", "Key used to hash the client bearer")
+	privateKey := flag.String("priv-key", "", "Path to the ECC private key used to validate clients (default \"allow unknown clients\")")
 	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")
 	tlsKey := flag.String("tls-key", "", "Path to the TLS private key file")
 	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Port on which the gRPC tunnel listens")
@@ -103,7 +110,8 @@ func ReadConfig() *Config {
 		HttpPort:                strconv.Itoa(*httpPort),
 		HttpsPort:               strconv.Itoa(*httpsPort),
 		HostnamePattern:         *hostnamePattern,
-		serverKey:               []byte(*serverKey),
+		seed:                    []byte(*seed),
+		privateKey:              loadPrivateKeyECC(*privateKey),
 		TlsCert:                 *tlsCert,
 		TlsKey:                  *tlsKey,
 		TunnelPort:              strconv.Itoa(*tunnelPort),
@@ -119,8 +127,8 @@ func ReadConfig() *Config {
 		panic("Hostname pattern MUST has " + ClientToken)
 	}
 
-	if len(config.serverKey) == 0 {
-		config.serverKey = rand.RandSha512("")
+	if len(config.seed) == 0 {
+		config.seed = rand.RandSha512("")
 	}
 
 	if config.TunnelRequestSize == 0 {
@@ -132,10 +140,6 @@ func ReadConfig() *Config {
 	}
 
 	return config
-}
-
-func PrintConfig() {
-	fmt.Println(ReadConfig())
 }
 
 func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
@@ -158,9 +162,63 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	return credentials.NewTLS(tlsConfig)
 }
 
+// loadPrivateKeyECC loads an ECC private key from a PEM file
+func loadPrivateKeyECC(path string) *ecdsa.PrivateKey {
+	if path == "" {
+		return nil
+	}
+
+	keyData, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Errorf("failed to read private key file: %w", err))
+	}
+
+	var block *pem.Block
+	for block == nil || block.Type != "EC PRIVATE KEY" {
+		block, keyData = pem.Decode(keyData)
+		if block == nil {
+			panic(errors.New("invalid private key format"))
+		}
+	}
+
+	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse private key: %w", err))
+	}
+
+	return privateKey
+}
+
 func GenerateBearer(clientKey []byte) []byte {
-	hash := sha512.Sum512(append(config.serverKey, clientKey...))
+	hash := sha512.Sum512(append(config.seed, clientKey...))
 	return hash[:]
+}
+
+func AuthClient(publicKey []byte) error {
+	if config.privateKey == nil {
+		return nil
+	}
+
+	if publicKey == nil {
+		return fmt.Errorf("no authentication key provided")
+	}
+
+	pubKey, err := x509.ParsePKIXPublicKey(publicKey)
+	if err != nil {
+		return fmt.Errorf("failed to parse public key: %w", err)
+	}
+
+	clientPubKey, ok := pubKey.(*ecdsa.PublicKey)
+	if !ok {
+		return errors.New("public key is not an ECDSA key")
+	}
+
+	// Verify that the public key matches the private key
+	if clientPubKey.Curve != config.privateKey.Curve {
+		return errors.New("failed to authenticate client: curve mismatch")
+	}
+
+	return nil
 }
 
 func parseDurationOrPanic(field string, duration string) time.Duration {
@@ -185,6 +243,10 @@ func parseTunnelMessageSizeOrPanic(field string, size string) int {
 	}
 
 	return int(sizeInt)
+}
+
+func PrintConfig() {
+	fmt.Println(ReadConfig())
 }
 
 func strPointer(str string) *string {

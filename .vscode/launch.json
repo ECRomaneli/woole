@@ -14,6 +14,63 @@
             ]
         },
         {
+            "name": "Server w/ Key",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-priv-key", "${workspaceFolder}/keys/private_key.pem",
+                "-http", "8080"
+            ]
+        },
+        {
+            "name": "Server w/ Seed",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-seed", "<any-seed>",
+                "-http", "8080"
+            ]
+        },
+        {
+            "name": "5s Conn Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-seed", "<any-seed>",
+                "-http", "8080",
+                "-tunnel-connection-timeout", "5s",
+            ]
+        },
+        {
+            "name": "Client w/ Key",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "localhost",
+                "-server-key", "${workspaceFolder}/keys/public_key.pem",
+            ]
+        },
+        {
+            "name": "Standalone Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-http", "80",
+                "-proxy", "https://www.w3schools.com/"
+            ]
+        },
+        {
             "name": "Client",
             "type": "go",
             "request": "launch",
@@ -48,40 +105,6 @@
                 "-sniffer", "8002",
                 "-reconnect-attempts", "3",
                 "-reconnect-interval", "1s",
-            ]
-        },
-        {
-            "name": "Server w/ Key",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cmd/server",
-            "args": [
-                "-key", "<any-key>",
-                "-http", "8080"
-            ]
-        },
-        {
-            "name": "5s Conn Server",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cmd/server",
-            "args": [
-                "-key", "<any-key>",
-                "-http", "8080",
-                "-tunnel-connection-timeout", "5s",
-            ]
-        },
-        {
-            "name": "Standalone Client",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cmd/client",
-            "args": [
-                "-http", "80",
-                "-proxy", "https://www.w3schools.com/"
             ]
         },
         {

@@ -14,5 +14,6 @@
 
 # Binaries
 bin/*
+keys/*
 
 # *.pb.go

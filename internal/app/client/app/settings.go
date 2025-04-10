@@ -3,6 +3,8 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -33,6 +35,7 @@ type Config struct {
 	CustomUrl            *url.URL
 	SnifferUrl           *url.URL
 	MaxRecords           int
+	ServerKey            string
 	tlsSkipVerify        bool
 	tlsCa                string
 	EnableTLSTunnel      bool
@@ -41,8 +44,7 @@ type Config struct {
 	MaxReconnectAttempts int
 	ReconnectIntervalStr string
 	ReconnectInterval    time.Duration
-
-	available bool
+	available            bool
 }
 
 const (
@@ -101,6 +103,7 @@ func ReadConfig() *Config {
 	// allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	maxReconnectAttempts := flag.Int("reconnect-attempts", 5, "Maximum number of reconnection attempts. 0 for infinite")
 	reconnectInterval := flag.String("reconnect-interval", "5s", "Time between reconnection attempts. Duration format")
+	serverKey := flag.String("server-key", "", "Path to the ECC public key used to authenticate (only if configured by the server)")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
 	tlsCa := flag.String("tls-ca", "", "Path to the TLS CA file. Only for self-signed certificates")
 
@@ -134,6 +137,7 @@ func ReadConfig() *Config {
 		CustomUrl:            iurl.RawUrlToUrl(*customUrl, "http", ""),
 		SnifferUrl:           iurl.RawUrlToUrl(*snifferPort, "http", defaultSnifferPort),
 		MaxRecords:           *maxRecords,
+		ServerKey:            *serverKey,
 		tlsSkipVerify:        *tlsSkipVerify,
 		tlsCa:                *tlsCa,
 		EnableTLSTunnel:      true,
@@ -175,12 +179,48 @@ func (cfg *Config) GetHandshake() *tunnel.Handshake {
 		clientId = session.ClientId
 	}
 
-	return &tunnel.Handshake{
-		ClientId:     clientId,
-		ClientKey:    cfg.ClientKey,
-		AllowReaders: cfg.AllowReaders,
-		Bearer:       session.Bearer,
+	publicKey, err := loadPublicKeyECC(cfg.ServerKey)
+
+	if err != nil {
+		panic(err)
 	}
+
+	return &tunnel.Handshake{
+		ClientId:  clientId,
+		ClientKey: cfg.ClientKey,
+		Bearer:    session.Bearer,
+		PublicKey: publicKey,
+	}
+}
+
+// loadPublicKeyECC loads the public key from the configured file
+func loadPublicKeyECC(path string) ([]byte, error) {
+	if path == "" {
+		return nil, nil
+	}
+
+	keyData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read public key file: %w", err)
+	}
+
+	var block *pem.Block
+	for block == nil || block.Type != "PUBLIC KEY" {
+		block, keyData = pem.Decode(keyData)
+		if block == nil {
+			return nil, errors.New("invalid public key format")
+		}
+	}
+	return block.Bytes, nil
+}
+
+func ExpireAt() string {
+	if session.ExpireAt == 0 {
+		return "never"
+	}
+
+	t := time.Unix(session.ExpireAt, 0)
+	return t.Format("2006-01-02 03:04:05 PM MST")
 }
 
 func parseDurationOrPanic(field string, duration string) time.Duration {
