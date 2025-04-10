@@ -43,7 +43,7 @@
 
 ## How it Works
 
-Woole provides two modules: the server and the client. The server sets up an HTTP Tunnel, sends requests to the client, and waits for responses. The client retrieves requests using the configured tunnel, performs reverse-proxy operations, stores the information, and sends responses back to the server. Additionally, the client provides a sniffing tool.
+Woole consists of two primary modules: the Woole Client and the Woole Server. The server establishes a gRPC tunnel, facilitates the transmission of requests to the client, and awaits corresponding responses. The client, utilizing the configured tunnel, processes incoming requests, performs reverse-proxy operations, logs the relevant data, and returns the responses to the server. Additionally, the client includes an integrated sniffing tool for enhanced request analysis and debugging.
 
 &nbsp;
 
@@ -103,12 +103,13 @@ Pre-built binaries for the client and server are available in the [Releases](htt
 #### Using a standalone server (provided by the client)
 
 ```sh
-./woole -http :80 -proxy https://github.com/ECRomaneli/woole
+./woole -http 80 -proxy https://github.com/ECRomaneli/woole
 
 ===============
-HTTP URL:  http://localhost
-Proxying:  https://github.com/ECRomaneli/woole
- Sniffer:  http://localhost:8000
+ HTTP URL:  http://localhost
+ Proxying:  https://github.com/ECRomaneli/woole
+  Sniffer:  http://localhost:8000
+Expire At:  never
 ===============
 ```
 *More about standalone config under the [Standalone Mode section](#standalone-mode).*
@@ -123,6 +124,7 @@ Proxying:  https://github.com/ECRomaneli/woole
 HTTPS URL: https://x5ck9p8e.woole.me
  Proxying: https://github.com/ECRomaneli/woole
   Sniffer: http://localhost:8000
+Expire At: never
 ===============
 ```
 
