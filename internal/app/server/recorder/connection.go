@@ -13,6 +13,11 @@ import (
 
 func serveWebServer() {
 	server := webserver.NewServerWithFS(http.FS(web.EmbeddedFS))
+	domain := config.GetDomain()
+
+	if domain != "" {
+		server.Get(domain+"/", recorderHandler)
+	}
 
 	server.All(config.HostnamePattern+"/**", recorderHandler)
 

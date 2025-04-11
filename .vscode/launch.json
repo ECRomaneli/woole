@@ -48,6 +48,19 @@
             ]
         },
         {
+            "name": "Server w/ Domain",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-pattern", "{client}.woole.local",
+                "-tunnel-response-timeout", "1s",
+                "-tunnel-reconnect-timeout", "0",
+                "-http", "8080"
+            ]
+        },
+        {
             "name": "Client w/ Key",
             "type": "go",
             "request": "launch",
@@ -90,6 +103,29 @@
             "args": [
                 "-proxy", "https://www.w3schools.com/",
                 "-client", "localhost",
+                "-sniffer", "8002"
+            ]
+        },
+        {
+            "name": "Domain Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "test1"
+            ]
+        },
+        {
+            "name": "Domain Client 2",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-proxy", "https://www.w3schools.com/",
+                "-client", "test2",
                 "-sniffer", "8002"
             ]
         },

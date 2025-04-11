@@ -162,6 +162,18 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 	return credentials.NewTLS(tlsConfig)
 }
 
+func (cfg *Config) GetDomain() string {
+	clientVar := "{client}"
+	clientPos := strings.Index(cfg.HostnamePattern, clientVar)
+
+	if clientPos == -1 {
+		return cfg.HostnamePattern
+	}
+
+	remainingHost := cfg.HostnamePattern[clientPos+len(clientVar):]
+	return strings.TrimPrefix(remainingHost, ".")
+}
+
 // loadPrivateKeyECC loads an ECC private key from a PEM file
 func loadPrivateKeyECC(path string) *ecdsa.PrivateKey {
 	if path == "" {

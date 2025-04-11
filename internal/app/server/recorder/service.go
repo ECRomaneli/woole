@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"woole/internal/app/server/app"
+	"woole/internal/pkg/constants"
 	"woole/internal/pkg/template"
 	"woole/internal/pkg/tunnel"
 	"woole/pkg/timer"
@@ -165,8 +166,11 @@ func handleGRPCErrors(err error) bool {
 
 func getHelpPage(clientId string) *tunnel.Response {
 	params := map[string]string{
-		"clientId":   clientId,
-		"tunnelPort": config.TunnelPort,
+		"client_id":  clientId,
+		"tunnel_url": config.GetDomain(),
+	}
+	if config.TunnelPort != strconv.Itoa(constants.DefaultTunnelPort) {
+		params["tunnel_url"] += ":" + config.TunnelPort
 	}
 
 	res := &tunnel.Response{
