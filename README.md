@@ -1,6 +1,6 @@
 <p align="center"><a href="https://github.com/ECRomaneli/woole"><img src="https://i.postimg.cc/44W825Fd/logo.png" alt='Woole'></a></p>
 <p align='center'>
-    The Wormhole (or just Woole) is an Open-Source reverse-proxy, sniffing, and tunneling tool developed in Go
+    Woole (a shortened form of "Wormhole") is an open-source project for reverse proxying, sniffing, and tunneling, developed in Go
 </p>
 <p align="center">
 <a href="https://github.com/ECRomaneli/woole/releases"><img src="https://img.shields.io/github/v/tag/ecromaneli/woole?label=version&sort=semver&style=for-the-badge" alt="Version"></a>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Woole Server</title>
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyBzaGFwZS1yZW5kZXJpbmc9Imdlb21ldHJpY1ByZWNpc2lvbiIgdGV4dC1yZW5kZXJpbmc9Imdlb21ldHJpY1ByZWNpc2lvbiIgaW1hZ2UtcmVuZGVyaW5nPSJvcHRpbWl6ZVF1YWxpdHkiIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiB3aWR0aD0iNDgxLjcwMSIgaGVpZ2h0PSI0MzMuNDU0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiNhZGFkYjAiIGQ9Ik0zMzIuNzAxIDBhNTguNDMyIDU4LjQzMiAwIDAxMTYgNy41Yzg0LjQxMiA1NC4wNTggMTI4Ljc0NSAxMzEuNTU4IDEzMyAyMzIuNWE0NzYuMjg2IDQ3Ni4yODYgMCAwMS0xLjUgMjYgMTMzLjY4NSAxMzMuNjg1IDAgMDEtNS41IDI5IDIyNy42MTYgMjI3LjYxNiAwIDAxLTMxIDE2YzIzLjE4Ni05OC45MjgtMS44MTQtMTgzLjQyOC03NS0yNTMuNS0xOS4yMDItMTYuMTA1LTQwLjIwMi0yOS40MzgtNjMtNDAgLjI2LTEuMjYxLjkyNi0yLjI2MSAyLTMgOC4zOTYtNC44NiAxNi43My05LjY5MyAyNS0xNC41eiIvPjxwYXRoIGZpbGw9IiNjZmQwZDEiIGQ9Ik0yOTEuNzAxIDcxYzMwLjgzNiAxNC42NjIgNTUuNjcgMzYuMzI5IDc0LjUgNjUgMjguMzE4IDQ0LjI1OSAzNy42NTIgOTIuMjU5IDI4IDE0NGExOTcuNjAyIDE5Ny42MDIgMCAwMS0xOS41IDEyLjVjLTIuMTA3Ljg1NC0zLjQ0LjE4OC00LTIgMTUuMTg2LTYxLjc1MSAyLjAyLTExNi41ODQtMzkuNS0xNjQuNS0xNi43NC0xOC4wOTEtMzYuMjQtMzIuMjU3LTU4LjUtNDIuNS4yNi0xLjI2MS45MjYtMi4yNjEgMi0zYTk3NDkuNzYgOTc0OS43NiAwIDAwMTctOS41eiIvPjxwYXRoIGZpbGw9IiM1NTViNjMiIGQ9Ik0xNTAuNzAxIDk4YzcyLjY5LTUuMDE1IDEyNy44NTcgMjMuMzE5IDE2NS41IDg1IDI3LjMxMyA1My42NjkgMjcuMzEzIDEwNy4zMzYgMCAxNjEtNDAuNDUyIDY0Ljk2OC05OC45NTIgOTIuNDY4LTE3NS41IDgyLjUtNTAuNzE1LTEwLjQzNy04OS4yMTUtMzcuOTM3LTExNS41LTgyLjUtMjAuMzM0LTM5LjY5Mi0yNS4zMzQtODEuMzU4LTE1LTEyNSAxNS43NjItNDkuNzY5IDQ3LjI2Mi04NS45MzYgOTQuNS0xMDguNSAxNC44Ny02LjM4MSAzMC4yMDItMTAuNTQ4IDQ2LTEyLjV6bTE0IDIxYzYyLjIxNy44MzEgMTA3LjcxNyAyOC40OTggMTM2LjUgODMgMjIuOTY4IDU1LjMwNSAxNi4zMDEgMTA2LjYzOC0yMCAxNTQtNDcuODE0IDUwLjY5OC0xMDQuMzE0IDYzLjUzMS0xNjkuNSAzOC41LTQ5LjY3My0yNC40NzYtNzcuODQtNjQuMzEtODQuNS0xMTkuNS0yLjIyLTU1LjM4NiAxOC45NDYtOTkuMjIgNjMuNS0xMzEuNSAyMi43MzYtMTQuMzAxIDQ3LjQwMy0yMi40NjggNzQtMjQuNXoiIHN0cm9rZT0iIzU1NWI2MyIgc3Ryb2tlLXdpZHRoPSIxMCIvPjxwYXRoIGZpbGw9IiNjZmQwZDEiIGQ9Ik0yMDcuNzAxIDE2NGMxNi4yMzcgNi4zOTcgMzAuMDcgMTYuMzk3IDQxLjUgMzAgMjQuNjkyIDMwLjkyNSAzMy41MjUgNjUuOTI1IDI2LjUgMTA1bC0xMyA2LjVjLTEuMTM1Ljc0OS0yLjEzNS41ODMtMy0uNSAxMS41NDQtNDkuMjA1LTIuNDU2LTg5LjM3MS00Mi0xMjAuNWExOTEuNjU0IDE5MS42NTQgMCAwMC0yMy0xMi41IDEzMS4xOTUgMTMxLjE5NSAwIDAxMTMtOHoiLz48L3N2Zz4=" type="image/svg+xml">
+    <style>
+        :root {
+            --background-color: #0d1117;
+            --text-color: #a9b1b9;
+            --border-color: #21262d;
+            --box-background: #161b22;
+            --highlight-color: #f78166;
+            --button-hover: #13233a;
+            --code-font: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            
+            /* Syntax highlighting colors */
+            --comment-color: #8b949e;
+            --command-color: #7ee787;
+            --flag-color: #79c0ff;
+            --string-color: #a5d6ff;
+            --variable-color: #d2a8ff;
+            --bracket-color: #ff7b72;
+            --operator-color: #ff7b72;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 2rem;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            margin-top: 0;
+            margin-bottom: 2.5rem;
+        }
+        
+        .code-block {
+            background-color: var(--box-background);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 0.75rem;
+            text-align: left;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: var(--code-font);
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Syntax highlighting classes */
+        .comment { color: var(--comment-color); font-style: italic; }
+        .command { color: var(--command-color); font-weight: bold; }
+        .flag { color: var(--flag-color); }
+        .string { color: var(--string-color); }
+        .variable { color: var(--variable-color); }
+        .bracket { color: var(--bracket-color); }
+        .operator { color: var(--operator-color); }
+        
+        .button {
+            background-color: var(--box-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem 0.5rem 0 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .button:hover {
+            background-color: var(--button-hover);
+            border-color: var(--highlight-color);
+        }
+        
+        .footer {
+            margin-top: 4rem;
+            font-size: 0.8rem;
+        }
+        
+        .copy-button {
+            background-color: transparent;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+        
+        .copy-button:hover {
+            background-color: var(--border-color);
+        }
+        
+        .code-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .code-section-title {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1918 504" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd">
+            <path fill="#4b5058" d="M1458.5 14.5h23c.17 149.334 0 298.667-.5 448-7.41.981-14.91 1.314-22.5 1v-449z" opacity=".958"/>
+            <path fill="#adadb0" d="M840.5 39.5a58.432 58.432 0 0116 7.5c84.412 54.058 128.745 131.558 133 232.5a476.286 476.286 0 01-1.5 26 133.685 133.685 0 01-5.5 29 227.616 227.616 0 01-31 16c23.186-98.928-1.814-183.428-75-253.5-19.202-16.105-40.202-29.438-63-40 .259-1.261.926-2.261 2-3 8.396-4.86 16.73-9.693 25-14.5z" opacity=".954"/>
+            <path fill="#cfd0d1" d="M799.5 110.5c30.836 14.662 55.67 36.329 74.5 65 28.318 44.259 37.652 92.259 28 144a197.602 197.602 0 01-19.5 12.5c-2.107.854-3.441.188-4-2 15.186-61.751 2.02-116.584-39.5-164.5-16.741-18.091-36.241-32.257-58.5-42.5.259-1.261.926-2.261 2-3a9749.76 9749.76 0 0017-9.5z" opacity=".921"/>
+            <path fill="#4b5058" d="M1732.5 136.5c67.08.111 118.24 28.444 153.5 85 9.57 17.595 16.07 36.262 19.5 56a7.248 7.248 0 01-2 2.5c-80.33.5-160.67.667-241 .5-.31-7.587.02-15.087 1-22.5 71.34-.167 142.67-.667 214-1.5-21-53.816-60-85.982-117-96.5-43.98-4.893-82.32 7.44-115 37-48.57 45.175-61.41 99.008-38.5 161.5 30.51 61.779 80.34 90.945 149.5 87.5 36.88-5.106 67.88-21.273 93-48.5a160.155 160.155 0 0115 15c-44.83 46.634-99.16 63.801-163 51.5-50.43-13.299-87.59-43.132-111.5-89.5-23.04-52.113-21.37-103.446 5-154 31.66-51.083 77.49-79.083 137.5-84z" opacity=".936"/>
+            <path fill="#4b5057" d="M658.5 137.5c72.69-5.015 127.857 23.319 165.5 85 27.313 53.669 27.313 107.336 0 161-40.452 64.968-98.952 92.468-175.5 82.5-50.715-10.437-89.215-37.937-115.5-82.5-20.334-39.692-25.334-81.358-15-125 15.762-49.769 47.262-85.936 94.5-108.5 14.869-6.381 30.202-10.548 46-12.5zm14 21c62.217.831 107.717 28.498 136.5 83 22.968 55.305 16.301 106.638-20 154-47.814 50.698-104.314 63.531-169.5 38.5-49.673-24.476-77.84-64.31-84.5-119.5-2.221-55.386 18.946-99.22 63.5-131.5 22.736-14.301 47.403-22.468 74-24.5z" opacity=".938"/>
+            <path fill="#4b5058" d="M1179.5 137.5c73.03-5.404 128.53 22.929 166.5 85 27.3 53.653 27.3 107.319 0 161-46.42 72.265-111.58 98.099-195.5 77.5-52.58-17.582-88.42-52.415-107.5-104.5-22.45-84.697 2.72-150.864 75.5-198.5 19.07-11.007 39.4-17.841 61-20.5zm14 21c64.74.929 111.24 30.262 139.5 88 20.57 55.028 12.57 105.362-24 151-46.9 48.448-102.06 60.948-165.5 37.5-60.78-29.696-89.61-78.529-86.5-146.5 7.66-54.529 36.16-93.696 85.5-117.5 16.48-6.872 33.48-11.038 51-12.5z" opacity=".937"/>
+            <path fill="#4b5058" d="M207.5 141.5c7.587-.314 15.087.019 22.5 1l1 238c15.14 41.607 44.973 63.607 89.5 66 31.11-.802 55.61-13.802 73.5-39 7.962-12.221 12.962-25.554 15-40 .5-75.333.667-150.666.5-226h23c.167 78.001 0 156.001-.5 234-4.046 27.936-17.212 50.436-39.5 67.5-39.845 29.246-82.179 33.246-127 12-19.046-10.545-34.379-25.045-46-43.5-29.999 44.321-71.666 62.488-125 54.5-38.345-8.751-65.845-30.917-82.5-66.5a97.753 97.753 0 01-6-25c-.444-77.005-.778-154.005-1-231a66.641 66.641 0 0123 0l1 219c3.51 35.209 21.01 60.709 52.5 76.5 44.001 15.662 81.168 5.828 111.5-29.5a172.506 172.506 0 0014-27c.5-80.333.667-160.666.5-241z" opacity=".943"/>
+            <path fill="#cfd0d1" d="M715.5 203.5c16.237 6.397 30.07 16.397 41.5 30 24.692 30.925 33.525 65.925 26.5 105l-13 6.5c-1.135.749-2.135.583-3-.5 11.544-49.205-2.456-89.371-42-120.5a191.654 191.654 0 00-23-12.5 131.195 131.195 0 0113-8z" opacity=".875"/>
+        </svg>
+        
+        <p class="tagline">
+            Woole (a shortened form of "Wormhole") is an open-source project for reverse proxying, sniffing, and tunneling, developed in Go.
+        </p>
+        
+        <p class="code-section-title">Connect to this server</p>
+        <div class="code-wrapper">
+            <div class="code-block">
+                <pre id="client-command"><span class="comment"># Using the client</span>
+<span class="command">woole</span><span class="string dynamic-tunnel"></span><span class="dynamic-client"></span> <span class="flag">-proxy</span> <span class="string">{url_to_proxy}</span></pre>
+            </div>
+            <button class="copy-button" data-command="client" title="Copy to clipboard"></button>
+        </div>
+        
+        <p class="code-section-title">Using Docker</p>
+        <div class="code-wrapper">
+            <div class="code-block">
+                <pre id="docker-command"><span class="comment"># Using Docker</span>
+<span class="command">docker</span> <span class="flag">run</span> <span class="flag">--rm</span> <span class="flag">-p</span> <span class="string">8000:8000</span> <span class="command">woole</span><span class="string dynamic-tunnel"></span><span class="dynamic-client"></span> <span class="flag">-proxy</span> <span class="string">{url_to_proxy}</span></pre>
+            </div>
+            <button class="copy-button" data-command="docker" title="Copy to clipboard"></button>
+        </div>
+        
+        <div class="button-container">
+            <a href="https://github.com/ECRomaneli/woole" target="_blank" class="button">GitHub Repository</a>
+            <a href="https://github.com/ECRomaneli/woole/releases" target="_blank" class="button">Download Woole Client</a>
+            <a href="https://github.com/ECRomaneli/woole/tree/master#docker" target="_blank" class="button">Setup Docker Client</a>
+        </div>
+        
+        <div class="footer">
+            <p>Created by <a href="https://github.com/ECRomaneli" style="color: var(--highlight-color); text-decoration: none;">Emerson Capuchi Romaneli</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUrl = window.location.origin + window.location.pathname;
+            const tunnelUrl = "{{tunnel_url}}";
+            const clientId = "{{client_id}}";
+            let clientOption = "";
+            let tunnelOption = "";
+            
+            // Set dynamic content
+            document.querySelectorAll('.dynamic-domain').forEach(el => el.textContent = tunnelUrl);
+
+            if (tunnelUrl) {
+                document.querySelectorAll('.dynamic-tunnel').forEach(el => el.innerHTML = ` <span class="flag">-tunnel</span> <span class="string">${tunnelUrl}</span>`);
+                tunnelOption = ` -tunnel ${tunnelUrl}`;
+            }
+            if (clientId) {
+                document.querySelectorAll('.dynamic-client').forEach(el => el.innerHTML = ` <span class="flag">-client</span> <span class="string">${clientId}</span>`);
+                clientOption = ` -client ${clientId}`;
+            }
+
+            if (!window.isSecureContext || !navigator.clipboard) { return }
+            
+            // Command templates
+            const commands = {
+                client: `woole${tunnelOption}${clientOption} -proxy {url_to_proxy}`,
+                docker: `docker run --rm -p 8000:8000 woole${tunnelOption}${clientOption} -proxy {url_to_proxy}`,
+            };
+            
+            // SVG templates
+            const svgIcons = {
+                copy: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 1.75C2.5 1.33579 2.83579 1 3.25 1H9.25C9.66421 1 10 1.33579 10 1.75V3H12.75C13.1642 3 13.5 3.33579 13.5 3.75V14.25C13.5 14.6642 13.1642 15 12.75 15H3.25C2.83579 15 2.5 14.6642 2.5 14.25V1.75ZM4 5V13.5H12V4.5H10V11.75C10 12.1642 9.66421 12.5 9.25 12.5H4.75C4.33579 12.5 4 12.1642 4 11.75V5ZM8.5 2.5H4V11H8.5V2.5Z" fill="currentColor"/></svg>',
+                check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" fill="currentColor"/></svg>'
+            };
+
+            // Buttons handler
+            const buttons = document.querySelectorAll('.copy-button')
+            
+            buttons.forEach(button => {
+                button.innerHTML = svgIcons.copy
+                button.addEventListener('click', function () {
+                    const commandType = this.getAttribute('data-command');
+                    const commandText = commands[commandType];
+                    
+                    navigator.clipboard.writeText(commandText)
+                        .then(() => {
+                            this.innerHTML = svgIcons.check;
+                            setTimeout(() => {
+                                this.innerHTML = svgIcons.copy;
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                        });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

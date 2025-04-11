@@ -2,12 +2,16 @@ package recorder
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"woole/internal/app/server/app"
+	"woole/internal/pkg/constants"
+	"woole/internal/pkg/template"
 	"woole/internal/pkg/tunnel"
 	"woole/pkg/timer"
+	web "woole/web/server"
 
 	"woole/internal/app/server/recorder/adt"
 
@@ -158,4 +162,24 @@ func handleGRPCErrors(err error) bool {
 		log.Error(err)
 		return false
 	}
+}
+
+func getHelpPage(clientId string) *tunnel.Response {
+	params := map[string]string{
+		"client_id":  clientId,
+		"tunnel_url": config.GetDomain(),
+	}
+	if config.TunnelPort != strconv.Itoa(constants.DefaultTunnelPort) {
+		params["tunnel_url"] += ":" + config.TunnelPort
+	}
+
+	res := &tunnel.Response{
+		Code: http.StatusAccepted,
+		Body: []byte(template.FromFile(web.EmbeddedFS, "index.html").Apply(params)),
+	}
+
+	res.SetHeader("Content-Type", "text/html")
+	res.SetHeader("Content-Length", strconv.Itoa(len(res.Body)))
+
+	return res
 }

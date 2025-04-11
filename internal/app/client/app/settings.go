@@ -17,7 +17,7 @@ import (
 	"woole/pkg/parser"
 	"woole/pkg/rand"
 	"woole/pkg/signal"
-	"woole/web"
+	web "woole/web/client"
 
 	iurl "woole/internal/pkg/url"
 
