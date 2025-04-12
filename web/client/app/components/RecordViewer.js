@@ -98,7 +98,13 @@ app.component('RecordItem', {
     `,
     inject: ['$woole', '$image', '$clipboard'],
     props: { titleGroup: Array, item: Object },
-    data() { return { supportedPreviews: ['image', 'video', 'audio'], tab: 'header', enableCopy: false } },
+    data() { return {
+        supportedPreviews: ['image', 'video', 'audio'],
+        otherPreviews: ['application/octet-stream', 'application/x-mpegURL'],
+        tab: 'header',
+        enableCopy: false
+        }
+    },
     beforeMount() { this.parseBody() },
     mounted() { this.selectAvailableTab() },
     beforeUpdate() {
@@ -152,7 +158,10 @@ app.component('RecordItem', {
         hasParam() { return this.item.queryParams && Object.keys(this.item.queryParams).length > 0 },
         hasBody() { return this.item.body !== '' },
         isPreviewSupported() {
-            return this.supportedPreviews.some(c => c === this.content.category) && this.hasBody()
+            return this.hasBody() && (
+                this.supportedPreviews.some(c => c === this.content.category) ||
+                this.otherPreviews.some(c => c === this.content.category + "/" + this.content.type)
+            )
         }
     }
     

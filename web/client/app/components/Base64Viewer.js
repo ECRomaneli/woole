@@ -2,7 +2,7 @@ app.component('Base64Viewer', {
     template: /*html*/ `
         <div v-if='data' class='base64-viewer' @mouseover="showFitBtn = true" @mouseleave="showFitBtn = false">
             <img v-if="category === 'image'" :src="contentToSource()" :class="{ 'w-100 h-100': fitContainer }" alt="preview" />
-            <video v-else-if="category === 'video'" :key="seqKey" :class="{ 'w-100 h-100': fitContainer }" controls="">
+            <video v-else-if="category === 'video' || category === 'application'" :key="seqKey" :class="{ 'w-100 h-100': fitContainer }" controls="">
                 <source :type="getContentType()" :src="contentToSource()">Not Supported
             </video>
             <audio v-else-if="category === 'audio'" :key="seqKey" :class="{ 'w-100 h-100': fitContainer }" controls="">
