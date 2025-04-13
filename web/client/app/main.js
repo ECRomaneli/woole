@@ -1,5 +1,5 @@
 const app = Vue.createApp({
-    inject: ['$woole', '$date'],
+    inject: ['$woole', '$date', '$constants'],
 
     data() { return { sessionDetails: {}, selectedRecord: null } },
 
@@ -45,15 +45,20 @@ const app = Vue.createApp({
             this.$bus.on('stream.new-record', fn)
             
             if (record.clientId !== void 0) {
-                await fetch('/record/' + record.clientId + '/replay').catch(this.catchAll)
-            } else {
-                this.$woole.encodeBody(record.request)
-                await fetch('/record/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(record.request)
-                }).catch(this.catchAll)
+                await fetch(`/record/${record.clientId}/replay`).catch(this.catchAll)
+                return
             }
+
+            if (record.request.forwardedTo !== void 0) {
+                record.request.header[this.$constants.FORWARDED_TO_HEADER] = record.request.forwardedTo
+            }
+
+            this.$woole.encodeBody(record.request)
+            await fetch('/record/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record.request)
+            }).catch(this.catchAll)
         },
 
         async clearRecords() {
@@ -113,20 +118,21 @@ const app = Vue.createApp({
 
         setupRecord(rec) {
             rec.request.host = this.host
-            rec.origin = this.getRecordOrigin(rec)
+            rec.forwardedTo = this.getRecordForwardedTo(rec)
             rec.createdAt = this.$date.from(rec.createdAtMillis).format('MMM DD, hh:mm:ss A')
             this.$woole.decodeQueryParams(rec.request)
             this.$woole.decodeBody(rec.request)
         },
 
-        getRecordOrigin(rec) {
+        getRecordForwardedTo(rec) {
             if (!rec || !rec.request || !rec.request.header) { return null }
 
-            if (!rec.origin) {
-                rec.origin = rec.request.header['Origin'] || rec.request.header['origin']
+            if (!rec.forwardedTo) {
+                rec.request.forwardedTo = rec.request.header[this.$constants.FORWARDED_TO_HEADER]
+                delete rec.request.header[this.$constants.FORWARDED_TO_HEADER]
             }
 
-            return rec.origin
+            return rec.forwardedTo
         }
     }
 })

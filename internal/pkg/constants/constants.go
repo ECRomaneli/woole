@@ -4,6 +4,7 @@ import "strconv"
 
 const (
 	DefaultTunnelPort = 9653
+	ForwardedToHeader = "X-Woole-Forwarded-To"
 )
 
 var (

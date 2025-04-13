@@ -61,11 +61,13 @@ func replayHandler(req *webserver.Request, res *webserver.Response) {
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
 	newRequest := &tunnel.Request{}
 	err := json.Unmarshal(req.Body(), newRequest)
+
 	if err != nil {
 		webserver.NewHTTPError(
 			http.StatusBadRequest,
 			"Error when trying to parse the new request. Reason: "+err.Error()).Panic()
 	}
+
 	recorder.Replay(newRequest)
 }
 

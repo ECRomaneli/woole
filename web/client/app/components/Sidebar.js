@@ -19,20 +19,20 @@ app.component('Sidebar', {
                 </div>
             </div>
             
-            <div id="record-list" class="to-be-removed-h-100" :class="{ loading: recordList.length === 0 }">
+            <div id="record-list" :class="{ loading: recordList.length === 0 }">
                 <div ref="scrollarea" class="scrollarea">
                     <template v-for="(record, index) in filteredRecordList">
                         
                         <sidebar-item
                             :record="record"
                             :key="record.clientId"
-                            :class="{ active: isSelectedRecord(record), 'first-item': isOtherOrigin(record, filteredRecordList[index - 1]) }"
+                            :class="{ active: isSelectedRecord(record), 'first-item': isOtherHost(record, filteredRecordList[index - 1]) }"
                             @click="showRecord(record)"
                         ></sidebar-item>
 
-                        <div v-if="isOtherOrigin(record, filteredRecordList[index + 1])" class="d-flex p-1 mb-2 origin">
+                        <div v-if="isOtherHost(record, filteredRecordList[index + 1])" class="d-flex p-1 mb-3 origin">
                             <div class="smallest font-monospace text-center">
-                                <span>{{ record.origin }}</span>
+                                <span>{{ record.request.forwardedTo }}</span>
                             </div>
                         </div>
 
@@ -61,7 +61,7 @@ app.component('Sidebar', {
     created() {
         this.$bus.on('stream.start', (recs) => {
             this.recordList = recs
-            this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
+            //this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
             this.showRecord()
             this.setRecords(this.recordList)
         })
@@ -98,8 +98,8 @@ app.component('Sidebar', {
     watch: { inputSearch() { this.setRecords(this.recordList) } },
 
     methods: {
-        isOtherOrigin(record, otherRecord) {
-            return otherRecord === void 0 || record.origin !== otherRecord.origin
+        isOtherHost(record, otherRecord) {
+            return otherRecord === void 0 || record.request.forwardedTo !== otherRecord.request.forwardedTo
         },
 
         isSelectedRecord(record) {

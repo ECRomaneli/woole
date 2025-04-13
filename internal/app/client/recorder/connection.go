@@ -7,9 +7,11 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"time"
 	"woole/internal/app/client/app"
+	"woole/internal/pkg/constants"
 	"woole/internal/pkg/tunnel"
 
 	"google.golang.org/grpc"
@@ -47,8 +49,8 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 	recoverOrExit(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)))
 }
 
-func CreateProxyHandler() http.HandlerFunc {
-	proxy := httputil.NewSingleHostReverseProxy(config.ProxyUrl)
+func CreateProxyHandler(proxyUrl *url.URL) http.HandlerFunc {
+	proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
 
 	go setProxyTimeout()
 
@@ -58,17 +60,41 @@ func CreateProxyHandler() http.HandlerFunc {
 		fmt.Fprintf(rw, "%v", err)
 	}
 
-	url := config.ProxyUrl
+	return func(rw http.ResponseWriter, req *http.Request) {
+		customHostHandler(req, func(customUrl *url.URL) {
+			req.Host = customUrl.Host
+			req.URL.Host = customUrl.Host
+			req.URL.Scheme = customUrl.Scheme
+
+			proxy.ServeHTTP(rw, req)
+		})
+	}
+}
+
+func customHostHandler(req *http.Request, handler func(*url.URL)) {
 	if config.CustomUrl != nil {
-		url = config.CustomUrl
+		handler(config.CustomUrl)
+		return
 	}
 
-	return func(rw http.ResponseWriter, req *http.Request) {
-		req.Host = url.Host
-		req.URL.Host = url.Host
-		req.URL.Scheme = url.Scheme
-		proxy.ServeHTTP(rw, req)
+	hostStr := req.Header.Get(constants.ForwardedToHeader)
+
+	if hostStr == "" {
+		handler(config.ProxyUrl)
+		return
 	}
+
+	// Hide Woole header from the request
+	req.Header.Del(constants.ForwardedToHeader)
+
+	host, err := url.Parse(hostStr)
+
+	if err != nil {
+		log.Error("Failed to parse domain:", err)
+		host = config.ProxyUrl
+	}
+
+	handler(host)
 }
 
 func setProxyTimeout() {

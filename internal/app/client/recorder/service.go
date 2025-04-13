@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder/adt"
+	"woole/internal/pkg/constants"
 	"woole/internal/pkg/tunnel"
 	iurl "woole/internal/pkg/url"
 
@@ -17,10 +18,27 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var proxyHandler = CreateProxyHandler(config.ProxyUrl)
+var proxyReplayHandler = CreateProxyHandler(config.ProxyUrl)
+
 func Replay(request *tunnel.Request) {
 	record := adt.NewRecord(request, adt.REPLAY)
+	forwardTo := request.GetHeaderOrEmpty(constants.ForwardedToHeader)
 
-	record.Response = proxyRequest(record.Request)
+	if forwardTo == "" {
+		request.SetHeader(constants.ForwardedToHeader, config.ProxyUrl.String())
+	} else {
+		proxyUrl, err := url.Parse(forwardTo)
+
+		if err != nil {
+			log.Error("Error parsing URL:", err)
+			return
+		}
+
+		proxyReplayHandler = CreateProxyHandler(proxyUrl)
+	}
+
+	record.Response = proxyRequest(record.Request, proxyReplayHandler)
 	records.AddRecordAndPublish(record)
 
 	if log.IsInfoEnabled() {
@@ -129,6 +147,7 @@ func handleServerElapsed(serverRecord *tunnel.Record) {
 
 func doRequest(record *adt.Record) {
 	record.Step = tunnel.Step_RESPONSE
+	record.Request.SetHeader(constants.ForwardedToHeader, config.ProxyUrl.String())
 
 	url := config.ProxyUrl
 	if config.CustomUrl != nil {
@@ -138,11 +157,11 @@ func doRequest(record *adt.Record) {
 	replaceUrlHeader(url, record.Request.Header, "Origin")
 	replaceUrlHeader(url, record.Request.Header, "Referer")
 
-	record.Response = proxyRequest(record.Request)
+	record.Response = proxyRequest(record.Request, proxyHandler)
 	handleRedirections(record)
 }
 
-func proxyRequest(req *tunnel.Request) *tunnel.Response {
+func proxyRequest(req *tunnel.Request, proxyHandler http.HandlerFunc) *tunnel.Response {
 	// Redirect and record the response
 	recorder := httptest.NewRecorder()
 	elapsed := timer.Exec(func() {
@@ -176,9 +195,9 @@ func updateReverseProxy(record *adt.Record, location string) {
 		return
 	}
 
-	config.CustomUrl = iurl.RawUrlToUrl(locationUrl.Hostname(), locationUrl.Scheme, locationUrl.Port())
-	proxyHandler = CreateProxyHandler()
-	log.Warn("Proxy changed to \"", config.CustomUrl.String(), "\"")
+	config.ProxyUrl = iurl.RawUrlToUrl(locationUrl.Hostname(), locationUrl.Scheme, locationUrl.Port())
+	proxyHandler = CreateProxyHandler(config.ProxyUrl)
+	log.Warn("Proxy changed to \"" + config.ProxyUrl.String() + "\"")
 
 	newLocation, _ := iurl.ReplaceHostByUsingExampleStr(locationUrl.String(), record.Request.Url)
 	record.Response.SetHeader("Location", newLocation.String())

@@ -23,7 +23,6 @@ func NewSessionDetails() *SessionDetails {
 		ClientID:   session.ClientId,
 		HTTP:       session.HttpUrl(),
 		HTTPS:      session.HttpsUrl(),
-		Proxying:   config.CustomUrl.String(),
 		Sniffer:    config.SnifferUrl.String(),
 		MaxRecords: config.MaxRecords,
 		ExpireAt:   app.ExpireAt(),
