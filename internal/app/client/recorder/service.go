@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder/adt"
 	"woole/internal/pkg/tunnel"
-	"woole/internal/pkg/url"
+	iurl "woole/internal/pkg/url"
+
 	"woole/pkg/timer"
 
 	"google.golang.org/grpc/codes"
@@ -151,16 +153,40 @@ func handleRedirections(record *adt.Record) {
 		return
 	}
 
+	if config.DisallowRedirection {
+		blockRedirection(record, location)
+		return
+	}
+
+	updateReverseProxy(record, location)
+}
+
+func updateReverseProxy(record *adt.Record, location string) {
+	locationUrl, err := url.Parse(location)
+	if err != nil {
+		log.Error("Error parsing URL:", err)
+		return
+	}
+
+	config.CustomUrl = iurl.RawUrlToUrl(locationUrl.Hostname(), locationUrl.Scheme, locationUrl.Port())
+	proxyHandler = CreateProxyHandler()
+	log.Warn("Proxy changed to \"", config.CustomUrl.String(), "\"")
+
+	newLocation, _ := iurl.ReplaceHostByUsingExampleStr(locationUrl.String(), record.Request.Url)
+	record.Response.SetHeader("Location", newLocation.String())
+}
+
+func blockRedirection(record *adt.Record, location string) {
 	record.Type = adt.REDIRECT
+
+	newUrl, ok := iurl.ReplaceHostByUsingExampleStr(location, record.Request.Url)
+	if !ok {
+		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
+	}
 
 	params := make(map[string]string)
 	params["redirectUrl"] = location
 	params["hostname"] = app.GetSessionWhenAvailable().Hostname
-
-	newUrl, ok := url.ReplaceHostByUsingExampleStr(location, record.Request.Url)
-	if !ok {
-		panic("Error when trying to replace the host of [" + record.Request.Url + "]")
-	}
 
 	if newUrl.String() == record.Request.Url {
 		params["enableCustomUrl"] = "false"
@@ -173,10 +199,10 @@ func handleRedirections(record *adt.Record) {
 	record.Response.Body = []byte(app.RedirectTemplate.Apply(params))
 	record.Response.Code = http.StatusOK
 
-	res.SetHeader("Content-Type", "text/html")
-	res.DelHeader("Location")
-	res.DelHeader("Content-Encoding")
-	res.SetHeader("Content-Length", strconv.Itoa(len(record.Response.Body)))
+	record.Response.SetHeader("Content-Type", "text/html")
+	record.Response.DelHeader("Location")
+	record.Response.DelHeader("Content-Encoding")
+	record.Response.SetHeader("Content-Length", strconv.Itoa(len(record.Response.Body)))
 }
 
 func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {
@@ -185,7 +211,7 @@ func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {
 	}
 
 	rawUrl := header[headerName]
-	newUrl, ok := url.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
+	newUrl, ok := iurl.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
 
 	if !ok {
 		panic("Error when trying to replace the host of [" + rawUrl + "]")

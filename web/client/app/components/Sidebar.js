@@ -22,7 +22,8 @@ app.component('Sidebar', {
             <div id="record-list" class="to-be-removed-h-100" :class="{ loading: recordList.length === 0 }">
                 <div ref="scrollarea" class="scrollarea">
                     <sidebar-item
-                        v-for="record in filteredRecordList"
+                        v-for="(record, index) in filteredRecordList"
+                        :show-origin="showOrigin(record, filteredRecordList[index + 1])"
                         :record="record"
                         :key="record.clientId"
                         :class="{ active: isSelectedRecord(record) }"
@@ -52,7 +53,7 @@ app.component('Sidebar', {
     created() {
         this.$bus.on('stream.start', (recs) => {
             this.recordList = recs
-            this.filteredRecordList = this.recordList.slice()
+            this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
             this.showRecord()
             this.setRecords(this.recordList)
         })
@@ -89,6 +90,10 @@ app.component('Sidebar', {
     watch: { inputSearch() { this.setRecords(this.recordList) } },
 
     methods: {
+        showOrigin(record, nextRecord) {
+            return nextRecord === void 0 || record.origin !== nextRecord.origin
+        },
+
         isSelectedRecord(record) {
             return this.selectedRecord && this.selectedRecord.clientId === record.clientId
         },
@@ -147,7 +152,7 @@ app.component('Sidebar', {
 
 app.component('SidebarItem', {
     template: /*html*/ `
-        <button :client-id="record.clientId" class="record-item p-3 lh-sm" @mouseover="showToggle = true" @mouseleave="showToggle = false">
+        <button :client-id="record.clientId" v-bind="$attrs" class="record-item p-3 lh-sm" @mouseover="showToggle = true" @mouseleave="showToggle = false">
             <div class="d-flex w-100 mb-1 justify-content-between small">
                 <div class="badge-group" dir="rtl">
                     <span class="badge px-1" :class="statusBadge()">{{ response.code }}</span>
@@ -177,10 +182,17 @@ app.component('SidebarItem', {
                 <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
             </div>
         </button>
+        <div v-if="showOrigin" class="d-flex p-1 origin">
+            <div class="smallest font-monospace text-center">
+                <span>{{ record.origin }}</span>
+            </div>
+        </div>
     `,
     inject: [ '$image', '$date' ],
+    inheritAttrs: false,
     props: {
-        record: Object
+        record: Object,
+        showOrigin: Boolean
     },
     data() {
         return {

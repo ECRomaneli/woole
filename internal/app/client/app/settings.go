@@ -41,6 +41,7 @@ type Config struct {
 	EnableTLSTunnel      bool
 	AllowReaders         bool
 	IsStandalone         bool
+	DisallowRedirection  bool
 	MaxReconnectAttempts int
 	ReconnectIntervalStr string
 	ReconnectInterval    time.Duration
@@ -103,6 +104,7 @@ func ReadConfig() *Config {
 	// allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	maxReconnectAttempts := flag.Int("reconnect-attempts", 5, "Maximum number of reconnection attempts. 0 for infinite")
 	reconnectInterval := flag.String("reconnect-interval", "5s", "Time between reconnection attempts. Duration format")
+	disallowRedirection := flag.Bool("disallow-redirection", false, "Disables the auto redirection")
 	serverKey := flag.String("server-key", "", "Path to the ECC public key used to authenticate (only if configured by the server)")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
 	tlsCa := flag.String("tls-ca", "", "Path to the TLS CA file. Only for self-signed certificates")
@@ -140,6 +142,7 @@ func ReadConfig() *Config {
 		ServerKey:            *serverKey,
 		tlsSkipVerify:        *tlsSkipVerify,
 		tlsCa:                *tlsCa,
+		DisallowRedirection:  *disallowRedirection,
 		EnableTLSTunnel:      true,
 		IsStandalone:         httpUrl != &emptyStr,
 		MaxReconnectAttempts: *maxReconnectAttempts,

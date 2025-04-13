@@ -113,9 +113,20 @@ const app = Vue.createApp({
 
         setupRecord(rec) {
             rec.request.host = this.host
+            rec.origin = this.getRecordOrigin(rec)
             rec.createdAt = this.$date.from(rec.createdAtMillis).format('MMM DD, hh:mm:ss A')
             this.$woole.decodeQueryParams(rec.request)
             this.$woole.decodeBody(rec.request)
+        },
+
+        getRecordOrigin(rec) {
+            if (!rec || !rec.request || !rec.request.header) { return null }
+
+            if (!rec.origin) {
+                rec.origin = rec.request.header['Origin'] || rec.request.header['origin']
+            }
+
+            return rec.origin
         }
     }
 })
