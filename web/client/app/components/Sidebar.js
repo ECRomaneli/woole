@@ -21,14 +21,22 @@ app.component('Sidebar', {
             
             <div id="record-list" class="to-be-removed-h-100" :class="{ loading: recordList.length === 0 }">
                 <div ref="scrollarea" class="scrollarea">
-                    <sidebar-item
-                        v-for="(record, index) in filteredRecordList"
-                        :show-origin="showOrigin(record, filteredRecordList[index + 1])"
-                        :record="record"
-                        :key="record.clientId"
-                        :class="{ active: isSelectedRecord(record) }"
-                        @click="showRecord(record)"
-                    ></sidebar-item>
+                    <template v-for="(record, index) in filteredRecordList">
+                        
+                        <sidebar-item
+                            :record="record"
+                            :key="record.clientId"
+                            :class="{ active: isSelectedRecord(record), 'first-item': isOtherOrigin(record, filteredRecordList[index - 1]) }"
+                            @click="showRecord(record)"
+                        ></sidebar-item>
+
+                        <div v-if="isOtherOrigin(record, filteredRecordList[index + 1])" class="d-flex p-1 mb-2 origin">
+                            <div class="smallest font-monospace text-center">
+                                <span>{{ record.origin }}</span>
+                            </div>
+                        </div>
+
+                    </template>
                 </div>
             </div>
             <request-editor ref="reqEditor"></request-editor>
@@ -90,8 +98,8 @@ app.component('Sidebar', {
     watch: { inputSearch() { this.setRecords(this.recordList) } },
 
     methods: {
-        showOrigin(record, nextRecord) {
-            return nextRecord === void 0 || record.origin !== nextRecord.origin
+        isOtherOrigin(record, otherRecord) {
+            return otherRecord === void 0 || record.origin !== otherRecord.origin
         },
 
         isSelectedRecord(record) {
@@ -182,17 +190,11 @@ app.component('SidebarItem', {
                 <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
             </div>
         </button>
-        <div v-if="showOrigin" class="d-flex p-1 origin">
-            <div class="smallest font-monospace text-center">
-                <span>{{ record.origin }}</span>
-            </div>
-        </div>
     `,
     inject: [ '$image', '$date' ],
     inheritAttrs: false,
     props: {
-        record: Object,
-        showOrigin: Boolean
+        record: Object
     },
     data() {
         return {
