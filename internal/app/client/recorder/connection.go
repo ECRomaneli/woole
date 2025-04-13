@@ -48,7 +48,7 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 }
 
 func CreateProxyHandler() http.HandlerFunc {
-	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
+	proxy := httputil.NewSingleHostReverseProxy(config.ProxyUrl)
 
 	go setProxyTimeout()
 
@@ -58,10 +58,15 @@ func CreateProxyHandler() http.HandlerFunc {
 		fmt.Fprintf(rw, "%v", err)
 	}
 
+	url := config.ProxyUrl
+	if config.CustomUrl != nil {
+		url = config.CustomUrl
+	}
+
 	return func(rw http.ResponseWriter, req *http.Request) {
-		req.Host = config.CustomUrl.Host
-		req.URL.Host = config.CustomUrl.Host
-		req.URL.Scheme = config.CustomUrl.Scheme
+		req.Host = url.Host
+		req.URL.Host = url.Host
+		req.URL.Scheme = url.Scheme
 		proxy.ServeHTTP(rw, req)
 	}
 }

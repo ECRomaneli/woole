@@ -19,6 +19,7 @@ import (
 
 func Replay(request *tunnel.Request) {
 	record := adt.NewRecord(request, adt.REPLAY)
+
 	record.Response = proxyRequest(record.Request)
 	records.AddRecordAndPublish(record)
 
@@ -128,8 +129,15 @@ func handleServerElapsed(serverRecord *tunnel.Record) {
 
 func doRequest(record *adt.Record) {
 	record.Step = tunnel.Step_RESPONSE
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Origin")
-	replaceUrlHeaderByCustomUrl(record.Request.Header, "Referer")
+
+	url := config.ProxyUrl
+	if config.CustomUrl != nil {
+		url = config.CustomUrl
+	}
+
+	replaceUrlHeader(url, record.Request.Header, "Origin")
+	replaceUrlHeader(url, record.Request.Header, "Referer")
+
 	record.Response = proxyRequest(record.Request)
 	handleRedirections(record)
 }
@@ -205,13 +213,18 @@ func blockRedirection(record *adt.Record, location string) {
 	record.Response.SetHeader("Content-Length", strconv.Itoa(len(record.Response.Body)))
 }
 
-func replaceUrlHeaderByCustomUrl(header map[string]string, headerName string) {
+func replaceUrlHeader(url *url.URL, header map[string]string, headerName string) {
 	if header == nil {
 		return
 	}
 
 	rawUrl := header[headerName]
-	newUrl, ok := iurl.ReplaceHostByUsingExampleUrl(rawUrl, config.CustomUrl)
+
+	if rawUrl == "" {
+		return
+	}
+
+	newUrl, ok := iurl.ReplaceHostByUsingExampleUrl(rawUrl, url)
 
 	if !ok {
 		panic("Error when trying to replace the host of [" + rawUrl + "]")

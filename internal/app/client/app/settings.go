@@ -122,10 +122,6 @@ func ReadConfig() *Config {
 
 	logger.SetLogLevelStr(*logLevel)
 
-	if *customUrl == defaultCustomUrlMessage {
-		customUrl = proxyUrl
-	}
-
 	if *httpUrl == defaultStandaloneMessage {
 		httpUrl = &emptyStr
 	}
@@ -136,7 +132,6 @@ func ReadConfig() *Config {
 		HttpUrl:              iurl.RawUrlToUrl(*httpUrl, "http", defaultStandalonePort),
 		ProxyUrl:             iurl.RawUrlToUrl(*proxyUrl, "http", ""),
 		TunnelUrl:            iurl.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
-		CustomUrl:            iurl.RawUrlToUrl(*customUrl, "http", ""),
 		SnifferUrl:           iurl.RawUrlToUrl(*snifferPort, "http", defaultSnifferPort),
 		MaxRecords:           *maxRecords,
 		ServerKey:            *serverKey,
@@ -149,6 +144,10 @@ func ReadConfig() *Config {
 		ReconnectIntervalStr: *reconnectInterval,
 		ReconnectInterval:    parseDurationOrPanic("reconnect-interval", *reconnectInterval),
 		available:            true,
+	}
+
+	if *customUrl != defaultCustomUrlMessage {
+		config.CustomUrl = iurl.RawUrlToUrl(*customUrl, "http", "")
 	}
 
 	session.ClientId = *clientId
