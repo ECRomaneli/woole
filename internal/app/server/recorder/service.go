@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record {
+func getRecordWhenReady(client *adt.Client, req *webserver.Request) (*adt.Record, error) {
 	record := adt.NewRecord((&tunnel.Request{}).FromHTTPRequest(req))
 	record.Step = tunnel.Step_REQUEST
 	client.AddRecord(record)
@@ -33,22 +34,21 @@ func getRecordWhenReady(client *adt.Client, req *webserver.Request) *adt.Record 
 		select {
 		case <-record.OnResponse.Receive():
 		case <-time.After(config.TunnelResponseTimeout):
-			err = webserver.NewHTTPError(http.StatusGatewayTimeout, client.Id+" Record("+record.Id+") - Server timeout reached")
+			err = fmt.Errorf("Record(%s) Server timeout reached", record.Id)
 		case <-req.Raw.Context().Done():
-			err = webserver.NewHTTPError(http.StatusGatewayTimeout, client.Id+" Record("+record.Id+") - The request is no longer available")
+			err = fmt.Errorf("Record(%s) The request is no longer available", record.Id)
 		}
 	})
 
 	if err != nil {
-		record.Response = &tunnel.Response{Code: http.StatusGatewayTimeout, ServerElapsed: elapsed}
-		logRecord(client.Id, record)
-		panic(err)
+		record.Response = &tunnel.Response{Code: http.StatusGatewayTimeout, Body: []byte("Gateway Timeout"), ServerElapsed: elapsed}
+		return record, err
 	}
 
 	record.Response.ServerElapsed = elapsed
 	client.SendServerElapsed(record)
 
-	return record
+	return record, nil
 }
 
 func sendServerMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client) {
@@ -136,8 +136,12 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 
 func logRecord(clientId string, record *adt.Record) {
 	if log.IsInfoEnabled() {
-		log.Info(clientId, "-", record.ToString(26))
+		log.Info(getClientLog(clientId, record.ToString(26)))
 	}
+}
+
+func getClientLog(clientId string, message string) string {
+	return clientId + " - " + message
 }
 
 func panicIfNotNil(err any) {
@@ -176,6 +180,10 @@ func getHelpPage(clientId string) *tunnel.Response {
 	res := &tunnel.Response{
 		Code: http.StatusAccepted,
 		Body: []byte(template.FromFile(web.EmbeddedFS, "index.html").Apply(params)),
+	}
+
+	if clientId == "" {
+		res.Code = http.StatusOK
 	}
 
 	res.SetHeader("Content-Type", "text/html")
