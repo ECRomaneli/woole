@@ -47,7 +47,7 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 	recoverOrExit(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)))
 }
 
-func createProxyHandler() http.HandlerFunc {
+func CreateProxyHandler() http.HandlerFunc {
 	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
 
 	go setProxyTimeout()

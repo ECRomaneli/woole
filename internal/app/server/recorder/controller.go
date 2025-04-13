@@ -11,20 +11,29 @@ import (
 
 // REST -> [ALL] /**
 func recorderHandler(req *webserver.Request, res *webserver.Response) {
-	clientIdStr := req.Param("client")
-	clientId, err := hasClient(clientIdStr)
-	if err != nil {
-		help := getHelpPage(clientIdStr)
+	clientId := req.Param("client")
+	clientExists := hasClient(clientId)
+
+	if !clientExists {
+		help := getHelpPage(clientId)
 		res.Headers(help.GetHttpHeader()).Status(int(help.Code)).Write(help.Body)
-		log.Error(err)
 		return
 	}
+
 	client := clientManager.Get(clientId)
+
 	if client.IsIdle {
-		panic("Trying to use an idle client")
+		res.Status(http.StatusServiceUnavailable).WriteText("Session started but not in use")
+		log.Warn(getClientLog(clientId, "Trying to use an idle client"))
+		return
 	}
 
-	record := getRecordWhenReady(client, req)
+	record, err := getRecordWhenReady(client, req)
+
+	if err != nil {
+		log.Warn(getClientLog(clientId, err.Error()))
+	}
+
 	res.Headers(record.Response.GetHttpHeader()).Status(int(record.Response.Code)).Write(record.Response.Body)
 	logRecord(clientId, record)
 }
@@ -93,15 +102,16 @@ func (_t *Tunnel) TestConn(_ context.Context, _ *tunnel.Empty) (*tunnel.Empty, e
 	return new(tunnel.Empty), nil
 }
 
-func hasClient(clientId string) (string, error) {
+func hasClient(clientId string) bool {
 	if len(clientId) == 0 {
-		return clientId, webserver.NewHTTPError(http.StatusForbidden, "The client provided no identification")
+		log.Info("No client id provided")
+		return false
 	}
 
 	if !clientManager.Exists(clientId) {
-		message := "The client '" + clientId + "' is not in use"
-		return clientId, webserver.NewHTTPError(http.StatusAccepted, message)
+		log.Warn(getClientLog(clientId, "Client is not in use"))
+		return false
 	}
 
-	return clientId, nil
+	return true
 }

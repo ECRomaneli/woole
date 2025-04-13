@@ -13,7 +13,7 @@ var config = app.ReadConfig()
 var log = logger.New("recorder")
 
 var records = adt.NewRecords(uint(config.MaxRecords))
-var proxyHandler = createProxyHandler()
+var proxyHandler = CreateProxyHandler()
 
 func Start() {
 	if config.IsStandalone {
