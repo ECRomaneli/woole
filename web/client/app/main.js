@@ -1,7 +1,7 @@
 const app = Vue.createApp({
     inject: ['$woole', '$date', '$constants'],
 
-    data() { return { sessionDetails: {}, selectedRecord: null } },
+    data() { return { sessionDetails: {}, selectedRecord: null, records: [] } },
 
     created() {
         this.setupStream()
@@ -81,6 +81,7 @@ const app = Vue.createApp({
                 if (event.data) {
                     let recs = JSON.parse(event.data)
                     recs.sort((a, b) => b.clientId - a.clientId).forEach(this.setupRecord)
+                    this.records = recs
                     this.$bus.trigger('stream.start', recs)
                 }
             })

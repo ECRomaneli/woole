@@ -36,6 +36,12 @@
     width: 100%;
 }
 
+/* BOOTSTRAP =========================== */
+
+.container-fluid {
+    max-width: 2560px
+}
+
 /* BADGES ============================== */
 
 .badge {
@@ -551,3 +557,18 @@
 .fast-fade-leave-to {
   opacity: 0;
 }
+
+/* DASHBOARD =========================== */
+
+.stats-card {
+    height: 70px;
+}
+
+.stats-chart {
+    height: 325px;
+}
+
+.stats-table {
+    height: 325px;
+}
+

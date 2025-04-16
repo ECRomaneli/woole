@@ -81,4 +81,4 @@ app.provide('$woole', {
 
         req.curl = curlCommand
     }
-});
+})

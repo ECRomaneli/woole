@@ -90,7 +90,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/client",
             "args": [
-                "-proxy", "https://google.com/",
+                "-proxy", "https://www.w3schools.com/",
                 "-client", "localhost"
             ]
         },
