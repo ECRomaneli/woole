@@ -17,9 +17,9 @@
 
 <body>
     <main id="app">
-        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
+        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="onItemSelected" @filter-records="onFilterRecords"></sidebar>
         <div id="body" class="pt-2">
-            <dashboard v-if="!selectedRecord" :session-details="sessionDetails" :records="records"></dashboard>
+            <dashboard v-if="!selectedRecord" id="dashboard" :session-details="sessionDetails" :records="sidebarRecords"></dashboard>
             <record-viewer v-else :record="selectedRecord"></record-viewer>
         </div>
     </main>

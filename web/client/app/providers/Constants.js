@@ -11,4 +11,12 @@ app.provide('$constants', {
     HTTP_METHODS: ["HEAD", "GET", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
 
     FORWARDED_TO_HEADER: "X-Woole-Forwarded-To",
+    NEVER_EXPIRE_MESSAGE: "never",
+
+    SESSION_STATUS: {
+        CONNECTING: "connecting",
+        CONNECTED: "connected",
+        DISCONNECTED: "disconnected",
+        RECONNECTING: "reconnecting"
+    }
 });

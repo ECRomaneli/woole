@@ -41,7 +41,7 @@ app.component('RecordViewer', {
             this.$refs.curlViewer.show()
         },
 
-        getFullUrl() { return this.record.request.host + this.record.request.url }
+        getFullUrl() { return this.record.host + this.record.request.url }
     }
 })
 

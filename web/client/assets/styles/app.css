@@ -191,6 +191,10 @@
     border-bottom-right-radius: var(--border-radius);
 }
 
+#record-list .origin:last-child {
+    margin-bottom: 0 !important;
+}
+
 .loading {
     background: linear-gradient(
         100deg, 
@@ -560,15 +564,21 @@
 
 /* DASHBOARD =========================== */
 
-.stats-card {
+#dashboard .stats-card {
     height: 70px;
 }
 
-.stats-chart {
+#dashboard .stats-chart {
     height: 325px;
 }
 
-.stats-table {
+#dashboard .stats-table {
     height: 325px;
 }
 
+@media (min-width: 992px) and (max-width: 1460px) {
+    #dashboard .col-lg-6 {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+}

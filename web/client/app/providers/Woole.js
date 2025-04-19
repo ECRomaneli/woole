@@ -80,5 +80,12 @@ app.provide('$woole', {
         }
 
         req.curl = curlCommand
+    },
+
+    getHeader(item, header, defaultValue) {
+        if (item === void 0 || item.header === void 0) { return defaultValue }
+        if (item.header[header] !== void 0) { return item.header[header] }
+        if (item.header[header.toLowerCase()] !== void 0) { return item.header[header.toLowerCase()] }
+        return defaultValue
     }
 })
