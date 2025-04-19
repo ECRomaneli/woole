@@ -262,7 +262,25 @@ and to search for `XML` bodies:
 response.header.Content-Type: xml
 ```
 
-Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer. 
+Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer.
+
+#### Regex
+
+Using the separator `*:` instead of `:`, the right side of the query will be parsed as a regex. Example:
+
+```
+response.code *: ^2[0-9]{2}$
+```
+
+#### Number Range
+
+Using the separator `~:` instead of `:`, the right side of the query will be parsed as a range. The left side of the query must be a parsable float. Example:
+
+```
+response.elapsed ~: 0ms-101ms
+```
+
+Note that non-numeric characters are also allowed. However, they will not be validated or parsed. They are a semanthic help to the developer.
 
 #### Hierarchical Structure
 
@@ -280,6 +298,7 @@ response
 ├── proto: string (Protocol)
 ├── status: string (e.g. Not Found)
 ├── code: int (e.g. 404)
+├── codeGroup: string (e.g. 4xx)
 ├── header
 │   ├── name_1: string
 │   └── name_n: string
