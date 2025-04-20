@@ -88,6 +88,8 @@ func onTunnelStart(client tunnel.TunnelClient, ctx context.Context, cancelCtx co
 	// Reset old IDs
 	records.ResetServerIds()
 
+	app.ChangeStatusAndPublish(tunnel.Status_CONNECTED)
+
 	// Listen for requests and send responses asynchronously
 	for {
 		serverMsg, err := stream.Recv()
@@ -180,8 +182,8 @@ func handleRedirections(record *adt.Record) {
 		return
 	}
 
-	if config.DisallowRedirection {
-		blockRedirection(record, location)
+	if config.DisableSelfRedirection {
+		blockSelfRedirection(record, location)
 		return
 	}
 
@@ -203,7 +205,7 @@ func updateReverseProxy(record *adt.Record, location string) {
 	record.Response.SetHeader("Location", newLocation.String())
 }
 
-func blockRedirection(record *adt.Record, location string) {
+func blockSelfRedirection(record *adt.Record, location string) {
 	record.Type = adt.REDIRECT
 
 	newUrl, ok := iurl.ReplaceHostByUsingExampleStr(location, record.Request.Url)

@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"os"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder/adt"
 
@@ -19,5 +20,10 @@ func Start() {
 		startStandalone()
 	} else {
 		startConnectionWithServer(onTunnelStart)
+	}
+	if app.HasSession() && !config.DisableSnifferOnlyMode {
+		log.Warn("Tunnel connection closed, entering sniffer-only mode")
+	} else {
+		os.Exit(1)
 	}
 }

@@ -14,9 +14,9 @@ app.provide('$constants', {
     NEVER_EXPIRE_MESSAGE: "never",
 
     SESSION_STATUS: {
-        CONNECTING: "connecting",
-        CONNECTED: "connected",
-        DISCONNECTED: "disconnected",
-        RECONNECTING: "reconnecting"
+        CONNECTING: "CONNECTING",
+        CONNECTED: "CONNECTED",
+        DISCONNECTED: "DISCONNECTED",
+        RECONNECTING: "RECONNECTING"
     }
 });

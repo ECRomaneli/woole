@@ -82,7 +82,7 @@ func receiveClientMessage(stream tunnel.Tunnel_TunnelServer, client *adt.Client)
 }
 
 func createSession(client *adt.Client, expireAt int64) *tunnel.Session {
-	hostname := strings.Replace(config.HostnamePattern, app.ClientToken, client.Id, 1)
+	hostname := strings.Replace(config.HostnamePattern, constants.ClientToken, client.Id, 1)
 
 	auth := &tunnel.Session{
 		ClientId:        client.Id,

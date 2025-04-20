@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"time"
 	"woole/internal/app/client/app"
 	"woole/internal/pkg/constants"
@@ -24,11 +23,17 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 	firstConn := true
 	var err error
 
-	for attempt := 0; attempt <= config.MaxReconnectAttempts; attempt++ {
+	for attempt := -1; attempt <= config.MaxReconnectAttempts; attempt++ {
 		if firstConn {
 			firstConn = false
+			app.ChangeStatusAndPublish(tunnel.Status_CONNECTING)
 		} else {
-			recoverOrExit(err)
+			isRetriable := isRetriable(err, attempt == config.MaxReconnectAttempts)
+			if !isRetriable {
+				app.ChangeStatusAndPublish(tunnel.Status_DISCONNECTED)
+				return
+			}
+			app.ChangeStatusAndPublish(tunnel.Status_RECONNECTING)
 		}
 
 		// Establish tunnel connection and retrieve request/response stream
@@ -43,10 +48,10 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 		err = tunnelErr
 
 		if connEstablished {
-			attempt = 0
+			attempt = -1
 		}
 	}
-	recoverOrExit(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)))
+	isRetriable(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)), true)
 }
 
 func CreateProxyHandler(proxyUrl *url.URL) http.HandlerFunc {
@@ -147,13 +152,13 @@ func connectClient(enableTransportCredentials bool) (tunnel.TunnelClient, contex
 	return client, ctx, cancelFn, nil
 }
 
-func recoverOrExit(err error) {
+func isRetriable(err error, aborted bool) bool {
 	errStatus, ok := status.FromError(err)
 
-	if !ok || !isRecoverable(err) || !app.HasSession() {
+	if !ok || !isRecoverable(err) || !app.HasSession() || aborted {
 		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
 		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel")
-		os.Exit(1)
+		return false
 	}
 
 	log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
@@ -163,6 +168,7 @@ func recoverOrExit(err error) {
 	} else {
 		log.Warn("[", config.TunnelUrl.String(), "]", "Trying to reconnect...")
 	}
+	return true
 }
 
 func isRecoverable(err error) bool {

@@ -39,7 +39,8 @@ app.component('Dashboard', {
                             <div class="stats-card text-center">
                                 <span class="h4" v-if="expireDate">{{ expireDate }}</span>
                                 <p v-if="expireRemaining !== null">Expires in {{ expireRemaining | 0 }} minutes</p>
-                                <p v-else>No Expiration</p>
+                                <p v-else-if="expireDate === $constants.NEVER_EXPIRE_MESSAGE">No Expiration</p>
+                                <p v-else>Tunnel is no longer connected</p>
                             </div>
                         </template>
                     </box>
@@ -78,26 +79,11 @@ app.component('Dashboard', {
                 <div class="col-xl-3 col-lg-6 p-0">
                     <box maximizable="false" label="Session Status">
                         <template #body>
-                            <div :class="'stats-card d-flex align-items-center text-' + (sessionStatus?.color || 'none') + ' justify-content-center'">
-                                <h2>{{ sessionStatus?.name || '-' }}</h2>
+                            <div :class="'stats-card d-flex align-items-center justify-content-center text-' + (sessionStatus?.color || 'none')">
+                                <span class="h4">{{ sessionStatus?.name || '-' }}</span>
                             </div>
                         </template>
                     </box>
-                <!-- <div class="col-xl-3 col-lg-6 p-0">
-                    <box maximizable="false" label="Success Rate">
-                        <template #body>
-                            <div class="stats-card text-center">
-                                <h2>{{ successRate }}%</h2>
-                                <div class="progress mt-2">
-                                    <div class="progress-bar" 
-                                         role="progressbar" 
-                                         :style="{ width: successRate + '%' }" 
-                                         :class="getSuccessRateClass()">
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </box> -->
                 </div>
 
                 <div class="col-md-12 col-lg-6 col-xl-4 p-0"><content-types-chart :records="records"></content-types-chart></div>
@@ -197,11 +183,19 @@ app.component('Dashboard', {
             }
 
             const expireTime = new Date(this.sessionDetails.expireAt).getTime()
+
+            if (!expireTime) {
+                this.expireDate = '-'
+                this.expireRemaining = null
+                return
+            }
+
             const currentTime = Date.now()
 
             if (expireTime < currentTime) {
-                this.expireDate = 'expired'
+                this.expireDate = 'Expired'
                 this.expireRemaining = null
+                return
             }
 
             this.expireDate = new Date(expireTime).toLocaleString()
@@ -432,8 +426,11 @@ app.component('ContentTypesChart', {
     template: /*html*/ `
         <box maximizable="false" label="Content Types">
             <template #body>
-                <div class="stats-chart">
+                <div v-show="records.length" class="stats-chart">
                     <canvas ref="canvas"></canvas>
+                </div>
+                <div v-if="!records.length" class="stats-chart d-flex align-items-center justify-content-center">
+                    <span class="h4">NO DATA</span>
                 </div>
             </template>
         </box>
@@ -494,8 +491,11 @@ app.component('MethodsChart', {
     template: /*html*/ `
         <box maximizable="false" label="HTTP Methods">
             <template #body>
-                <div class="stats-chart">
+                <div v-show="records.length" class="stats-chart">
                     <canvas ref="canvas"></canvas>
+                </div>
+                <div v-if="!records.length" class="stats-chart d-flex align-items-center justify-content-center">
+                    <span class="h4">NO DATA</span>
                 </div>
             </template>
         </box>
@@ -566,8 +566,11 @@ app.component('EncodingTypesChart', {
     template: /*html*/ `
         <box maximizable="false" label="Encoding Types">
             <template #body>
-                <div class="stats-chart">
+                <div v-show="records.length" class="stats-chart">
                     <canvas ref="canvas"></canvas>
+                </div>
+                <div v-if="!records.length" class="stats-chart d-flex align-items-center justify-content-center">
+                    <span class="h4">NO DATA</span>
                 </div>
             </template>
         </box>

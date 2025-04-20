@@ -16,6 +16,7 @@ func startStandalone() {
 		Hostname:        "localhost",
 		MaxRequestSize:  math.MaxInt32,
 		MaxResponseSize: math.MaxInt32,
+		Status:          tunnel.Status_CONNECTED,
 	})
 
 	server := webserver.NewServer()

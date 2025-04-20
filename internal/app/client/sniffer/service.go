@@ -15,7 +15,7 @@ import (
 
 var records = recorder.GetRecords()
 var config = app.ReadConfig()
-var unsupportedContentEncodings = []string{
+var ignoreContentEncodings = []string{
 	"", // empty
 	"compress",
 	"identity",
@@ -27,7 +27,7 @@ func ListenAndServe() error {
 
 func decompress(contentEncoding string, data []byte) []byte {
 
-	if data == nil || slices.Contains(unsupportedContentEncodings, contentEncoding) {
+	if data == nil || slices.Contains(ignoreContentEncodings, contentEncoding) {
 		return data
 	}
 

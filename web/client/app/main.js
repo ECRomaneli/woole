@@ -74,7 +74,6 @@ const app = Vue.createApp({
 
             es.addEventListener('session', (event) => {
                 const data = JSON.parse(event.data)
-                data.status = this.$constants.SESSION_STATUS.CONNECTED
                 this.sessionDetails = data
             })
 
@@ -103,7 +102,6 @@ const app = Vue.createApp({
 
             es.onerror = () => {
                 if (TenSecondErrorThreshold > 0) {
-                    this.sessionDetails.status = this.$constants.SESSION_STATUS.RECONNECTING
                     TenSecondErrorThreshold--
                     setTimeout(() => TenSecondErrorThreshold++, 10000)
                 } else {

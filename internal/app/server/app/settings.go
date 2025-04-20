@@ -42,10 +42,6 @@ type Config struct {
 	available               bool
 }
 
-const (
-	ClientToken = "{client}"
-)
-
 var (
 	config   *Config = &Config{available: false}
 	configMu sync.Mutex
@@ -69,7 +65,7 @@ func ReadConfig() *Config {
 	httpPort := flag.Int("http", url.GetDefaultPort("http"), "Port on which the server listens for HTTP requests")
 	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "Port on which the server listens for HTTPS requests")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
-	hostnamePattern := flag.String("pattern", ClientToken, "Set the server hostname pattern. Example: "+ClientToken+".mysite.com to vary the subdomain")
+	hostnamePattern := flag.String("pattern", constants.ClientToken, "Set the server hostname pattern. Example: "+constants.ClientToken+".mysite.com to vary the subdomain")
 	seed := flag.String("seed", "", "Key used to hash the client bearer")
 	privateKey := flag.String("priv-key", "", "Path to the ECC private key used to validate clients (default \"allow unknown clients\")")
 	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")
@@ -123,8 +119,8 @@ func ReadConfig() *Config {
 		available:               true,
 	}
 
-	if !strings.Contains(config.HostnamePattern, ClientToken) {
-		panic("Hostname pattern MUST has " + ClientToken)
+	if !strings.Contains(config.HostnamePattern, constants.ClientToken) {
+		panic("Hostname pattern MUST has " + constants.ClientToken)
 	}
 
 	if len(config.seed) == 0 {
@@ -171,6 +167,7 @@ func (cfg *Config) GetDomain() string {
 	}
 
 	remainingHost := cfg.HostnamePattern[clientPos+len(clientVar):]
+
 	return strings.TrimPrefix(remainingHost, ".")
 }
 
