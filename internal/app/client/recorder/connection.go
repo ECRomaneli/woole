@@ -7,9 +7,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"os"
+	"net/url"
 	"time"
 	"woole/internal/app/client/app"
+	"woole/internal/pkg/constants"
 	"woole/internal/pkg/tunnel"
 
 	"google.golang.org/grpc"
@@ -22,11 +23,17 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 	firstConn := true
 	var err error
 
-	for attempt := 0; attempt <= config.MaxReconnectAttempts; attempt++ {
+	for attempt := -1; attempt <= config.MaxReconnectAttempts; attempt++ {
 		if firstConn {
 			firstConn = false
+			app.ChangeStatusAndPublish(tunnel.Status_CONNECTING)
 		} else {
-			recoverOrExit(err)
+			isRetriable := isRetriable(err, attempt == config.MaxReconnectAttempts)
+			if !isRetriable {
+				app.ChangeStatusAndPublish(tunnel.Status_DISCONNECTED)
+				return
+			}
+			app.ChangeStatusAndPublish(tunnel.Status_RECONNECTING)
 		}
 
 		// Establish tunnel connection and retrieve request/response stream
@@ -41,14 +48,14 @@ func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.
 		err = tunnelErr
 
 		if connEstablished {
-			attempt = 0
+			attempt = -1
 		}
 	}
-	recoverOrExit(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)))
+	isRetriable(status.Error(codes.Aborted, fmt.Sprintf("failed to establish connection after %d attempts", config.MaxReconnectAttempts)), true)
 }
 
-func CreateProxyHandler() http.HandlerFunc {
-	proxy := httputil.NewSingleHostReverseProxy(config.CustomUrl)
+func CreateProxyHandler(proxyUrl *url.URL) http.HandlerFunc {
+	proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
 
 	go setProxyTimeout()
 
@@ -59,11 +66,40 @@ func CreateProxyHandler() http.HandlerFunc {
 	}
 
 	return func(rw http.ResponseWriter, req *http.Request) {
-		req.Host = config.CustomUrl.Host
-		req.URL.Host = config.CustomUrl.Host
-		req.URL.Scheme = config.CustomUrl.Scheme
-		proxy.ServeHTTP(rw, req)
+		customHostHandler(req, func(customUrl *url.URL) {
+			req.Host = customUrl.Host
+			req.URL.Host = customUrl.Host
+			req.URL.Scheme = customUrl.Scheme
+
+			proxy.ServeHTTP(rw, req)
+		})
 	}
+}
+
+func customHostHandler(req *http.Request, handler func(*url.URL)) {
+	if config.CustomUrl != nil {
+		handler(config.CustomUrl)
+		return
+	}
+
+	hostStr := req.Header.Get(constants.ForwardedToHeader)
+
+	if hostStr == "" {
+		handler(config.ProxyUrl)
+		return
+	}
+
+	// Hide Woole header from the request
+	req.Header.Del(constants.ForwardedToHeader)
+
+	host, err := url.Parse(hostStr)
+
+	if err != nil {
+		log.Error("Failed to parse domain:", err)
+		host = config.ProxyUrl
+	}
+
+	handler(host)
 }
 
 func setProxyTimeout() {
@@ -116,13 +152,13 @@ func connectClient(enableTransportCredentials bool) (tunnel.TunnelClient, contex
 	return client, ctx, cancelFn, nil
 }
 
-func recoverOrExit(err error) {
+func isRetriable(err error, aborted bool) bool {
 	errStatus, ok := status.FromError(err)
 
-	if !ok || !isRecoverable(err) || !app.HasSession() {
+	if !ok || !isRecoverable(err) || !app.HasSession() || aborted {
 		log.Fatal("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
 		log.Fatal("[", config.TunnelUrl.String(), "]", "Failed to connect with tunnel")
-		os.Exit(1)
+		return false
 	}
 
 	log.Error("[", config.TunnelUrl.String(), "]", errStatus.Code(), "-", errStatus.Message())
@@ -132,6 +168,7 @@ func recoverOrExit(err error) {
 	} else {
 		log.Warn("[", config.TunnelUrl.String(), "]", "Trying to reconnect...")
 	}
+	return true
 }
 
 func isRecoverable(err error) bool {

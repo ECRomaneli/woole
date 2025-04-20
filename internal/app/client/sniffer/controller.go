@@ -3,6 +3,7 @@ package sniffer
 import (
 	"encoding/json"
 	"net/http"
+	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder"
 	recorderAdt "woole/internal/app/client/recorder/adt"
 	"woole/internal/app/client/sniffer/adt"
@@ -18,16 +19,31 @@ func connHandler(req *webserver.Request, res *webserver.Response) {
 	defer records.Broker.Unsubscribe(listener)
 
 	res.Headers(webserver.EventStreamHeader)
+	session := app.GetSessionWhenAvailable()
+	config := app.ReadConfig()
 
 	res.FlushEvent(&webserver.Event{
 		Name: "session",
-		Data: adt.NewSessionDetails(),
+		Data: adt.NewSessionDetails(session, config),
 	})
 
 	res.FlushEvent(&webserver.Event{
 		Name: "start",
 		Data: records.ThinCloneWithoutResponseBody(),
 	})
+
+	statusListener, err := app.StatusBroker.Subscribe()
+	panicIfNotNil(err)
+	defer app.StatusBroker.Unsubscribe(statusListener)
+
+	go func() {
+		for range statusListener {
+			res.FlushEvent(&webserver.Event{
+				Name: "session",
+				Data: adt.NewSessionDetails(app.GetSessionWhenAvailable(), config),
+			})
+		}
+	}()
 
 	go func() {
 		for msg := range listener {
@@ -61,11 +77,13 @@ func replayHandler(req *webserver.Request, res *webserver.Response) {
 func newRequestHandler(req *webserver.Request, res *webserver.Response) {
 	newRequest := &tunnel.Request{}
 	err := json.Unmarshal(req.Body(), newRequest)
+
 	if err != nil {
 		webserver.NewHTTPError(
 			http.StatusBadRequest,
 			"Error when trying to parse the new request. Reason: "+err.Error()).Panic()
 	}
+
 	recorder.Replay(newRequest)
 }
 

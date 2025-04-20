@@ -5,6 +5,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
+	"slices"
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder"
 
@@ -14,7 +15,7 @@ import (
 
 var records = recorder.GetRecords()
 var config = app.ReadConfig()
-var unsupportedContentEncodings = []string{
+var ignoreContentEncodings = []string{
 	"", // empty
 	"compress",
 	"identity",
@@ -26,7 +27,7 @@ func ListenAndServe() error {
 
 func decompress(contentEncoding string, data []byte) []byte {
 
-	if data == nil || contains(unsupportedContentEncodings, contentEncoding) {
+	if data == nil || slices.Contains(ignoreContentEncodings, contentEncoding) {
 		return data
 	}
 
@@ -75,15 +76,6 @@ func readBrotli(reader *brotli.Reader) []byte {
 	panicIfNotNil(err)
 
 	return data
-}
-
-func contains(slice []string, target string) bool {
-	for _, str := range slice {
-		if str == target {
-			return true
-		}
-	}
-	return false
 }
 
 func panicIfNotNil(err any) {

@@ -17,12 +17,15 @@
 
 <body>
     <main id="app">
-        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="itemSelected"></sidebar>
+        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="onItemSelected" @filter-records="onFilterRecords"></sidebar>
         <div id="body" class="pt-2">
-            <dashboard v-if="!selectedRecord" :session-details="sessionDetails"></dashboard>
+            <dashboard v-if="!selectedRecord" id="dashboard" :session-details="sessionDetails" :records="sidebarRecords"></dashboard>
             <record-viewer v-else :record="selectedRecord"></record-viewer>
         </div>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 
     <!-- Vendors -->
     <script src="assets/vendor/bootstrap/bootstrap.min.js"></script>
@@ -41,6 +44,8 @@
     <script src="app/providers/Image.js"></script>
     <script src="app/providers/Constants.js"></script>
     <script src="app/providers/Clipboard.js"></script>
+    <script src="app/providers/Chart.js"></script>
+    <script src="app/providers/Timer.js"></script>
 
     <!-- Plugins -->
     <script src="app/plugins/SearchEngine.js"></script>

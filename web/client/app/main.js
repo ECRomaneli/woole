@@ -1,7 +1,7 @@
 const app = Vue.createApp({
-    inject: ['$woole', '$date'],
+    inject: ['$woole', '$date', '$constants'],
 
-    data() { return { sessionDetails: {}, selectedRecord: null } },
+    data() { return { sessionDetails: {}, selectedRecord: null, sidebarRecords: [] } },
 
     created() {
         this.setupStream()
@@ -17,13 +17,13 @@ const app = Vue.createApp({
     },
 
     methods: {
-        async itemSelected(record) {
+        async onItemSelected(record) {
             if (record === null || record.isFetched || !record.response) {
                 this.selectedRecord = record
                 return
             }
 
-            let resp = await fetch('/record/' + record.clientId + '/response/body').catch(this.catchAll)
+            let resp = await fetch(`/record/${record.clientId}/response/body`).catch(this.catchAll)
             if (resp.ok && resp.status === 200) {
                 record.response.body = await resp.json()
                 record.isFetched = true
@@ -45,15 +45,20 @@ const app = Vue.createApp({
             this.$bus.on('stream.new-record', fn)
             
             if (record.clientId !== void 0) {
-                await fetch('/record/' + record.clientId + '/replay').catch(this.catchAll)
-            } else {
-                this.$woole.encodeBody(record.request)
-                await fetch('/record/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(record.request)
-                }).catch(this.catchAll)
+                await fetch(`/record/${record.clientId}/replay`).catch(this.catchAll)
+                return
             }
+
+            if (record.request.forwardedTo !== void 0) {
+                record.request.header[this.$constants.FORWARDED_TO_HEADER] = record.request.forwardedTo
+            }
+
+            this.$woole.encodeBody(record.request)
+            await fetch('/record/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record.request)
+            }).catch(this.catchAll)
         },
 
         async clearRecords() {
@@ -65,7 +70,7 @@ const app = Vue.createApp({
 
         setupStream() {
             const es = new EventSource('record/stream')
-            let TenSecondErrorThreshold = 1
+            let TenSecondErrorThreshold = 2
 
             es.addEventListener('session', (event) => {
                 const data = JSON.parse(event.data)
@@ -74,7 +79,7 @@ const app = Vue.createApp({
 
             es.addEventListener('start', (event) => {
                 if (event.data) {
-                    let recs = JSON.parse(event.data)
+                    const recs = JSON.parse(event.data)
                     recs.sort((a, b) => b.clientId - a.clientId).forEach(this.setupRecord)
                     this.$bus.trigger('stream.start', recs)
                 }
@@ -82,7 +87,7 @@ const app = Vue.createApp({
 
             es.addEventListener('new-record', (event) => {
                 if (event.data) {
-                    let rec = JSON.parse(event.data)
+                    const rec = JSON.parse(event.data)
                     this.setupRecord(rec)
                     this.$bus.trigger('stream.new-record', rec)
                 }
@@ -90,7 +95,7 @@ const app = Vue.createApp({
 
             es.addEventListener('update-record', (event) => {
                 if (event.data) {
-                    let rec = JSON.parse(event.data)
+                    const rec = JSON.parse(event.data)
                     this.$bus.trigger('stream.update-record', rec)
                 }
             })
@@ -101,9 +106,14 @@ const app = Vue.createApp({
                     setTimeout(() => TenSecondErrorThreshold++, 10000)
                 } else {
                     es.close()
-                    console.error("Tunnel connection closed")
+                    this.sessionDetails.status = this.$constants.SESSION_STATUS.DISCONNECTED
+                    console.error("Stream connection closed")
                 }
             }
+        },
+
+        onFilterRecords(recs) {
+            this.sidebarRecords = recs
         },
 
         catchAll(err) {
@@ -112,21 +122,24 @@ const app = Vue.createApp({
         },
 
         setupRecord(rec) {
-            rec.request.host = this.host
-            rec.origin = this.getRecordOrigin(rec)
+            rec.forwardedTo = this.getRecordForwardedTo(rec)
             rec.createdAt = this.$date.from(rec.createdAtMillis).format('MMM DD, hh:mm:ss A')
             this.$woole.decodeQueryParams(rec.request)
             this.$woole.decodeBody(rec.request)
+            rec.request.getHeader = (header, defaultValue) => this.$woole.getHeader(rec.request, header, defaultValue)
+            rec.response.getHeader = (header, defaultValue) => this.$woole.getHeader(rec.response, header, defaultValue)
+            rec.response.codeGroup = rec.response.code ? ((rec.response.code / 100) | 0) + 'xx' : '-'
         },
 
-        getRecordOrigin(rec) {
+        getRecordForwardedTo(rec) {
             if (!rec || !rec.request || !rec.request.header) { return null }
 
-            if (!rec.origin) {
-                rec.origin = rec.request.header['Origin'] || rec.request.header['origin']
+            if (!rec.forwardedTo) {
+                rec.request.forwardedTo = rec.request.header[this.$constants.FORWARDED_TO_HEADER]
+                delete rec.request.header[this.$constants.FORWARDED_TO_HEADER]
             }
 
-            return rec.origin
+            return rec.forwardedTo
         }
     }
 })

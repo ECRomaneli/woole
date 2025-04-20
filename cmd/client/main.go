@@ -11,8 +11,8 @@ var config = app.ReadConfig()
 
 func main() {
 	go printInfo()
-	go startSnifferTool()
-	recorder.Start()
+	go recorder.Start()
+	startSnifferTool()
 }
 
 func startSnifferTool() {

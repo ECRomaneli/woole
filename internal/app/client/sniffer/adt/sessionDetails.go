@@ -2,6 +2,7 @@ package adt
 
 import (
 	"woole/internal/app/client/app"
+	"woole/internal/pkg/tunnel"
 )
 
 type SessionDetails struct {
@@ -11,20 +12,18 @@ type SessionDetails struct {
 	Proxying   string `json:"proxying"`
 	Sniffer    string `json:"sniffer"`
 	Tunnel     string `json:"tunnel"`
+	Status     string `json:"status"`
 	MaxRecords int    `json:"maxRecords"`
 	ExpireAt   string `json:"expireAt"`
 }
 
-func NewSessionDetails() *SessionDetails {
-	session := app.GetSessionWhenAvailable()
-	config := app.ReadConfig()
-
+func NewSessionDetails(session *tunnel.Session, config *app.Config) *SessionDetails {
 	sessionDetails := &SessionDetails{
 		ClientID:   session.ClientId,
 		HTTP:       session.HttpUrl(),
 		HTTPS:      session.HttpsUrl(),
-		Proxying:   config.CustomUrl.String(),
 		Sniffer:    config.SnifferUrl.String(),
+		Status:     session.Status.String(),
 		MaxRecords: config.MaxRecords,
 		ExpireAt:   app.ExpireAt(),
 	}

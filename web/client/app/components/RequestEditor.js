@@ -77,7 +77,10 @@ app.component('RequestEditor', {
                 this.request.header['Content-Length'] = this.$refs.codeEditor.getLength() + ''
             }
 
-            this.$bus.trigger('record.new', { request: this.request })
+            this.$bus.trigger('record.new', {
+                forwardedTo: this.originalRequest?.forwardedTo,
+                request: this.request
+            })
             this.$refs.modal.hide()
         },
 

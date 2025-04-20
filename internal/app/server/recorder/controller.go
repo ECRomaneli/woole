@@ -104,12 +104,12 @@ func (_t *Tunnel) TestConn(_ context.Context, _ *tunnel.Empty) (*tunnel.Empty, e
 
 func hasClient(clientId string) bool {
 	if len(clientId) == 0 {
-		log.Info("No client id provided")
+		log.Info("No client ID provided")
 		return false
 	}
 
 	if !clientManager.Exists(clientId) {
-		log.Warn(getClientLog(clientId, "Client is not in use"))
+		log.Warn(getClientLog(clientId, "client ID is not in use"))
 		return false
 	}
 

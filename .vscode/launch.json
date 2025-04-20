@@ -8,7 +8,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/server",
             "args": [
-                "-tunnel-response-timeout", "1s",
+                "-tunnel-response-timeout", "10s",
                 "-tunnel-reconnect-timeout", "0",
                 "-http", "8080"
             ]
@@ -36,7 +36,7 @@
             ]
         },
         {
-            "name": "5s Conn Server",
+            "name": "2m Conn Server",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -44,7 +44,7 @@
             "args": [
                 "-seed", "<any-seed>",
                 "-http", "8080",
-                "-tunnel-connection-timeout", "5s",
+                "-tunnel-connection-timeout", "2m",
             ]
         },
         {
@@ -79,8 +79,20 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/client",
             "args": [
-                "-http", "80",
+                "-http", "8080",
                 "-proxy", "https://www.w3schools.com/"
+            ]
+        },
+        {
+            "name": "10 records Standalone Client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/client",
+            "args": [
+                "-http", "8080",
+                "-proxy", "https://www.w3schools.com/",
+                "-records", "10"
             ]
         },
         {
@@ -91,7 +103,8 @@
             "program": "${workspaceFolder}/cmd/client",
             "args": [
                 "-proxy", "https://www.w3schools.com/",
-                "-client", "localhost"
+                "-client", "localhost",
+                "-records", "0"
             ]
         },
         {

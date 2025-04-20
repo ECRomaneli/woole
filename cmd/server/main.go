@@ -18,7 +18,12 @@ func main() {
 		fmt.Printf(" HTTPS listening on https://%s:%s\n", config.HostnamePattern, config.HttpsPort)
 	}
 
-	fmt.Printf("Tunnel listening on grpc://%s:%s\n", config.GetDomain(), config.TunnelPort)
+	tunnelHost := config.GetDomain()
+	if tunnelHost == "" {
+		tunnelHost = "localhost"
+	}
+
+	fmt.Printf("Tunnel listening on grpc://%s:%s\n", tunnelHost, config.TunnelPort)
 	fmt.Println("===============")
 	fmt.Println()
 

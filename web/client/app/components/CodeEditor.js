@@ -25,10 +25,7 @@ app.component('CodeEditor', {
                         'sh': [ 'shellscript', 'sh' ]
             },
             tab: 'raw',
-            pretty: {
-                enabled: this.enablePretty(),
-                code: null
-            },
+            pretty: { enabled: this.enablePretty(), code: null },
             themeElement: document.querySelector('[data-theme]')
         }
     },

@@ -37,6 +37,7 @@ message Session {
     int32 maxResponseSize = 7;
     int64 responseTimeout = 8;
     int64 expireAt = 9;
+    Status status = 10;
 }
 
 message Request {
@@ -72,4 +73,11 @@ enum Step {
     REQUEST = 0;
     RESPONSE = 1;
     SERVER_ELAPSED = 2;
+}
+
+enum Status {
+    CONNECTING = 0;
+    CONNECTED = 1;
+    RECONNECTING = 2;
+    DISCONNECTED = 3;
 }

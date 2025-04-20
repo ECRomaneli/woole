@@ -140,6 +140,8 @@ Expire At: never
 | `-tunnel`               | URL of the tunnel (default `9653`)                                         |
 | `-custom-host`          | Custom host to be used when proxying                                       |
 | `-sniffer`              | Port on which the sniffer is available (default `8000`)                    |
+| `-disable-sniffer-only` | Terminate the application when the tunnel closes                           |
+| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                   |
 | `-records`              | Max records to store. Use `0` for unlimited (default `1000`)               |
 | `-log-level`            | Level of detail for the logs to be displayed (default `INFO`)              |
 | `-tls-skip-verify`      | Disables the validation of the integrity of the Server's certificate       |
@@ -160,12 +162,23 @@ Define the URL to proxy using the option `-proxy`. The URL must follows one of [
 
 #### Custom Host
 
-The option `custom-host` can be used along with the proxy to customize the host provided during the HTTP requests.
-The default value is the proxy URL.
+The `-custom-host` option allows you to specify a custom host to be used in HTTP requests when proxying. The custom host will always take precedence, even in cases of self-redirection, which may lead to unexpected behavior.
 
 ```sh
 # Proxying "http://localhost:8080" but sending mywebsite.com as header
 ./woole -proxy 8080 -custom-host mywebsite.com
+```
+
+#### Redirections
+
+During navigation, the application may encounter HTTP 302 (Redirect) responses, which can prevent Woole from continuing to use the original proxied URL. To maintain tracking, Woole will automatically update the proxy to follow the new host provided in the redirection.
+
+To disable this behavior, use the following option:
+
+
+```sh
+# Redirections will show a Woole page warning about the URL changing
+./woole -disable-self-redirection
 ```
 
 
@@ -199,10 +212,10 @@ To use the tunneling tool, a server must be configured and provided using the `t
 A single server allows many client connections at the same time. Once configured, copy the Tunnel URL provided by the server and use it as `tunnel`. Consult the [Server Section](#server) for more details on how to create and configure a server. The URL follows [this pattern](#url-patterns) but the default protocol is `grpc` and the default port is `9653`.
 
 ```sh
-./woole [...] -tunnel woole.me
+./woole -tunnel woole.me
 
 # OR, WITH A CUSTOMIZED PORT
-./woole [...] -tunnel woole.me:<tunnel-port>
+./woole -tunnel woole.me:<tunnel-port>
 ```
 
 If the objective is to only use the sniffing tool and the reverse proxy, without the tunnel, consider using the [Standalone Mode](#standalone-mode).
@@ -232,7 +245,7 @@ Some browsers and websites utilize efficient caching mechanisms to minimize unne
 The sniffing tool is accessible through the port configured using the `sniffer` option (default port is available in the [options list](#available-options)). To change the port use:
 
 ```sh
-./woole [...] -sniffer 9094
+./woole -sniffer 9094
 ```
 
 #### Features
@@ -262,7 +275,25 @@ and to search for `XML` bodies:
 response.header.Content-Type: xml
 ```
 
-Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer. 
+Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer.
+
+#### Regex
+
+Using the separator `*:` instead of `:`, the right side of the query will be parsed as a regex. Example:
+
+```
+response.code *: ^2[0-9]{2}$
+```
+
+#### Number Range
+
+Using the separator `~:` instead of `:`, the right side of the query will be parsed as a range. The left side of the query must be a parsable float. Example:
+
+```
+response.elapsed ~: 0ms-101ms
+```
+
+Note that non-numeric characters are also allowed. However, they will not be validated or parsed. They are a semanthic help to the developer.
 
 #### Hierarchical Structure
 
@@ -280,11 +311,22 @@ response
 ├── proto: string (Protocol)
 ├── status: string (e.g. Not Found)
 ├── code: int (e.g. 404)
+├── codeGroup: string (e.g. 4xx)
 ├── header
 │   ├── name_1: string
 │   └── name_n: string
 ├── elapsed: int
 └── serverElapsed: int
+```
+
+#### Sniffer-Only Mode
+
+When the tunnel closes after a successful session, the application remains active to provide access to the Sniffer and previously recorded data. This is the "Sniffer-Only" mode.
+
+To disable "Sniffer-Only" mode and terminate the application when the tunnel closes, use the following option:
+
+```sh
+./woole -disable-sniffer-only
 ```
 
 ## Woole.me Server

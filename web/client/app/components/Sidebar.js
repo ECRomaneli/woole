@@ -8,27 +8,35 @@ app.component('Sidebar', {
                 <div class="d-flex me-2 sidebar-btn w-100" @click="toggleTheme()">
                     <img class="svg-icon square-20" :src="$image.src(themeImg)" alt="theme" title="Theme">
                 </div>
+                <div class="d-flex me-2 sidebar-btn w-100" @click="clearRecords()">
+                    <img class="svg-icon square-20" :src="$image.src('trash2')" alt="clear all" title="Clear All">
+                </div>
                 <div class="d-flex sidebar-btn w-100" @click="$refs.reqEditor.show()">
                     <img class="svg-icon square-20" :src="$image.src('file-signature')" alt="new request" title="New Request">
                 </div>
             </div>
             <div class="d-flex mb-2">
-                <input class="d-flex me-2 px-3 w-100 input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Filter records" type="search" spellcheck="false">
-                <div class="d-flex sidebar-btn" @click="clearRecords()">
-                    <img class="svg-icon square-20" :src="$image.src('trash2')" alt="clear all" title="Clear All">
-                </div>
+                <input class="d-flex px-3 w-100 input-search" v-model="inputSearch" :class="{ active: inputSearch !== '' }" placeholder="Filter records" type="search" spellcheck="false">
             </div>
             
-            <div id="record-list" class="to-be-removed-h-100" :class="{ loading: recordList.length === 0 }">
+            <div id="record-list" :class="{ loading: recordList.length === 0 }">
                 <div ref="scrollarea" class="scrollarea">
-                    <sidebar-item
-                        v-for="(record, index) in filteredRecordList"
-                        :show-origin="showOrigin(record, filteredRecordList[index + 1])"
-                        :record="record"
-                        :key="record.clientId"
-                        :class="{ active: isSelectedRecord(record) }"
-                        @click="showRecord(record)"
-                    ></sidebar-item>
+                    <template v-for="(record, index) in filteredRecordList">
+                        
+                        <sidebar-item
+                            :record="record"
+                            :key="record.clientId"
+                            :class="{ active: isSelectedRecord(record), 'first-item': isOtherHost(record, filteredRecordList[index - 1]) }"
+                            @click="showRecord(record)"
+                        ></sidebar-item>
+
+                        <div v-if="isOtherHost(record, filteredRecordList[index + 1])" class="d-flex p-1 mb-2 origin">
+                            <div class="smallest font-monospace text-center">
+                                <span>{{ record.request.forwardedTo }}</span>
+                            </div>
+                        </div>
+
+                    </template>
                 </div>
             </div>
             <request-editor ref="reqEditor"></request-editor>
@@ -53,9 +61,9 @@ app.component('Sidebar', {
     created() {
         this.$bus.on('stream.start', (recs) => {
             this.recordList = recs
-            this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
+            //this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
             this.showRecord()
-            this.setRecords(this.recordList)
+            this.filterRecords(this.recordList)
         })
 
         this.$bus.on('stream.new-record', (rec) => {
@@ -70,7 +78,7 @@ app.component('Sidebar', {
                 this.recordList.pop()
             }
             
-            this.setRecords(this.recordList)
+            this.filterRecords(this.recordList)
         })
 
         this.$bus.on('stream.update-record', (update) => {
@@ -79,19 +87,21 @@ app.component('Sidebar', {
                     rec.step = update.step
                     rec.response.serverElapsed = update.response.serverElapsed
                     if (this.inputSearch.indexOf('serverElapsed') !== -1) {
-                        this.setRecords(this.recordList)
+                        this.filterRecords(this.recordList)
                     }
                     return true
                 }
             })
         })
+
+        this.$bus.on('sidebar.search', (search) => this.inputSearch = search)
     },
 
-    watch: { inputSearch() { this.setRecords(this.recordList) } },
+    watch: { inputSearch() { this.filterRecords(this.recordList) } },
 
     methods: {
-        showOrigin(record, nextRecord) {
-            return nextRecord === void 0 || record.origin !== nextRecord.origin
+        isOtherHost(record, otherRecord) {
+            return otherRecord === void 0 || record.request.forwardedTo !== otherRecord.request.forwardedTo
         },
 
         isSelectedRecord(record) {
@@ -121,9 +131,10 @@ app.component('Sidebar', {
             this.$bus.trigger('record.clear')
         },
 
-        setRecords(recordList) {
+        filterRecords(recordList) {
             let newFilteredList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
             this.filteredRecordList = newFilteredList
+            this.$emit('filterRecords', newFilteredList)
         },
 
         appendRecords(recordList) {
@@ -182,17 +193,11 @@ app.component('SidebarItem', {
                 <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
             </div>
         </button>
-        <div v-if="showOrigin" class="d-flex p-1 origin">
-            <div class="smallest font-monospace text-center">
-                <span>{{ record.origin }}</span>
-            </div>
-        </div>
     `,
     inject: [ '$image', '$date' ],
     inheritAttrs: false,
     props: {
-        record: Object,
-        showOrigin: Boolean
+        record: Object
     },
     data() {
         return {
