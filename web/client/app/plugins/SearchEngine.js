@@ -109,7 +109,7 @@ app.use({
 
             if (query.type === REGEX_CHAR) {
                 try {
-                    query.value = new RegExp(query.value, 'gi')
+                    query.value = new RegExp(query.value, 'i')
                 } catch (_e) {
                     delete query.type
                     delete query.value
