@@ -9,8 +9,9 @@ import (
 
 func setupServer() *webserver.Server {
 	server := webserver.NewServerWithFS(http.FS(web.EmbeddedFS))
+	server.Logger().SetLogLevelStr(config.SnifferLogLevel)
 
-	server.FileServer("/")
+	server.FileServer()
 	server.Get("/record/stream", connHandler)
 	server.Get("/record/{id}/response/body", responseBodyHandler)
 	server.Get("/record/{id}/replay", replayHandler)

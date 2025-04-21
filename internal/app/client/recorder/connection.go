@@ -20,6 +20,8 @@ import (
 )
 
 func startConnectionWithServer(contextHandler func(tunnel.TunnelClient, context.Context, context.CancelFunc) (bool, error)) {
+	log.SetLogLevelStr(config.LogLevel)
+
 	firstConn := true
 	var err error
 

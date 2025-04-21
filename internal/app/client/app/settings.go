@@ -22,7 +22,6 @@ import (
 
 	iurl "woole/internal/pkg/url"
 
-	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -36,6 +35,8 @@ type Config struct {
 	CustomUrl              *url.URL
 	SnifferUrl             *url.URL
 	MaxRecords             int
+	LogLevel               string
+	SnifferLogLevel        string
 	ServerKey              string
 	tlsSkipVerify          bool
 	tlsCa                  string
@@ -97,6 +98,7 @@ func ReadConfig() *Config {
 	disableSnifferOnlyMode := flag.Bool("disable-sniffer-only", false, "Terminate the application when the tunnel closes")
 	maxRecords := flag.Int("records", 1000, "Max records to store. Use 0 to not define a limit.")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
+	snifferLogLevel := flag.String("sniffer-log-level", "INFO", "Level of detail for the sniffer logs to be displayed")
 	// allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	maxReconnectAttempts := flag.Int("reconnect-attempts", 5, "Maximum number of reconnection attempts. 0 for infinite")
 	reconnectInterval := flag.String("reconnect-interval", "5s", "Time between reconnection attempts. Duration format")
@@ -115,8 +117,6 @@ func ReadConfig() *Config {
 	}
 
 	flag.Parse()
-
-	logger.SetLogLevelStr(*logLevel)
 	StatusBroker.Start()
 
 	if *httpUrl == constants.DefaultStandaloneMessage {
@@ -131,6 +131,8 @@ func ReadConfig() *Config {
 		TunnelUrl:              iurl.RawUrlToUrl(*tunnelUrl, "grpc", constants.DefaultTunnelPortStr),
 		SnifferUrl:             iurl.RawUrlToUrl(*snifferPort, "http", constants.DefaultSnifferPort),
 		MaxRecords:             *maxRecords,
+		LogLevel:               *logLevel,
+		SnifferLogLevel:        *snifferLogLevel,
 		ServerKey:              *serverKey,
 		tlsSkipVerify:          *tlsSkipVerify,
 		tlsCa:                  *tlsCa,

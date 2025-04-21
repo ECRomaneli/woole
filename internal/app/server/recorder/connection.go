@@ -13,6 +13,8 @@ import (
 
 func serveWebServer() {
 	server := webserver.NewServerWithFS(http.FS(web.EmbeddedFS))
+	server.Logger().SetLogLevelStr(config.ServerLogLevel)
+
 	domain := config.GetDomain()
 
 	if domain != "" {
@@ -31,6 +33,8 @@ func serveWebServer() {
 }
 
 func serveTunnel() {
+	log.SetLogLevelStr(config.LogLevel)
+
 	lis, err := net.Listen("tcp", ":"+config.TunnelPort)
 	panicIfNotNil(err)
 

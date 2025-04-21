@@ -20,7 +20,6 @@ import (
 	"woole/pkg/parser"
 	"woole/pkg/rand"
 
-	"github.com/ecromaneli-golang/console/logger"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -29,6 +28,8 @@ type Config struct {
 	HostnamePattern         string
 	HttpPort                string
 	HttpsPort               string
+	LogLevel                string
+	ServerLogLevel          string
 	TlsCert                 string
 	TlsKey                  string
 	TunnelPort              string
@@ -65,6 +66,7 @@ func ReadConfig() *Config {
 	httpPort := flag.Int("http", url.GetDefaultPort("http"), "Port on which the server listens for HTTP requests")
 	httpsPort := flag.Int("https", url.GetDefaultPort("https"), "Port on which the server listens for HTTPS requests")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
+	serverLogLevel := flag.String("server-log-level", "INFO", "Level of detail for the server logs to be displayed")
 	hostnamePattern := flag.String("pattern", constants.ClientToken, "Set the server hostname pattern. Example: "+constants.ClientToken+".mysite.com to vary the subdomain")
 	seed := flag.String("seed", "", "Key used to hash the client bearer")
 	privateKey := flag.String("priv-key", "", "Path to the ECC private key used to validate clients (default \"allow unknown clients\")")
@@ -90,8 +92,6 @@ func ReadConfig() *Config {
 	}
 	flag.Parse()
 
-	logger.SetLogLevelStr(*logLevel)
-
 	if *tunnelRequestSize == "" {
 		tunnelRequestSize = strPointer("2gb")
 	}
@@ -105,6 +105,8 @@ func ReadConfig() *Config {
 	config = &Config{
 		HttpPort:                strconv.Itoa(*httpPort),
 		HttpsPort:               strconv.Itoa(*httpsPort),
+		LogLevel:                *logLevel,
+		ServerLogLevel:          *serverLogLevel,
 		HostnamePattern:         *hostnamePattern,
 		seed:                    []byte(*seed),
 		privateKey:              loadPrivateKeyECC(*privateKey),

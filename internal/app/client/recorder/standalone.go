@@ -10,6 +10,8 @@ import (
 )
 
 func startStandalone() {
+	log.SetLogLevelStr(config.LogLevel)
+
 	app.SetSession(&tunnel.Session{
 		ClientId:        "standalone",
 		HttpPort:        config.HttpUrl.Port(),
