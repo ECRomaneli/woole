@@ -456,7 +456,7 @@ app.component('ContentTypesChart', {
                 Object.values(data),
                 backgroundColor,
                 { plugins: { legend: { position: 'right' } } },
-                label => this.$bus.trigger('sidebar.search', `response.header.content-type: ${label}`)
+                label => this.$bus.trigger('sidebar.search', label === 'no content-type' ? 'not response.header.content-type' : `response.header.content-type: ${label}`)
             )
         },
 
@@ -470,7 +470,7 @@ app.component('ContentTypesChart', {
         getData() {
             const data = {}
             this.records.forEach(record => {
-                const contentType = record.response.getHeader('Content-Type', 'unknown')
+                const contentType = record.response.getHeader('Content-Type', 'no content-type')
                 data[contentType] = (data[contentType] || 0) + 1
             })
             return data
