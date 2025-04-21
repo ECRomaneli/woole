@@ -238,7 +238,7 @@ Some browsers and websites utilize efficient caching mechanisms to minimize unne
 
 <p align='center'>
     <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
-        <img src="https://i.postimg.cc/cL27kFvc/sniffing-tool.png" alt='Sniffing Tool'>
+        <img src="https://i.postimg.cc/zfQBxYbx/sniffer.png" alt='Sniffing Tool'>
     </a>
 </p>
 

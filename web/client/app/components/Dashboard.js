@@ -105,7 +105,6 @@ app.component('Dashboard', {
             totalRecords: 0,
             avgResponseTime: 0,
             avgServerTime: 0,
-            successRate: 0,
             clientId: null,
             httpUrl: null,
             httpsUrl: null,
@@ -138,17 +137,14 @@ app.component('Dashboard', {
 
             let totalResponseTime = 0
             let totalServerTime = 0
-            let successCount = 0
 
             this.records.forEach(record => {
                 totalResponseTime += record.response.elapsed || 0
                 totalServerTime += record.response.serverElapsed || 0
-                if (Math.floor(record.response.code / 100) === 2) { successCount++ }
             })
 
             this.avgResponseTime = Math.round(totalResponseTime / (this.totalRecords || 1))
             this.avgServerTime = Math.round(totalServerTime / (this.totalRecords || 1))
-            this.successRate = Math.round((successCount / (this.totalRecords || 1)) * 100)
         },
         loadSessionDetails() {
             this.clientId = this.sessionDetails.clientId || '-'
@@ -205,11 +201,6 @@ app.component('Dashboard', {
                 this.expireRemaining = Math.max(0, (expireTime - Date.now()) / 60000)
                 if (this.expireRemaining <= 0) { this.setExpireAt() }
             }, 60000)
-        },
-        getSuccessRateClass() {
-            if (this.successRate >= 90) return 'bg-success'
-            if (this.successRate >= 70) return 'bg-warning'
-            return 'bg-danger'
         }
     }
 })
