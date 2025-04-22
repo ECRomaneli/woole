@@ -1,8 +1,8 @@
 package adt
 
 import (
-	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -166,21 +166,54 @@ func (rec *Record) Clone() *Record {
 	return clone
 }
 
-func (rec *Record) ToString(maxPathLength int) string {
-	path := []byte(rec.Request.Path)
+func (recs *Record) ToString(logRemoteAddr bool, maxPathLength int) string {
+	var sb strings.Builder
+	estSize := 9 + maxPathLength
+	if logRemoteAddr {
+		estSize += len(recs.Request.RemoteAddr) + 7
+	}
+	if recs.Response != nil {
+		estSize += 18 // for elapsed time and status code
+	}
+	sb.Grow(estSize)
 
+	// Write remote address if needed
+	if logRemoteAddr && recs.Request.RemoteAddr != "" {
+		sb.WriteString("From: ")
+		sb.WriteString(recs.Request.RemoteAddr)
+		sb.WriteByte(' ')
+	}
+
+	// Write method
+	if len(recs.Request.Method) < 6 {
+		sb.WriteString(strings.Repeat(" ", 6-len(recs.Request.Method)))
+	}
+	sb.WriteByte('[')
+	sb.WriteString(recs.Request.Method)
+	sb.WriteString("] ")
+
+	// Write path
+	path := recs.Request.Path
 	if len(path) > maxPathLength {
-		path = append([]byte("..."), path[len(path)-maxPathLength:]...)
+		sb.WriteString("...")
+		sb.WriteString(path[len(path)-maxPathLength:])
+	} else {
+		sb.WriteString(strings.Repeat(" ", maxPathLength+3-len(path)))
+		sb.WriteString(path)
 	}
 
-	method := "[" + rec.Request.Method + "]"
-
-	strPathLength := strconv.Itoa(maxPathLength + 3)
-	str := fmt.Sprintf("%8s %"+strPathLength+"s", method, string(path))
-
-	if rec.Response == nil {
-		return str
+	if recs.Response == nil {
+		// Write N/A if response is nil
+		sb.WriteString(" N/A")
+		return sb.String()
 	}
 
-	return str + fmt.Sprintf(" %d - %dms", rec.Response.Code, rec.Response.Elapsed)
+	// Write elapsed time
+	sb.WriteString(" - c: ")
+	sb.WriteString(strconv.FormatInt(int64(recs.Response.Elapsed), 10))
+	sb.WriteString("ms / s: ")
+	sb.WriteString(strconv.FormatInt(int64(recs.Response.ServerElapsed), 10))
+	sb.WriteString("ms")
+
+	return sb.String()
 }
