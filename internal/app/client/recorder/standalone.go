@@ -36,6 +36,6 @@ func recorderHandler(req *webserver.Request, res *webserver.Response) {
 	records.AddRecordAndPublish(record)
 
 	if log.IsInfoEnabled() {
-		log.Info(record.ToString(26))
+		log.Info(record.ToString(config.LogRemoteAddr, 26))
 	}
 }

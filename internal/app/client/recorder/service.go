@@ -42,7 +42,7 @@ func Replay(request *tunnel.Request) {
 	records.AddRecordAndPublish(record)
 
 	if log.IsInfoEnabled() {
-		log.Info(record.ToString(26))
+		log.Info(record.ToString(config.LogRemoteAddr, 26))
 	}
 }
 
@@ -130,7 +130,7 @@ func handleServerRequest(stream tunnel.Tunnel_TunnelClient, serverRecord *tunnel
 	records.AddRecordAndPublish(record)
 
 	if log.IsInfoEnabled() {
-		log.Info(record.ToString(26))
+		log.Info(record.ToString(config.LogRemoteAddr, 26))
 	}
 }
 

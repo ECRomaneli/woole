@@ -17,26 +17,34 @@
   - [Basic Usage](#basic-usage)
   - [Available Options](#available-options)
   - [Proxy](#proxy)
-  - [Client ID](#client-id)
+      - [Client ID](#client-id)
   - [Standalone Mode](#standalone-mode)
   - [Tunnel](#tunnel)
   - [Troubleshooting](#troubleshooting)
-  - [Sniffing Tool](#sniffing-tool)
+      - [Sniffing Tool](#sniffing-tool)
     - [Features](#features)
     - [Fuzzy Search](#fuzzy-search)
+    - [Regex](#regex)
+    - [Number Range](#number-range)
     - [Hierarchical Structure](#hierarchical-structure)
+    - [Sniffer-Only Mode](#sniffer-only-mode)
 - [Server](#server)
   - [Basic Usage](#basic-usage-1)
   - [Available Options](#available-options-1)
   - [Hostname Pattern](#hostname-pattern)
-  - [Using HTTPS](#using-https)
-  - [Server w/ ECC Authentication](#server-with-ecc-authentication)
+      - [Using HTTPS](#using-https)
+  - [Server with ECC Authentication](#server-with-ecc-authentication)
 - [Build](#build)
 - [Docker](#docker)
-- [Custom Types](#custom-types)
-    - [URL Patterns](#url-patterns)
-    - [Duration Format](#duration-format)
-    - [Size Format](#size-format)
+  - [Dockerfile Arguments](#dockerfile-arguments)
+  - [Building and Running the Images](#building-and-running-the-images)
+    - [Server](#server-1)
+    - [Client](#client-1)
+    - [Examples](#examples)
+- [Special Types](#special-types)
+  - [URL Patterns](#url-patterns)
+  - [Duration Format](#duration-format)
+  - [Size Format](#size-format)
 - [Author](#author)
 - [Disclaimer](#disclaimer)
 - [License](#license)
@@ -132,23 +140,24 @@ Expire At: never
 
 ### Available Options
 
-| Option                  | Description                                                                |
-|-------------------------|----------------------------------------------------------------------------|
-| `-client`               | Unique identifier of the client                                            |
-| `-http`                 | Port to start the standalone server (disables tunnel)                      |
-| `-proxy`                | URL of the target server to be proxied (default `80`)                      |
-| `-tunnel`               | URL of the tunnel (default `9653`)                                         |
-| `-custom-host`          | Custom host to be used when proxying                                       |
-| `-sniffer`              | Port on which the sniffer is available (default `8000`)                    |
-| `-disable-sniffer-only` | Terminate the application when the tunnel closes                           |
-| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                   |
-| `-records`              | Max records to store. Use `0` for unlimited (default `1000`)               |
-| `-log-level`            | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-tls-skip-verify`      | Disables the validation of the integrity of the Server's certificate       |
-| `-tls-ca`               | Path to the TLS CA file (only for self-signed certificates)                |
-| `-server-key`           | Path to the ECC public key used to authenticate with the server (default disabled)   |
-| `-reconnect-attempts`   | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
-| `-reconnect-interval`   | Time between reconnection attempts. [Duration format](#duration-format) (default `5s`) |
+| Option                      | Description                                                                |
+|-----------------------------|----------------------------------------------------------------------------|
+| `-client`                   | Unique identifier of the client                                            |
+| `-http`                     | Port to start the standalone server (disables tunnel)                      |
+| `-proxy`                    | URL of the target server to be proxied (default `80`)                      |
+| `-tunnel`                   | URL of the tunnel (default `9653`)                                         |
+| `-custom-host`              | Custom host to be used when proxying                                       |
+| `-sniffer`                  | Port on which the sniffer is available (default `8000`)                    |
+| `-disable-sniffer-only`     | Terminate the application when the tunnel closes                           |
+| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                       |
+| `-records`                  | Max records to store. Use `0` for unlimited (default `1000`)               |
+| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
+| `-log-remote-addr`          | Log the request remote address                                             |
+| `-tls-skip-verify`          | Disables the validation of the integrity of the Server's certificate       |
+| `-tls-ca`                   | Path to the TLS CA file (only for self-signed certificates)                |
+| `-server-key`               | Path to the ECC public key used to authenticate with the server (default disabled)   |
+| `-reconnect-attempts`       | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
+| `-reconnect-interval`       | Time between reconnection attempts. [Duration format](#duration-format) (default `5s`) |
 
 ### Proxy
 
@@ -301,6 +310,7 @@ Note that non-numeric characters are also allowed. However, they will not be val
 request
 ├── proto: string (Protocol)
 ├── method: string (HTTP Verbs)
+├── remoteAddr: string
 ├── url: string
 ├── path: string
 ├── header
@@ -361,22 +371,23 @@ Please note that domains and hosting services are not included with Woole Server
 
 ### Available Options
 
-| Option                      | Description                                                                 |
-|-----------------------------|-----------------------------------------------------------------------------|
+| Option                      | Description                                                                |
+|-----------------------------|----------------------------------------------------------------------------|
 | `-pattern`                  | Set the server hostname pattern. Example: `{client}.mysite.com`            |
 | `-http`                     | Port on which the server listens for HTTP requests (default `80`)          |
 | `-https`                    | Port on which the server listens for HTTPS requests (default `443`)        |
 | `-tunnel`                   | Port on which the gRPC tunnel listens (default `9653`)                     |
-| `-seed`                     | Key used to hash the client bearer                                                |
+| `-seed`                     | Key used to hash the client bearer                                         |
 | `-tls-cert`                 | Path to the TLS certificate or fullchain file                              |
 | `-tls-key`                  | Path to the TLS private key file                                           |
-| `-priv-key`                 | Path to the ECC private key used to validate clients (default disabled)  |
+| `-priv-key`                 | Path to the ECC private key used to validate clients (default disabled)    |
 | `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
+| `-log-remote-addr`          | Log the request remote address                                             |
 | `-tunnel-reconnect-timeout` | Timeout to reconnect the stream when the connection is lost. [Duration format](#duration-format) (default `10s`) |
 | `-tunnel-request-size`      | Tunnel maximum request size. [Size format](#size-format) (default `2GB`, limited by gRPC)  |
 | `-tunnel-response-size`     | Tunnel maximum response size. [Size format](#size-format) (default `2GB`, limited by gRPC) |
-| `-tunnel-response-timeout`  | Timeout to receive a client response. [Duration format](#duration-format) (default `10s`)      |
-| `-tunnel-connection-timeout`| Timeout for client connections. [Duration format](#duration-format) (default `unset`)          |
+| `-tunnel-response-timeout`  | Timeout to receive a client response. [Duration format](#duration-format) (default `10s`)  |
+| `-tunnel-connection-timeout`| Timeout for client connections. [Duration format](#duration-format) (default `unset`)      |
 
 ### Hostname Pattern
 
@@ -440,17 +451,21 @@ To use the server authentication, generate a pair of ECC (Elliptic Curve Cryptog
 
 ## Build
 
+Requirements:
+
+- Golang 1.24
+
 Manually:
 
 ```sh
     git clone --depth 1 https://github.com/ecromaneli/woole.git
+    cd woole
 
     # to build the client
     go build -o ./bin/woole ./cmd/client
     chmod +x ./bin/woole
 
     # to build the server
-    cd woole/cmd/server
     go build -o ./bin/woole-server ./cmd/server
     chmod +x ./bin/woole-server
 ```
@@ -613,7 +628,3 @@ The Woole project, the woole.me website and all its contributors are not respons
 ## License
 
 [MIT License](https://github.com/ECRomaneli/woole/blob/master/LICENSE)
-
-Mostrar no client data de expiração
-Landing Page no /
-mostrar info no client, expire date, timeout

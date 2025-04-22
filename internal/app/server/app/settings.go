@@ -30,6 +30,7 @@ type Config struct {
 	HttpsPort               string
 	LogLevel                string
 	ServerLogLevel          string
+	LogRemoteAddr           bool
 	TlsCert                 string
 	TlsKey                  string
 	TunnelPort              string
@@ -70,6 +71,7 @@ func ReadConfig() *Config {
 	hostnamePattern := flag.String("pattern", constants.ClientToken, "Set the server hostname pattern. Example: "+constants.ClientToken+".mysite.com to vary the subdomain")
 	seed := flag.String("seed", "", "Key used to hash the client bearer")
 	privateKey := flag.String("priv-key", "", "Path to the ECC private key used to validate clients (default \"allow unknown clients\")")
+	logRemoteAddr := flag.Bool("log-remote-addr", false, "Log the request remote address")
 	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")
 	tlsKey := flag.String("tls-key", "", "Path to the TLS private key file")
 	tunnelPort := flag.Int("tunnel", constants.DefaultTunnelPort, "Port on which the gRPC tunnel listens")
@@ -110,6 +112,7 @@ func ReadConfig() *Config {
 		HostnamePattern:         *hostnamePattern,
 		seed:                    []byte(*seed),
 		privateKey:              loadPrivateKeyECC(*privateKey),
+		LogRemoteAddr:           *logRemoteAddr,
 		TlsCert:                 *tlsCert,
 		TlsKey:                  *tlsKey,
 		TunnelPort:              strconv.Itoa(*tunnelPort),
@@ -161,14 +164,13 @@ func (cfg *Config) GetTransportCredentials() credentials.TransportCredentials {
 }
 
 func (cfg *Config) GetDomain() string {
-	clientVar := "{client}"
-	clientPos := strings.Index(cfg.HostnamePattern, clientVar)
+	clientPos := strings.Index(cfg.HostnamePattern, constants.ClientToken)
 
 	if clientPos == -1 {
 		return cfg.HostnamePattern
 	}
 
-	remainingHost := cfg.HostnamePattern[clientPos+len(clientVar):]
+	remainingHost := cfg.HostnamePattern[clientPos+len(constants.ClientToken):]
 
 	return strings.TrimPrefix(remainingHost, ".")
 }

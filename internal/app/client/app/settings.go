@@ -37,6 +37,7 @@ type Config struct {
 	MaxRecords             int
 	LogLevel               string
 	SnifferLogLevel        string
+	LogRemoteAddr          bool
 	ServerKey              string
 	tlsSkipVerify          bool
 	tlsCa                  string
@@ -99,6 +100,7 @@ func ReadConfig() *Config {
 	maxRecords := flag.Int("records", 1000, "Max records to store. Use 0 to not define a limit.")
 	logLevel := flag.String("log-level", "INFO", "Level of detail for the logs to be displayed")
 	snifferLogLevel := flag.String("sniffer-log-level", "INFO", "Level of detail for the sniffer logs to be displayed")
+	logRemoteAddr := flag.Bool("log-remote-addr", false, "Log the request remote address")
 	// allowReaders := flag.Bool("allow-readers", false, "Allow other connections to listen the requests")
 	maxReconnectAttempts := flag.Int("reconnect-attempts", 5, "Maximum number of reconnection attempts. 0 for infinite")
 	reconnectInterval := flag.String("reconnect-interval", "5s", "Time between reconnection attempts. Duration format")
@@ -133,6 +135,7 @@ func ReadConfig() *Config {
 		MaxRecords:             *maxRecords,
 		LogLevel:               *logLevel,
 		SnifferLogLevel:        *snifferLogLevel,
+		LogRemoteAddr:          *logRemoteAddr,
 		ServerKey:              *serverKey,
 		tlsSkipVerify:          *tlsSkipVerify,
 		tlsCa:                  *tlsCa,

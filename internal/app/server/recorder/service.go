@@ -136,7 +136,7 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 
 func logRecord(clientId string, record *adt.Record) {
 	if log.IsInfoEnabled() {
-		log.Info(getClientLog(clientId, record.ToString(26)))
+		log.Info(getClientLog(clientId, record.ToString(config.LogRemoteAddr, 26)))
 	}
 }
 

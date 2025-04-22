@@ -36,6 +36,17 @@
             ]
         },
         {
+            "name": "Server w/ log RemoteAddr",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "args": [
+                "-http", "8080",
+                "-log-remote-addr", "true"
+            ]
+        },
+        {
             "name": "2m Conn Server",
             "type": "go",
             "request": "launch",
