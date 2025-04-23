@@ -5,6 +5,7 @@ import (
 	"woole/internal/app/client/app"
 	"woole/internal/app/client/recorder"
 	"woole/internal/app/client/sniffer"
+	"woole/pkg/draw"
 )
 
 var config = app.ReadConfig()
@@ -22,18 +23,18 @@ func startSnifferTool() {
 func printInfo() {
 	session := app.GetSessionWhenAvailable()
 
-	fmt.Println()
-	fmt.Println("===============")
-	fmt.Printf(" HTTP URL: %s\n", session.HttpUrl())
-
-	if session.HttpsPort != "" {
-		fmt.Printf("HTTPS URL: %s\n", session.HttpsUrl())
+	data := []draw.KeyValue{
+		{Key: "HTTP URL", Value: session.HttpUrl()},
 	}
 
-	fmt.Printf(" Proxying: %s\n", config.ProxyUrl.String())
-	fmt.Printf("  Sniffer: %s\n", config.SnifferUrl.String())
-	fmt.Printf("Expire At: %s\n", app.ExpireAt())
+	if session.HttpsPort != "" {
+		data = append(data, draw.KeyValue{Key: "HTTPS URL", Value: session.HttpsUrl()})
+	}
 
-	fmt.Println("===============")
-	fmt.Println()
+	data = append(data,
+		draw.KeyValue{Key: "Proxying", Value: config.ProxyUrl.String()},
+		draw.KeyValue{Key: "Sniffer", Value: config.SnifferUrl.String()},
+		draw.KeyValue{Key: "Expire At", Value: app.ExpireAt()})
+
+	fmt.Println("\n" + draw.Box(data))
 }
