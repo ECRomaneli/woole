@@ -6,11 +6,11 @@ import (
 
 // Constants for box drawing characters and formatting
 const (
-	topLeftCorner     = '┌'
-	topRightCorner    = '┐'
-	bottomLeftCorner  = '└'
-	bottomRightCorner = '┘'
-	horizontalLine    = "─"
+	topLeftCorner     = '╒'
+	topRightCorner    = '╕'
+	bottomLeftCorner  = '╘'
+	bottomRightCorner = '╛'
+	horizontalLine    = "═"
 	verticalLine      = '│'
 	space             = ' '
 	spaceStr          = " "
