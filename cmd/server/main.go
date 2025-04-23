@@ -2,15 +2,30 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"woole/internal/app/server/app"
 	"woole/internal/app/server/recorder"
 	"woole/pkg/draw"
+
+	"github.com/ecromaneli-golang/console/logger"
 )
 
 var config = app.ReadConfig()
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log := logger.New("woole")
+			log.SetLogLevelStr(config.LogLevel)
+			log.Fatal(err)
+			if log.IsDebugEnabled() {
+				panic(err)
+			}
+			os.Exit(1)
+		}
+	}()
+
 	tunnelHost := config.GetDomain()
 	if tunnelHost == "" {
 		tunnelHost = "localhost"
