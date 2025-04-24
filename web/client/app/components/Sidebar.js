@@ -61,7 +61,6 @@ app.component('Sidebar', {
     created() {
         this.$bus.on('stream.start', (recs) => {
             this.recordList = recs
-            //this.filteredRecordList = this.recordList.slice() // TODO: Remove it?
             this.showRecord()
             this.filterRecords(this.recordList)
         })
@@ -82,16 +81,17 @@ app.component('Sidebar', {
         })
 
         this.$bus.on('stream.update-record', (update) => {
-            this.recordList.some(rec => {
+            const recordUpdated = this.recordList.some(rec => {
                 if (rec.clientId === update.clientId) {
                     rec.step = update.step
                     rec.response.serverElapsed = update.response.serverElapsed
-                    if (this.inputSearch.indexOf('serverElapsed') !== -1) {
-                        this.filterRecords(this.recordList)
-                    }
                     return true
                 }
             })
+            
+            if (recordUpdated && this.inputSearch.indexOf('serverElapsed') !== -1) {
+                this.filterRecords(this.recordList)
+            }
         })
 
         this.$bus.on('sidebar.search', (search) => this.inputSearch = search)
@@ -132,15 +132,18 @@ app.component('Sidebar', {
         },
 
         filterRecords(recordList) {
-            let newFilteredList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
-            this.filteredRecordList = newFilteredList
-            this.$emit('filterRecords', newFilteredList)
+            this.filteredRecordList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
+            this.$emit('filterRecords', this.filteredRecordList)
         },
 
         appendRecords(recordList) {
-            const newFilteredList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
-            newFilteredList.reverse()
-            newFilteredList.forEach((rec) => this.filteredRecordList.unshift(rec))
+            if (!recordList.length) return;
+            
+            const newFilteredRecords = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
+            if (newFilteredRecords.length) {
+                // Insert at the beginning of the list
+                this.filteredRecordList.unshift(...newFilteredRecords)
+            }
         },
 
         toggleTheme() {
@@ -181,7 +184,7 @@ app.component('SidebarItem', {
                         <small class="fw-light">{{ createdAt[0] + ', ' }}</small>
                         <small class="fw-bolder">{{ createdAt[1] }}</small>
                     </template>
-                    <template v-else-if="record.response.serverElapsed">
+                    <template v-else-if="response.serverElapsed">
                         <small class="fw-light" title="Client Elapsed Time">{{ response.elapsed }}ms /&nbsp;</small>
                         <small class="fw-bolder" title="Server Elapsed Time">{{ response.serverElapsed }}ms</small>
                     </template>
@@ -190,7 +193,7 @@ app.component('SidebarItem', {
             </div>
             <div class="mb-1 smallest font-monospace text-end">
                 <span>{{ ellipsis(request.path) }}</span>
-                <span v-if="request.query !== void 0" class="badge bg-query" :title="request.query">?</span>
+                <span v-if="hasQuery" class="badge bg-query" :title="requestQuery">?</span>
             </div>
         </button>
     `,
@@ -201,18 +204,17 @@ app.component('SidebarItem', {
     },
     data() {
         return {
-            request: this.record.request,
-            response: this.record.response,
-            createdAt: this.record.createdAt.split(', '),
             showCreatedAt: true,
             showToggle: false,
             maxLength: 30
         }
     },
-    beforeMount() {
-        if (this.request.query === void 0) {
-            this.request.query = this.request.url.split('?')[1]
-        }
+    computed: {
+        request() { return this.record.request },
+        response() { return this.record.response },
+        createdAt() { return this.record.createdAt.split(', ') },
+        hasQuery() { return this.queryParam !== void 0 },
+        requestQuery() { return this.hasQuery ? this.request.url.split('?')[1] : '' },
     },
     methods: {
         methodBadge() {
@@ -223,11 +225,10 @@ app.component('SidebarItem', {
         },
         ellipsis(path) {
             let maxLength = this.maxLength
-            let hasQuery = this.request.queryParams !== void 0
 
-            if (hasQuery) { maxLength -= 4 }
+            if (this.hasQuery) { maxLength -= 4 }
             let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)
-            return result + (hasQuery ? ' ' : '')
+            return result + (this.hasQuery ? ' ' : '')
         },
         toggleInfo(e) {
             e.stopPropagation()

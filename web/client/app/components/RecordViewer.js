@@ -60,25 +60,33 @@ app.component('RecordItem', {
             <span v-if="titleGroup[2]" class="input-group-text">{{ titleGroup[2] }}</span>
         </div>
 
+        <span v-if="item.remoteAddr" class="fw-light remote-address">{{ item.remoteAddr }}</span>
+
         <ul class="inline-tabs">
-            <li v-if="hasHeader()" @click="tab = 'header'">
+        <li @click="tab = 'raw'">
+                <button class="tab" :class="{ active: tab === 'raw' }">Raw</button>
+            </li>
+            <li v-if="hasHeader" @click="tab = 'header'">
                 <button class="tab" :class="{ active: tab === 'header' }">Header</button>
             </li>
-            <li v-if="hasParam()" @click="tab = 'param'">
+            <li v-if="hasParam" @click="tab = 'param'">
                 <button class="tab" :class="{ active: tab === 'param' }">Params</button>
             </li>
-            <li v-if="hasBody()" @click="tab = 'body'; $refs.codeEditor.forceUpdate()">
+            <li v-if="hasBody" @click="tab = 'body'; $refs.codeEditor.forceUpdate()">
                 <button class="tab" :class="{ active: tab === 'body' }">
-                    Body <span v-if="hasBody()" class="badge fw-light" style="font-size:.6rem">{{ bodySize }}</span>
+                    Body <span v-if="hasBody" class="badge fw-light" style="font-size:.6rem">{{ bodySize }}</span>
                 </button>
             </li>
 
-            <li v-if="isPreviewSupported()" @click="tab = 'preview'">
+            <li v-if="isPreviewSupported" @click="tab = 'preview'">
                 <button class="tab" :class="{ active: tab === 'preview' }">Preview</button>
             </li>
         </ul>
 
         <div class="tab-content">
+            <div class="tab-pane show" :class="{ active: tab === 'raw' }">
+                <map-table :map="item"></map-table>
+            </div>
             <div class="tab-pane show" :class="{ active: tab === 'header' }">
                 <map-table :map="item.header"></map-table>
             </div>
@@ -100,69 +108,54 @@ app.component('RecordItem', {
     props: { titleGroup: Array, item: Object },
     data() { return {
         supportedPreviews: ['image', 'video', 'audio'],
-        otherPreviews: ['application/octet-stream', 'application/x-mpegURL'],
+        sizeUnits: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
         tab: 'header',
         enableCopy: false
         }
     },
-    beforeMount() { this.parseBody() },
-    mounted() { this.selectAvailableTab() },
-    beforeUpdate() {
-        this.parseBody()
-        this.selectAvailableTab()
+    watch: {
+        item: {
+            handler() {
+                this.selectAvailableTab()
+            },
+            deep: true
+        }
     },
     computed: {
+        hasHeader() { return this.item.header && Object.keys(this.item.header).length > 0 },
+        hasParam() { return this.item.queryParams && Object.keys(this.item.queryParams).length > 0 },
+        hasBody() { return this.item.body },
+        content() {
+            if (!this.hasHeader) { return {} }
+            const contentType = this.item.header['Content-Type']
+            return contentType ? this.$woole.parseContentType(contentType) : {}
+        },
+        isPreviewSupported() {
+            return this.hasBody && this.supportedPreviews.some(c => c === this.content.category)
+        },
         bodySize() {
-            let length = parseInt(this.item.header && this.item.header['Content-Length']) || this.item.body.length
-
+            let length = parseInt(this.hasHeader && this.item.header['Content-Length']) || this.item.body.length
             if (!length) { return '0 B' }
-
-            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-            let index = 0;
-        
-            while (length >= 1000 && index < units.length - 1) {
-                length /= 1024;
-                index++;
-            }
-        
-            return length.toFixed(2) + ' ' + units[index];
-        }
+            let i = 0
+            for (; length >= 1000 && i < this.sizeUnits.length; i++) { length /= 1024 }
+            return length.toFixed(2) + ' ' + this.sizeUnits[i]
+        },
     },
     methods: { 
         selectAvailableTab() {
             let availableTabs = []
-            this.isPreviewSupported()   && availableTabs.push('preview')
-            this.hasBody()              && availableTabs.push('body')
-            this.hasParam()             && availableTabs.push('param')
-            this.hasHeader()            && availableTabs.push('header')
+            this.isPreviewSupported   && availableTabs.push('preview')
+            this.hasBody              && availableTabs.push('body')
+            this.hasParam             && availableTabs.push('param')
+            this.hasHeader            && availableTabs.push('header')
 
-            if (availableTabs.some(tab => this.tab === tab)) { return }
-            this.tab = availableTabs.length ? availableTabs[0] : ''
-        },
-
-        parseBody() {
-            this.content = {}
-            if (this.item.body === void 0 || this.item.body === null) { this.item.body = '' }
-            if (!this.item.header) { return }
-            const contentType = this.item.header['Content-Type']
-            if (contentType) {
-                this.content = this.$woole.parseContentType(contentType)
+            if (!availableTabs.some(tab => this.tab === tab)) {
+                this.tab = availableTabs.length ? availableTabs[0] : 'raw'
             }
         },
 
         async copyUrl() {
             await navigator.clipboard.writeText(this.titleGroup[1])
-        },
-
-        hasHeader() { return this.item.header && Object.keys(this.item.header).length > 0 },
-        hasParam() { return this.item.queryParams && Object.keys(this.item.queryParams).length > 0 },
-        hasBody() { return this.item.body !== '' },
-        isPreviewSupported() {
-            return this.hasBody() && (
-                this.supportedPreviews.some(c => c === this.content.category) ||
-                this.otherPreviews.some(c => c === this.content.category + "/" + this.content.type)
-            )
         }
     }
-    
 })

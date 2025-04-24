@@ -576,6 +576,16 @@
     height: 325px;
 }
 
+.remote-address {
+    display: flex;
+    justify-content: right;
+    width: 0;
+    margin-top: -1rem;
+    float: right;
+    font-size: 0.75rem;
+    line-height: 26px;
+}
+
 @media (min-width: 992px) and (max-width: 1460px) {
     #dashboard .col-lg-6 {
         flex: 0 0 auto;

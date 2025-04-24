@@ -24,6 +24,12 @@ app.component('Modal', {
     props: { fitHeight: { type: Boolean, default: false } },
     data() { return { emitDelay: 100 } },
     mounted() { this.modal = new bootstrap.Modal(this.$refs.modal) },
+    unmounted() {
+        if (this.modal) {
+            this.modal.dispose();
+            this.modal = null;
+        }
+    },
     methods: {
         show() {
             this.modal.show()

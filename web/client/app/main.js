@@ -122,6 +122,7 @@ const app = Vue.createApp({
         },
 
         setupRecord(rec) {
+            rec.host = this.host
             rec.forwardedTo = this.getRecordForwardedTo(rec)
             rec.createdAt = this.$date.from(rec.createdAtMillis).format('MMM DD, hh:mm:ss A')
             this.$woole.decodeQueryParams(rec.request)
