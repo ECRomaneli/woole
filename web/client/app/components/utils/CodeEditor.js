@@ -1,20 +1,23 @@
 app.component('CodeEditor', {
     template: /*html*/ `
-        <div class='editor-container'>
-            <div class="editor-toolbar ps-2" v-if="pretty.enabled">
+        <div class='editor-container h-100'>
+            <div class="editor-toolbar ps-2" v-if="isPrettyEnabled">
                 <div v-if="readOnly">
                     <button class="fw-light px-2 m-1" :class="{ active: tab === 'raw' }" @click="changeTab('raw')">Raw</button>
                     <button class="fw-light px-2 m-1" :class="{ active: tab === 'pretty' }" @click="changeTab('pretty')">Pretty</button>
                 </div>
                 <div v-else>
-                    <button class="fw-light px-2 m-1" @click="beautify(); setCode(pretty.code, false)">Beautify</button>
+                    <button class="fw-light px-2 m-1" @click="beautify(); setCode(prettyCode, false)">Beautify</button>
                 </div>
             </div>
-            <div ref="container"></div>
+            <div ref="container" class="h-100"></div>
         </div>
     `,
     inject: [ '$beautifier' ],
-    props: { type: String, code: String, readOnly: Boolean, minLines: Number, maxLines: Number },
+    props: { type: String, code: String, readOnly: Boolean, 
+            minLines: { type: Number, default: 5 }, 
+            maxLines: { type: Number, default: Infinity }
+     },
     data() {
         return {
             typesByMode: {
@@ -25,44 +28,62 @@ app.component('CodeEditor', {
                         'sh': [ 'shellscript', 'sh' ]
             },
             tab: 'raw',
-            pretty: { enabled: this.enablePretty(), code: null },
+            prettyCode: null,
             themeElement: document.querySelector('[data-theme]')
         }
     },
     mounted() {
         this.createEditor()
         this.$bus.on('theme.change', this.updateTheme)
+
+        this.resizeObserver = new ResizeObserver((entries) => { this.observeParentResize(entries[0]) })
+        this.resizeObserver.observe(this.$refs.container)
     },
     beforeUnmount() {
         this.$bus.off('theme.change', this.updateTheme)
+        
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect()
+            this.resizeObserver = null
+        }
+        
         this.editor.destroy()
+        this.editor = null
     },
     watch: {
         type: function (val) { this.setEditorMode(val) },
         code: function (val) { this.setCode(val) }
     },
+    computed: {
+        isPrettyEnabled() { return this.type && this.$beautifier.supports(this.type) }
+    },
     methods: {
         createEditor() {
-            this.editor = ace.edit(this.$refs.container, {
+            const options = {
                 useWorker: false,
                 readOnly: this.readOnly,
-                autoScrollEditorIntoView: true,
+                wrap: true,
                 minLines: this.minLines,
                 maxLines: this.maxLines,
-                //height: '100%',
-                wrap: true
-            })
-            this.updateTheme()
-            if (this.readOnly) {
-                this.editor.renderer.$cursorLayer.element.style.display = "none"
+                autoScrollEditorIntoView: true
             }
+            
+            try {
+                this.editor = ace.edit(this.$refs.container, options)
+                this.updateTheme()
+                
+                if (this.readOnly) {
+                    this.editor.renderer.$cursorLayer.element.style.display = "none"
+                }
 
-            this.setEditorMode(this.type)
-            this.setCode(this.code)
+                this.setEditorMode(this.type)
+                this.setCode(this.code)
+            } catch (e) {
+                console.error('Error creating editor:', e)
+            }
         },
 
         setEditorMode(type) {
-            this.pretty.enabled = this.enablePretty()
             if (type) {
                 for (const mode in this.typesByMode) {
                     if (this.typesByMode[mode].some(t => this.isType(t))) {
@@ -81,9 +102,10 @@ app.component('CodeEditor', {
         setCode(code, resetPretty) {
             if (resetPretty !== false) {
                 this.tab = 'raw'
-                this.pretty.code = null
+                this.prettyCode = null
             }
             this.editor.setValue(code)
+            this.editor.clearSelection()
             this.editor.gotoLine(1)
         },
 
@@ -91,24 +113,39 @@ app.component('CodeEditor', {
             return this.editor.getValue().length
         },
 
+        observeParentResize(parent) {
+            const height = parent.contentRect.height
+
+            if (!height) { return }
+            if (!this.fontSize) { this.fontSize = this.editor.getFontSize() + 1 }
+
+            let lines = Math.floor(height / this.fontSize)
+
+            if (lines < this.minLines) { lines = this.minLines }
+            else if (lines > this.maxLines) { lines = this.maxLines }
+
+            if (lines !== this.editor.getOption('maxLines')) {
+                this.editor.setOption("maxLines", lines)
+            }
+        },
+
         forceUpdate() {
             this.editor.renderer.updateFull()
         },
 
         updateTheme() {
-            if (this.themeElement.getAttribute('data-theme') === 'dark') {
-                this.editor.setTheme('ace/theme/twilight')
-            } else {
-                this.editor.setTheme('ace/theme/dawn')
-            }
-        },
-
-        enablePretty() {
-            return this.type && this.$beautifier.supports(this.type)
+            this.editor.setTheme(this.themeElement.getAttribute('data-theme') === 'dark' ? 
+                'ace/theme/twilight' : 'ace/theme/dawn'
+            )
         },
 
         beautify() {
-            this.pretty.code = this.$beautifier.beautify(this.type, this.getCode())
+            try {
+                this.prettyCode = this.$beautifier.beautify(this.type, this.getCode());
+            } catch (error) {
+                console.error("Error beautifying code:", error);
+                this.prettyCode = this.getCode();
+            }
         },
 
         changeTab(tab) {
@@ -116,11 +153,12 @@ app.component('CodeEditor', {
             let code = this.code
 
             if (tab === 'pretty') {
-                if (this.pretty.code === null) { this.beautify() }
-                code = this.pretty.code
+                if (this.prettyCode === null) { this.beautify() }
+                code = this.prettyCode
             }
             
             this.editor.setValue(code)
+            this.editor.clearSelection()
             this.editor.gotoLine(1)
         },
 

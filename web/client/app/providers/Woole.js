@@ -65,9 +65,11 @@ app.provide('$woole', {
         }
     },
 
-    parseRequestToCurl(req) {
+    parseRequestToCurl(rec) {
+        const req = rec.request
+
         // Construct cURL command
-        let curlCommand = `curl -X ${req.method} ${req.host}${req.url}`
+        let curlCommand = `curl -X ${req.method} ${rec.host}${req.url}`
 
         // Add headers to cURL command
         Object.keys(req.header).forEach(header => {
@@ -87,5 +89,45 @@ app.provide('$woole', {
         if (item.header[header] !== void 0) { return item.header[header] }
         if (item.header[header.toLowerCase()] !== void 0) { return item.header[header.toLowerCase()] }
         return defaultValue
+    },
+
+    escapeRegex(str) {
+        // Didn't escape "/" and "-" because they are not used in regex without other characters
+        return str.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
+    },
+
+    parseAddress(address) {
+        let ip, port
+    
+        if (address.startsWith('[')) {
+            // IPv6 with brackets
+            const parts = address.split(']:')
+            ip = parts[0].slice(1) // Remove the opening '['
+            port = parts[1]
+        } else if (address.includes(':') && address.includes('.')) {
+            // IPv4 with port
+            const parts = address.split(':')
+            ip = parts[0]
+            port = parts[1]
+        } else if (address.includes(':')) {
+            // IPv6 without brackets
+            const parts = address.split(':')
+            port = parts.pop() // Last part is the port
+            ip = parts.join(':') // Rejoin the rest as the IPv6 address
+        } else {
+            // No port
+            ip = address
+            port = null
+        }
+    
+        return { ip, port }
+    },
+
+    parseSize(bytes) {
+        const sizeUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        if (!bytes) { return '0 B' }
+        let i = 0
+        for (; bytes >= 1000 && i < sizeUnits.length; i++) { bytes /= 1024 }
+        return bytes.toFixed(2) + ' ' + sizeUnits[i]
     }
 })

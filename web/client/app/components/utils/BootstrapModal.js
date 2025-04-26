@@ -10,7 +10,7 @@ app.component('Modal', {
                         </div>
                     </slot>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body d-flex flex-column">
                     <slot name="body"></slot>
                 </div>
                 <div class="modal-footer">

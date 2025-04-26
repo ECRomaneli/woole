@@ -42,8 +42,8 @@ app.component('Sidebar', {
             <request-editor ref="reqEditor"></request-editor>
         </nav>
     `,
-    inject: [ '$search', '$image' ],
-    emits: [ 'itemSelected' ],
+    inject: [ '$search', '$image', '$timer' ],
+    emits: [ 'item-selected', 'filter-records' ],
     props: { maxRecords: Number },
 
     data() {
@@ -54,30 +54,37 @@ app.component('Sidebar', {
             inputSearch: "",
             themeImg: localStorage.getItem('_woole_theme') ?? 'moon',
             appElement: document.getElementById('app'),
-            excludeFromSearch: ['b64body', 'response.body']
+            excludeFromSearch: ['b64body', 'response.body'],
+            postponeEmitFilterRecords: this.$timer.debounceWithThreshold(() => { this.emitFilterRecords() }, 250)
         }
     },
     beforeMount() { this.setTheme() },
     created() {
+        let range = { lastEnd: null, end: null }
+        let debounce = this.$timer.debounceWithThreshold(() => {
+            range.end = this.recordList.length
+            if (this.maxRecords && this.recordList.length > this.maxRecords) {
+                // Remove records that are not in the range
+                this.recordList.length = this.maxRecords
+                this.filterRecords(this.recordList)
+                return
+            }
+            this.appendRecords(this.recordList.slice(0, range.end - range.lastEnd))
+            range.lastEnd = range.end
+        }, 250)
+
         this.$bus.on('stream.start', (recs) => {
             this.recordList = recs
+            range.lastEnd = this.recordList.length
+
             this.showRecord()
             this.filterRecords(this.recordList)
         })
 
         this.$bus.on('stream.new-record', (rec) => {
             this.recordList.unshift(rec)
-
-            if (!this.maxRecords || this.recordList.length <= this.maxRecords) {
-                this.appendRecords([rec])
-                return
-            }                
-    
-            while (this.recordList.length > this.maxRecords) {
-                this.recordList.pop()
-            }
-            
-            this.filterRecords(this.recordList)
+            this.recordList.sort((a, b) => b.clientId - a.clientId)
+            debounce()
         })
 
         this.$bus.on('stream.update-record', (update) => {
@@ -116,7 +123,7 @@ app.component('Sidebar', {
             if (record === void 0) {
                 if (this.selectedRecord !== null) {
                     this.selectedRecord = null
-                    this.$emit('itemSelected', null)
+                    this.$emit('item-selected', null)
                 }
                 return
             }
@@ -124,7 +131,7 @@ app.component('Sidebar', {
             if (this.isSelectedRecord(record.clientId)) { return }
 
             this.selectedRecord = record
-            this.$emit('itemSelected', record)
+            this.$emit('item-selected', record)
         },
 
         clearRecords() {
@@ -133,16 +140,20 @@ app.component('Sidebar', {
 
         filterRecords(recordList) {
             this.filteredRecordList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
-            this.$emit('filterRecords', this.filteredRecordList)
+            this.postponeEmitFilterRecords()
+        },
+
+        emitFilterRecords() {
+            this.$emit('filter-records', this.filteredRecordList.slice())
         },
 
         appendRecords(recordList) {
-            if (!recordList.length) return;
+            if (!recordList.length) return
             
             const newFilteredRecords = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
             if (newFilteredRecords.length) {
-                // Insert at the beginning of the list
                 this.filteredRecordList.unshift(...newFilteredRecords)
+                this.postponeEmitFilterRecords()
             }
         },
 
@@ -160,79 +171,6 @@ app.component('Sidebar', {
                 localStorage.setItem('_woole_theme', 'moon')
             }
             this.$bus.trigger('theme.change')
-        }
-    }
-})
-
-app.component('SidebarItem', {
-    template: /*html*/ `
-        <button :client-id="record.clientId" v-bind="$attrs" class="record-item p-3 lh-sm" @mouseover="showToggle = true" @mouseleave="showToggle = false">
-            <div class="d-flex w-100 mb-1 justify-content-between small">
-                <div class="badge-group" dir="rtl">
-                    <span class="badge px-1" :class="statusBadge()">{{ response.code }}</span>
-                    <span class="badge px-1 me-1" :class="methodBadge()">{{ request.method }}</span>
-                    <div v-if="record.type === 'redirect'" class="bg-redirect-badge badge me-1" title="Redirect">
-                        <img :src="$image.src('windows')" alt="redirect" />
-                    </div>
-                    <div v-else-if="record.type === 'replay'" class="bg-replay-badge badge me-1" title="Replay">
-                        <img :src="$image.src('play')" alt="replay" />
-                    </div>
-                </div>
-                <div class="opacity-50 ms-1">
-                    <img v-show="showToggle" :src="$image.src('change')" class="me-1 toggle-time" alt="toggle" @click="toggleInfo($event)" />
-                    <template v-if="showCreatedAt">
-                        <small class="fw-light">{{ createdAt[0] + ', ' }}</small>
-                        <small class="fw-bolder">{{ createdAt[1] }}</small>
-                    </template>
-                    <template v-else-if="response.serverElapsed">
-                        <small class="fw-light" title="Client Elapsed Time">{{ response.elapsed }}ms /&nbsp;</small>
-                        <small class="fw-bolder" title="Server Elapsed Time">{{ response.serverElapsed }}ms</small>
-                    </template>
-                    <small v-else class="fw-bolder" title="Client Elapsed Time">{{ response.elapsed }}ms</small>
-                </div>
-            </div>
-            <div class="mb-1 smallest font-monospace text-end">
-                <span>{{ ellipsis(request.path) }}</span>
-                <span v-if="hasQuery" class="badge bg-query" :title="requestQuery">?</span>
-            </div>
-        </button>
-    `,
-    inject: [ '$image', '$date' ],
-    inheritAttrs: false,
-    props: {
-        record: Object
-    },
-    data() {
-        return {
-            showCreatedAt: true,
-            showToggle: false,
-            maxLength: 30
-        }
-    },
-    computed: {
-        request() { return this.record.request },
-        response() { return this.record.response },
-        createdAt() { return this.record.createdAt.split(', ') },
-        hasQuery() { return this.queryParam !== void 0 },
-        requestQuery() { return this.hasQuery ? this.request.url.split('?')[1] : '' },
-    },
-    methods: {
-        methodBadge() {
-            return "bg-" + this.request.method.toLowerCase()
-        },
-        statusBadge() {
-            return "bg-status-" + parseInt(this.response.code/100)
-        },
-        ellipsis(path) {
-            let maxLength = this.maxLength
-
-            if (this.hasQuery) { maxLength -= 4 }
-            let result = path.length < maxLength ? path : '...' + path.substring(path.length - maxLength)
-            return result + (this.hasQuery ? ' ' : '')
-        },
-        toggleInfo(e) {
-            e.stopPropagation()
-            this.showCreatedAt = !this.showCreatedAt
         }
     }
 })

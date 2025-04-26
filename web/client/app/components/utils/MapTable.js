@@ -11,7 +11,7 @@ app.component('MapTable', {
             <tbody v-if="readOnly">
                 <tr v-for="(keyValuePair, index) in keyValuePairs" :key="index">
                     <td class="highlight" role="key">{{ keyValuePair.key }}</td>
-                    <td role="value">{{ keyValuePair.value }}</td>
+                    <td role="value">{{ supress?.includes(keyValuePair.key) ? '...' : keyValuePair.value }}</td>
                 </tr>
             </tbody>
             <tbody v-else>
@@ -30,18 +30,12 @@ app.component('MapTable', {
     `,
     emits: [ 'update', 'remove' ],
     inject: ['$image', '$map'],
-    props: { map: Object, readOnly: { type: Boolean, default: true } },
+    props: { map: Object, readOnly: { type: Boolean, default: true }, supress: Array },
     data() { return { keyValuePairs: this.$map.toKeyValuePairs(this.map) } },
     watch: { map(newMap) { this.keyValuePairs = this.$map.toKeyValuePairs(newMap) } },
-
     methods: {
-        addKey() {
-            this.keyValuePairs.push({ key: '', value: '' })
-        },
-
-        removeKey(index) {
-            this.$emit('remove', this.keyValuePairs.splice(index, 1)[0])
-        },
+        addKey() { this.keyValuePairs.push({ key: '', value: '' }) },
+        removeKey(index) { this.$emit('remove', this.keyValuePairs.splice(index, 1)[0]) },
 
         autoResize(event) {
             const el = event.currentTarget

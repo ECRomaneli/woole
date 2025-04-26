@@ -13,9 +13,8 @@ app.provide('$timer', {
 
         const execute = () => {
             if (lastArgs) {
-                fn.apply(this, lastArgs)
                 lastArgs = null
-                isScheduled = false
+                fn.apply(this, lastArgs)
             }
         }
 
@@ -24,7 +23,7 @@ app.provide('$timer', {
 
             if (!isScheduled) {
                 isScheduled = true
-                timeout = setTimeout(() => { execute() }, delay)
+                timeout = setTimeout(() => { isScheduled = false; execute() }, delay)
             }
         }
     }

@@ -1,4 +1,12 @@
 const app = Vue.createApp({
+    template: /*html*/ `
+        <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="onItemSelected" @filter-records="onFilterRecords"></sidebar>
+        <div id="body">
+            <dashboard v-if="!selectedRecord" id="dashboard" :session-details="sessionDetails" :records="sidebarRecords"></dashboard>
+            <record-viewer v-else :record="selectedRecord"></record-viewer>
+        </div>
+    `,
+
     inject: ['$woole', '$date', '$constants'],
 
     data() { return { sessionDetails: {}, selectedRecord: null, sidebarRecords: [] } },

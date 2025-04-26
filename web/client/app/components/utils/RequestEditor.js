@@ -26,7 +26,7 @@ app.component('RequestEditor', {
                     </li>
                 </ul>
 
-                <div class="tab-content">
+                <div class="tab-content overflow-auto h-100">
                     <div class="tab-pane" :class="{ active: tab === 'header' }">
                         <map-table ref="headerEditor" :map="request.header" :read-only="false" @update="updateHeader" @remove="removeHeader"></map-table>
                     </div>
@@ -35,7 +35,7 @@ app.component('RequestEditor', {
                         <map-table ref="queryParamsEditor" :map="request.queryParams" :read-only="false" @update="updateQueryParams" @remove="updateQueryParams"></map-table>
                     </div>
 
-                    <div class="tab-pane mt-3" :class="{ active: tab === 'body' }">
+                    <div class="tab-pane h-100 pt-3" :class="{ active: tab === 'body' }">
                         <code-editor ref="codeEditor" :code="request.body" :type="content.type" :readOnly="false" :minLines="20" :maxLines="39"></code-editor>
                     </div>
                 </div>
