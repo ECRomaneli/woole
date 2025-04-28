@@ -51,7 +51,7 @@ app.component('RemoteAddressDetails', {
         },
 
         searchIp(ip) {
-            this.$bus.trigger('sidebar.search', `remoteAddr*: ^\[?${this.$woole.escapeRegex(ip)}(]|:|$)`)
+            this.$bus.trigger('sidebar.search', `remoteAddr*: "^\\[?${this.$woole.escapeRegex(ip)}(]|:|$)"`)
         },
         
         getData() {

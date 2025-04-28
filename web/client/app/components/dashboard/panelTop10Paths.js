@@ -55,7 +55,7 @@ app.component('Top10Paths', {
         },
 
         searchPath(path) {
-            this.$bus.trigger('sidebar.search', 'request.path *: ^' + this.$woole.escapeRegex(path) + '$')
+            this.$bus.trigger('sidebar.search', 'request.path *: "^' + this.$woole.escapeRegex(path) + '$"')
         }
     }
 })

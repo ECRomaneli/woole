@@ -26,7 +26,7 @@ app.component('Top10RemoteAddrs', {
                 Object.values(data),
                 null,
                 null,
-                label => this.$bus.trigger('sidebar.search', `request.remoteAddr: ${label}`)
+                ip => this.$bus.trigger('sidebar.search', `remoteAddr*: "^\\[?${this.$woole.escapeRegex(ip)}(]|:|$)"`)
             )
 
             this.$chart.colorfy(this.chart)

@@ -101,7 +101,10 @@ app.component('Sidebar', {
             }
         })
 
-        this.$bus.on('sidebar.search', (search) => this.inputSearch = search)
+        this.$bus.on('sidebar.search', (search) => {
+            if (this.inputSearch) { this.inputSearch += ` and ${search}` }
+            else { this.inputSearch = search }
+        })
     },
 
     watch: { inputSearch() { this.filterRecords(this.recordList) } },
