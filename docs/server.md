@@ -25,18 +25,18 @@ Output:
 
 ## Available Options
 
-| Option                      | Description                                                                |
-|-----------------------------|----------------------------------------------------------------------------|
-| `-pattern`                  | Set the server hostname pattern. Example: `{client}.mysite.com`            |
-| `-http`                     | Port on which the server listens for HTTP requests (default `80`)          |
-| `-https`                    | Port on which the server listens for HTTPS requests (default `443`)        |
-| `-tunnel`                   | Port on which the gRPC tunnel listens (default `9653`)                     |
-| `-seed`                     | Key used to hash the client bearer                                         |
-| `-tls-cert`                 | Path to the TLS certificate or fullchain file                              |
-| `-tls-key`                  | Path to the TLS private key file                                           |
-| `-priv-key`                 | Path to the ECC private key used to validate clients (default disabled)    |
-| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-log-remote-addr`          | Log the request remote address                                             |
+| Option                      | Description                                                                 |
+|-----------------------------|-----------------------------------------------------------------------------|
+| `-pattern`                  | Set the server hostname pattern. Example: `{client}.mysite.com`             |
+| `-http`                     | Port on which the server listens for HTTP requests (default `80`)           |
+| `-https`                    | Port on which the server listens for HTTPS requests (default `443`)         |
+| `-tunnel`                   | Port on which the gRPC tunnel listens (default `9653`)                      |
+| `-seed`                     | Key used to hash the client bearer                                          |
+| `-tls-cert`                 | Path to the TLS certificate or fullchain file                               |
+| `-tls-key`                  | Path to the TLS private key file                                            |
+| `-shared-key`               | Path to the shared key used to authenticate the client. (Default: disabled) |
+| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)               |
+| `-log-remote-addr`          | Log the request remote address                                              |
 | `-tunnel-reconnect-timeout` | Timeout to reconnect the stream when the connection is lost. [Duration format](special-types.md#duration-format) (default `10s`) |
 | `-tunnel-request-size`      | Tunnel maximum request size. [Size format](special-types.md#size-format) (default `2GB`, limited by gRPC)  |
 | `-tunnel-response-size`     | Tunnel maximum response size. [Size format](special-types.md#size-format) (default `2GB`, limited by gRPC) |
@@ -79,26 +79,24 @@ The HTTPS URL is only available for certified servers. Provide the certification
         -tls-key "/etc/tls/domain/privkey.pem"
 ```
 
-## Server with ECC Authentication
+## Server Authentication
 
-To use the server authentication, generate a pair of ECC (Elliptic Curve Cryptography) keys. Follow the steps below:
+To use the server authentication, generate a shared/symmetric key file (no need to have a special format or length) and use the `-shared-key` providing the file path.
 
-### **Using OpenSSL**
+### **Example**
 
-1. **Generate the Private Key**:
+1. **Generate any shared key**:
+
    ```sh
-   openssl ecparam -genkey -name prime256v1 -noout -out private_key.pem
+   openssl rand 32 > shared.key
    ```
-   - This command generates a private key using the `prime256v1` curve.
+   - This command generates a pseudo random 32 bytes binary key.
 
-2. **Generate the Public Key**:
-   ```sh
-   openssl ec -in private_key.pem -pubout -out public_key.pem
+2. **Usage**:
+
+   Use the same key file in the server and client application:
    ```
-   - This command extracts the public key from the private key.
+   ./woole -shared-key "/path/to/file/shared/key"
+   ./woole-server -shared-key "/path/to/file/shared/key"
+   ```
 
-### **Key Usage**
-- **Server**:
-  - Use the private key (`private_key.pem`) with the `-priv-key` option to validate client connections.
-- **Client**:
-  - Share the public key with the allowed clients and use the `-server-key` option to authenticate with the server.

@@ -20,7 +20,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/server",
             "args": [
-                "-priv-key", "${workspaceFolder}/keys/private_key.pem",
+                "-shared-key", "${workspaceFolder}/keys/shared.key",
                 "-http", "8080"
             ]
         },
@@ -80,7 +80,7 @@
             "args": [
                 "-proxy", "https://www.w3schools.com/",
                 "-client", "localhost",
-                "-server-key", "${workspaceFolder}/keys/public_key.pem",
+                "-shared-key", "${workspaceFolder}/keys/shared.key",
             ]
         },
         {
@@ -115,7 +115,7 @@
             "args": [
                 "-proxy", "https://www.w3schools.com/",
                 "-client", "localhost",
-                "-records", "0"
+                "-records", "0",
             ]
         },
         {

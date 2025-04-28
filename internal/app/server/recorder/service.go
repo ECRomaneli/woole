@@ -103,7 +103,7 @@ func createSession(client *adt.Client, expireAt int64) *tunnel.Session {
 }
 
 func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
-	err := app.AuthClient(hs.PublicKey)
+	err := app.AuthClient(hs.SharedKey)
 	if err != nil {
 		log.Error(hs.ClientId, "-", err.Error())
 		return nil, err

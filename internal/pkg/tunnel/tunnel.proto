@@ -24,7 +24,7 @@ message Handshake {
     bytes clientKey = 2;
     bool allowReaders = 3;
     bytes bearer = 4;
-    bytes publicKey = 5;
+    bytes sharedKey = 5;
 }
 
 message Session {

@@ -42,23 +42,23 @@ Expire At: never
 
 ## Available Options
 
-| Option                      | Description                                                                |
-|-----------------------------|----------------------------------------------------------------------------|
-| `-client`                   | Unique identifier of the client                                            |
-| `-http`                     | Port to start the standalone server (disables tunnel)                      |
-| `-proxy`                    | URL of the target server to be proxied (default `80`)                      |
-| `-tunnel`                   | URL of the tunnel (default `9653`)                                         |
-| `-custom-host`              | Custom host to be used when proxying                                       |
-| `-sniffer`                  | Port on which the sniffer is available (default `8000`)                    |
-| `-disable-sniffer-only`     | Terminate the application when the tunnel closes                           |
-| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                       |
-| `-records`                  | Max records to store. Use `0` for unlimited (default `1000`)               |
-| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-log-remote-addr`          | Log the request remote address                                             |
-| `-tls-skip-verify`          | Disables the validation of the integrity of the Server's certificate       |
-| `-tls-ca`                   | Path to the TLS CA file (only for self-signed certificates)                |
-| `-server-key`               | Path to the ECC public key used to authenticate with the server (default disabled)   |
-| `-reconnect-attempts`       | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
+| Option                      | Description                                                                 |
+|-----------------------------|-----------------------------------------------------------------------------|
+| `-client`                   | Unique identifier of the client                                             |
+| `-http`                     | Port to start the standalone server (disables tunnel)                       |
+| `-proxy`                    | URL of the target server to be proxied (default `80`)                       |
+| `-tunnel`                   | URL of the tunnel (default `9653`)                                          |
+| `-custom-host`              | Custom host to be used when proxying                                        |
+| `-sniffer`                  | Port on which the sniffer is available (default `8000`)                     |
+| `-disable-sniffer-only`     | Terminate the application when the tunnel closes                            |
+| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                        |
+| `-records`                  | Max records to store. Use `0` for unlimited (default `1000`)                |
+| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)               |
+| `-log-remote-addr`          | Log the request remote address                                              |
+| `-tls-skip-verify`          | Disables the validation of the integrity of the Server's certificate        |
+| `-tls-ca`                   | Path to the TLS CA file (only for self-signed certificates)                 |
+| `-shared-key`               | Path to the shared key used to authenticate the client (Only if server requires it) |
+| `-reconnect-attempts`       | Maximum number of reconnection attempts. Use `0` for infinite (default `5`) |
 | `-reconnect-interval`       | Time between reconnection attempts. [Duration format](special-types.md#duration-format) (default `5s`) |
 
 ## Proxy

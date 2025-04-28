@@ -3,8 +3,6 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -38,7 +36,7 @@ type Config struct {
 	LogLevel               string
 	SnifferLogLevel        string
 	LogRemoteAddr          bool
-	ServerKey              string
+	SharedKey              string
 	tlsSkipVerify          bool
 	tlsCa                  string
 	EnableTLSTunnel        bool
@@ -105,7 +103,7 @@ func ReadConfig() *Config {
 	maxReconnectAttempts := flag.Int("reconnect-attempts", 5, "Maximum number of reconnection attempts. 0 for infinite")
 	reconnectInterval := flag.String("reconnect-interval", "5s", "Time between reconnection attempts. Duration format")
 	disableSelfRedirection := flag.Bool("disable-self-redirection", false, "Disables the self-redirection and the proxy changing")
-	serverKey := flag.String("server-key", "", "Path to the ECC public key used to authenticate (only if configured by the server)")
+	sharedKey := flag.String("shared-key", "", "Path to the shared key used to authenticate the client (Only if server requires it)")
 	tlsSkipVerify := flag.Bool("tls-skip-verify", false, "Disables the validation of the integrity of the Server's certificate")
 	tlsCa := flag.String("tls-ca", "", "Path to the TLS CA file. Only for self-signed certificates")
 
@@ -136,7 +134,7 @@ func ReadConfig() *Config {
 		LogLevel:               *logLevel,
 		SnifferLogLevel:        *snifferLogLevel,
 		LogRemoteAddr:          *logRemoteAddr,
-		ServerKey:              *serverKey,
+		SharedKey:              *sharedKey,
 		tlsSkipVerify:          *tlsSkipVerify,
 		tlsCa:                  *tlsCa,
 		DisableSnifferOnlyMode: *disableSnifferOnlyMode,
@@ -185,7 +183,7 @@ func (cfg *Config) GetHandshake() *tunnel.Handshake {
 		clientId = session.ClientId
 	}
 
-	publicKey, err := loadPublicKeyECC(cfg.ServerKey)
+	sharedKey, err := loadSharedKey(cfg.SharedKey)
 
 	if err != nil {
 		panic(err)
@@ -195,29 +193,20 @@ func (cfg *Config) GetHandshake() *tunnel.Handshake {
 		ClientId:  clientId,
 		ClientKey: cfg.ClientKey,
 		Bearer:    session.Bearer,
-		PublicKey: publicKey,
+		SharedKey: sharedKey,
 	}
 }
 
-// loadPublicKeyECC loads the public key from the configured file
-func loadPublicKeyECC(path string) ([]byte, error) {
+func loadSharedKey(path string) ([]byte, error) {
 	if path == "" {
 		return nil, nil
 	}
 
 	keyData, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read public key file: %w", err)
+		return nil, fmt.Errorf("failed to read shared key file: %w", err)
 	}
-
-	var block *pem.Block
-	for block == nil || block.Type != "PUBLIC KEY" {
-		block, keyData = pem.Decode(keyData)
-		if block == nil {
-			return nil, errors.New("invalid public key format")
-		}
-	}
-	return block.Bytes, nil
+	return keyData, nil
 }
 
 func ExpireAt() string {
