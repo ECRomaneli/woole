@@ -1,12 +1,9 @@
 package app
 
 import (
-	"crypto/ecdsa"
+	"bytes"
 	"crypto/sha512"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"flag"
 	"fmt"
 	"math"
@@ -39,7 +36,7 @@ type Config struct {
 	TunnelResponseTimeout   time.Duration
 	TunnelReconnectTimeout  time.Duration
 	TunnelConnectionTimeout time.Duration
-	privateKey              *ecdsa.PrivateKey
+	sharedKey               []byte
 	seed                    []byte
 	available               bool
 }
@@ -70,7 +67,7 @@ func ReadConfig() *Config {
 	serverLogLevel := flag.String("server-log-level", "INFO", "Level of detail for the server logs to be displayed")
 	hostnamePattern := flag.String("pattern", constants.ClientToken, "Set the server hostname pattern. Example: "+constants.ClientToken+".mysite.com to vary the subdomain")
 	seed := flag.String("seed", "", "Key used to hash the client bearer")
-	privateKey := flag.String("priv-key", "", "Path to the ECC private key used to validate clients (default \"allow unknown clients\")")
+	sharedKey := flag.String("shared-key", "", "Path to the shared key used to authenticate the client. (Default: disabled)")
 	logRemoteAddr := flag.Bool("log-remote-addr", false, "Log the request remote address")
 	tlsCert := flag.String("tls-cert", "", "Path to the TLS certificate or fullchain file")
 	tlsKey := flag.String("tls-key", "", "Path to the TLS private key file")
@@ -111,7 +108,7 @@ func ReadConfig() *Config {
 		ServerLogLevel:          *serverLogLevel,
 		HostnamePattern:         *hostnamePattern,
 		seed:                    []byte(*seed),
-		privateKey:              loadPrivateKeyECC(*privateKey),
+		sharedKey:               loadSharedKey(*sharedKey),
 		LogRemoteAddr:           *logRemoteAddr,
 		TlsCert:                 *tlsCert,
 		TlsKey:                  *tlsKey,
@@ -175,31 +172,17 @@ func (cfg *Config) GetDomain() string {
 	return strings.TrimPrefix(remainingHost, ".")
 }
 
-// loadPrivateKeyECC loads an ECC private key from a PEM file
-func loadPrivateKeyECC(path string) *ecdsa.PrivateKey {
+func loadSharedKey(path string) []byte {
 	if path == "" {
 		return nil
 	}
 
 	keyData, err := os.ReadFile(path)
 	if err != nil {
-		panic(fmt.Errorf("failed to read private key file: %w", err))
+		panic(fmt.Errorf("failed to read shared key file: %w", err))
 	}
 
-	var block *pem.Block
-	for block == nil || block.Type != "EC PRIVATE KEY" {
-		block, keyData = pem.Decode(keyData)
-		if block == nil {
-			panic(errors.New("invalid private key format"))
-		}
-	}
-
-	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
-	if err != nil {
-		panic(fmt.Errorf("failed to parse private key: %w", err))
-	}
-
-	return privateKey
+	return keyData
 }
 
 func GenerateBearer(clientKey []byte) []byte {
@@ -207,28 +190,16 @@ func GenerateBearer(clientKey []byte) []byte {
 	return hash[:]
 }
 
-func AuthClient(publicKey []byte) error {
-	if config.privateKey == nil {
+func AuthClient(sharedKey []byte) error {
+	if config.sharedKey == nil {
 		return nil
 	}
 
-	if publicKey == nil {
-		return fmt.Errorf("no authentication key provided")
+	if len(sharedKey) == 0 {
+		return fmt.Errorf("shared key is empty")
 	}
-
-	pubKey, err := x509.ParsePKIXPublicKey(publicKey)
-	if err != nil {
-		return fmt.Errorf("failed to parse public key: %w", err)
-	}
-
-	clientPubKey, ok := pubKey.(*ecdsa.PublicKey)
-	if !ok {
-		return errors.New("public key is not an ECDSA key")
-	}
-
-	// Verify that the public key matches the private key
-	if clientPubKey.Curve != config.privateKey.Curve {
-		return errors.New("failed to authenticate client: curve mismatch")
+	if !bytes.Equal(sharedKey, config.sharedKey) {
+		return fmt.Errorf("shared key mismatch")
 	}
 
 	return nil

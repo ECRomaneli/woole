@@ -1,3 +1,5 @@
+[<- Go back to "README"](../README.md)
+
 # Docker Documentation
 
 Woole can be built and run using Docker for easier setup and usage. The Dockerfile supports building images for both the client and the server. The [Dockerfile](https://github.com/ECRomaneli/woole/blob/master/docker/Dockerfile) is available under the `docker` folder in the root path of the project.

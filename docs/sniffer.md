@@ -1,4 +1,6 @@
-### Sniffing Tool Documentation
+[<- Go back to "README"](../README.md)
+
+# Sniffing Tool Documentation
 
 <p align='center'>
     <a href="https://github.com/ECRomaneli/woole" style='text-decoration:none'>
@@ -12,7 +14,7 @@ The sniffing tool is accessible through the port configured using the `sniffer` 
 ./woole -sniffer 9094
 ```
 
-#### Features
+## Features
 - Light/Dark Theme;
 - Fuzzy Search (status, host, url, name, headers, request body, cookies);
 - Media preview (audio, video [chunks are not supported], and images);
@@ -21,7 +23,7 @@ The sniffing tool is accessible through the port configured using the `sniffer` 
 - ACE Editor as viewer for the request and response body;
 - Beautify XML, HTML, JSON, javascript, and CSS bodies.
 
-#### Fuzzy Search
+## Fuzzy Search
 
 The search uses the pattern `root.parent.child: value` recursively where one or more levels can be used starting from the root parent or not. The value is optional. The root parent is not required, the search can start by any level.
 
@@ -41,7 +43,7 @@ response.header.Content-Type: xml
 
 Note that the value does not need to match the entire field. Also, the response body is not available when searching, because the response body is loaded on demand to reduce the resources and increase the performance of the sniffer.
 
-#### Regex
+## Regex
 
 Using the separator `*:` instead of `:`, the right side of the query will be parsed as a regex. Example:
 
@@ -49,7 +51,7 @@ Using the separator `*:` instead of `:`, the right side of the query will be par
 response.code *: ^2[0-9]{2}$
 ```
 
-#### Number Range
+## Number Range
 
 Using the separator `~:` instead of `:`, the right side of the query will be parsed as a range. The left side of the query must be a parsable float. Example:
 
@@ -59,7 +61,7 @@ response.elapsed ~: 0ms-101ms
 
 Note that non-numeric characters are also allowed. However, they will not be validated or parsed. They are a semanthic help to the developer.
 
-#### Hierarchical Structure
+## Hierarchical Structure
 
 ```
 request

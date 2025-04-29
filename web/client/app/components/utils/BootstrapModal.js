@@ -10,7 +10,7 @@ app.component('Modal', {
                         </div>
                     </slot>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body d-flex flex-column">
                     <slot name="body"></slot>
                 </div>
                 <div class="modal-footer">
@@ -24,6 +24,12 @@ app.component('Modal', {
     props: { fitHeight: { type: Boolean, default: false } },
     data() { return { emitDelay: 100 } },
     mounted() { this.modal = new bootstrap.Modal(this.$refs.modal) },
+    unmounted() {
+        if (this.modal) {
+            this.modal.dispose();
+            this.modal = null;
+        }
+    },
     methods: {
         show() {
             this.modal.show()

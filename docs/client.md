@@ -1,8 +1,10 @@
-## Client Documentation
+[<- Go back to "README"](../README.md)
 
-### Basic Usage
+# Client Documentation
 
-#### Using a standalone server (provided by the client)
+## Basic Usage
+
+### Using a standalone server (provided by the client)
 
 ```sh
 ./woole -http 80 -proxy https://github.com/ECRomaneli/woole
@@ -19,7 +21,7 @@ Expire At:  never
 ```
 *More about standalone config under the [Standalone Mode section](#standalone-mode).*
 
-#### Using the tunnel to connect with an external server
+### Using the tunnel to connect with an external server
 
 ```sh
 ./woole -proxy https://github.com/ECRomaneli/woole -tunnel woole.me
@@ -38,28 +40,28 @@ Expire At: never
 
 *The HTTPS URL requires a certified Server. Otherwise, only the HTTP URL will be displayed.*
 
-### Available Options
+## Available Options
 
-| Option                      | Description                                                                |
-|-----------------------------|----------------------------------------------------------------------------|
-| `-client`                   | Unique identifier of the client                                            |
-| `-http`                     | Port to start the standalone server (disables tunnel)                      |
-| `-proxy`                    | URL of the target server to be proxied (default `80`)                      |
-| `-tunnel`                   | URL of the tunnel (default `9653`)                                         |
-| `-custom-host`              | Custom host to be used when proxying                                       |
-| `-sniffer`                  | Port on which the sniffer is available (default `8000`)                    |
-| `-disable-sniffer-only`     | Terminate the application when the tunnel closes                           |
-| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                       |
-| `-records`                  | Max records to store. Use `0` for unlimited (default `1000`)               |
-| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)              |
-| `-log-remote-addr`          | Log the request remote address                                             |
-| `-tls-skip-verify`          | Disables the validation of the integrity of the Server's certificate       |
-| `-tls-ca`                   | Path to the TLS CA file (only for self-signed certificates)                |
-| `-server-key`               | Path to the ECC public key used to authenticate with the server (default disabled)   |
-| `-reconnect-attempts`       | Maximum number of reconnection attempts. Use `0` for infinite (default `5`)|
+| Option                      | Description                                                                 |
+|-----------------------------|-----------------------------------------------------------------------------|
+| `-client`                   | Unique identifier of the client                                             |
+| `-http`                     | Port to start the standalone server (disables tunnel)                       |
+| `-proxy`                    | URL of the target server to be proxied (default `80`)                       |
+| `-tunnel`                   | URL of the tunnel (default `9653`)                                          |
+| `-custom-host`              | Custom host to be used when proxying                                        |
+| `-sniffer`                  | Port on which the sniffer is available (default `8000`)                     |
+| `-disable-sniffer-only`     | Terminate the application when the tunnel closes                            |
+| `-disable-self-redirection` | Disables the self-redirection and the proxy changing                        |
+| `-records`                  | Max records to store. Use `0` for unlimited (default `1000`)                |
+| `-log-level`                | Level of detail for the logs to be displayed (default `INFO`)               |
+| `-log-remote-addr`          | Log the request remote address                                              |
+| `-tls-skip-verify`          | Disables the validation of the integrity of the Server's certificate        |
+| `-tls-ca`                   | Path to the TLS CA file (only for self-signed certificates)                 |
+| `-shared-key`               | Path to the shared key used to authenticate the client (Only if server requires it) |
+| `-reconnect-attempts`       | Maximum number of reconnection attempts. Use `0` for infinite (default `5`) |
 | `-reconnect-interval`       | Time between reconnection attempts. [Duration format](special-types.md#duration-format) (default `5s`) |
 
-### Proxy
+## Proxy
 
 Woole is capable to proxy local and online HTTP and HTTPS webservers. Custom names defined using a DNS or `hosts` file are also supported.
 
@@ -69,7 +71,7 @@ Define the URL to proxy using the option `-proxy`. The URL must follows one of [
 ./woole -proxy <port>
 ```
 
-#### Custom Host
+### Custom Host
 
 The `-custom-host` option allows you to specify a custom host to be used in HTTP requests when proxying. The custom host will always take precedence, even in cases of self-redirection, which may lead to unexpected behavior.
 
@@ -78,7 +80,7 @@ The `-custom-host` option allows you to specify a custom host to be used in HTTP
 ./woole -proxy 8080 -custom-host mywebsite.com
 ```
 
-#### Redirections
+### Redirections
 
 During navigation, the application may encounter HTTP 302 (Redirect) responses, which can prevent Woole from continuing to use the original proxied URL. To maintain tracking, Woole will automatically update the proxy to follow the new host provided in the redirection.
 
@@ -91,18 +93,18 @@ To disable this behavior, use the following option:
 ```
 
 
-### Client ID
+## Client ID
 
 The `-client` is optional. However, when creating the URL, the provided client ID will be prioritized.
 Read more about the URL and how the client is used by the server in the [Server Hostname Pattern](special-types.md#hostname-pattern) section.
 
-### Standalone Mode
+## Standalone Mode
 
 Standalone mode initiates a self-served HTTP server via the Woole client. In this mode, the client bypasses the need for a tunnel connection, and can be used as a local sniffing tool and reverse proxy. 
 
 To enable it, provide the port using the option `-http`. If a custom name is provided along with the port, the URL will only be accessible through it.
 
-#### Example
+### Example
 
 ```sh
 ./woole -http 80 -proxy <internal-or-external-url>
@@ -114,7 +116,7 @@ To enable it, provide the port using the option `-http`. If a custom name is pro
 
 When using the Standalone mode, the tunnel related options are going to be ignored.
 
-### Tunnel
+## Tunnel
 
 To use the tunneling tool, a server must be configured and provided using the `tunnel` option.
 
@@ -129,21 +131,21 @@ A single server allows many client connections at the same time. Once configured
 
 If the objective is to only use the sniffing tool and the reverse proxy, without the tunnel, consider using the [Standalone Mode](#standalone-mode).
 
-### Troubleshooting
+## Troubleshooting
 
-#### Expired or unsafe cerficate
+### Expired or unsafe cerficate
 
 For servers with expired or unsafe certificates, if trusted by the user, use the option `-tls-skip-verify` to disable the validation of the integrity. Otherwise, the connection with the tunnel will not be possible. This is only required by HTTPS servers.
 
-#### [EXPERIMENTAL] Self-signed Certificates
+### [EXPERIMENTAL] Self-signed Certificates
 
 If the server and the client shares a self-signed certificate, use the `-tls-ca` option to provide the CA file path.
 
-#### Requests not showing
+### Requests not showing
 
 Some browsers and websites utilize efficient caching mechanisms to minimize unnecessary requests. To temporarily disable this caching, disable the cache in your browser's DevTools (Network tab > Check "Disable Cache") and remove any cache headers from website requests. Note that this behavior is not a bug.
 
-#### Sniffer-Only Mode
+### Sniffer-Only Mode
 
 When the tunnel closes after a successful session, the application remains active to provide access to the Sniffer and previously recorded data. This is the "Sniffer-Only" mode.
 
