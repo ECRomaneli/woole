@@ -2,8 +2,9 @@ app.component('StatusChart', {
     template: /*html*/ `
         <box maximizable="false" label="Status Codes">
             <template #body>
-                <div class="stats-chart">
-                    <canvas ref="canvas"></canvas>
+                <div class="stats-chart d-flex align-items-center justify-content-center">
+                    <canvas v-show="records.length" ref="canvas"></canvas>
+                    <span v-if="!records.length" class="h4">NO DATA</span>
                 </div>
             </template>
         </box>

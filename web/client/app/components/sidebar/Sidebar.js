@@ -62,6 +62,7 @@ app.component('Sidebar', {
     created() {
         let range = { lastEnd: null, end: null }
         let debounce = this.$timer.debounceWithThreshold(() => {
+            this.recordList.sort((a, b) => b.clientId - a.clientId)
             range.end = this.recordList.length
             if (this.maxRecords && this.recordList.length > this.maxRecords) {
                 // Remove records that are not in the range
@@ -69,7 +70,8 @@ app.component('Sidebar', {
                 this.filterRecords(this.recordList)
                 return
             }
-            this.appendRecords(this.recordList.slice(0, range.end - range.lastEnd))
+            
+            this.filterRecords(this.recordList)
             range.lastEnd = range.end
         }, 250)
 
@@ -83,7 +85,6 @@ app.component('Sidebar', {
 
         this.$bus.on('stream.new-record', (rec) => {
             this.recordList.unshift(rec)
-            this.recordList.sort((a, b) => b.clientId - a.clientId)
             debounce()
         })
 
@@ -148,16 +149,6 @@ app.component('Sidebar', {
 
         emitFilterRecords() {
             this.$emit('filter-records', this.filteredRecordList.slice())
-        },
-
-        appendRecords(recordList) {
-            if (!recordList.length) return
-            
-            const newFilteredRecords = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
-            if (newFilteredRecords.length) {
-                this.filteredRecordList.unshift(...newFilteredRecords)
-                this.postponeEmitFilterRecords()
-            }
         },
 
         toggleTheme() {
