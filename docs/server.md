@@ -9,14 +9,14 @@ Please note that domains and hosting services are not included with Woole Server
 ## Basic Usage
 
 ```sh
-./woole-server 
+./woole-server -pattern {client}.mywebsite.com
 ```
 
-Output:
+**Output:**
+
 ```
 ╒═════════════════════════════════════════════════════╕
 │   HTTP listening on: http://{client}.mywebsite.com  |
-│  HTTPS listening on: https://{client}.mywebsite.com |
 │ Tunnel listening on: grpc://mywebsite.com:9653      |
 ╘═════════════════════════════════════════════════════╛
 ```
@@ -75,8 +75,19 @@ The HTTPS URL is only available for certified servers. Provide the certification
 
 ```sh
     ./woole-server \
+        -pattern {client}.mywebsite.com \
         -tls-cert "/etc/tls/domain/fullchain.pem" \
         -tls-key "/etc/tls/domain/privkey.pem"
+```
+
+**Output:**
+
+```
+╒═════════════════════════════════════════════════════╕
+│   HTTP listening on: http://{client}.mywebsite.com  |
+│  HTTPS listening on: https://{client}.mywebsite.com |
+│ Tunnel listening on: grpc://mywebsite.com:9653      |
+╘═════════════════════════════════════════════════════╛
 ```
 
 ## Server Authentication
