@@ -50,6 +50,7 @@ Working completely **offline**.
 ```
 
 **Output:**
+
 ```
 ╒══════════════════════════════════╕
 │  HTTP URL: http://localhost:81   │
@@ -68,6 +69,7 @@ Analyze the requests of any website.
 ```
 
 **Output:**
+
 ```
 ╒══════════════════════════════════╕
 │  HTTP URL: http://localhost:81   │
@@ -86,14 +88,15 @@ The server is only needed to receive requests from the internet and expose the r
 ```
 
 **Output:**
+
 ```
-╒════════════════════════════════════════════════╕
-│  HTTP URL: http://anything.woole.me            │
-│ HTTPS URL: https://anything.woole.me           │
-│  Proxying: https://github.com/ECRomaneli/woole │
-│   Sniffer: http://localhost:8000               │
-│ Expire At: never                               │
-╘════════════════════════════════════════════════╛
+╒══════════════════════════════════════╕
+│  HTTP URL: http://anything.woole.me  │
+│ HTTPS URL: https://anything.woole.me │
+│  Proxying: https://github.com        │
+│   Sniffer: http://localhost:8000     │
+│ Expire At: never                     │
+╘══════════════════════════════════════╛
 ```
 
 ## Sniffer
