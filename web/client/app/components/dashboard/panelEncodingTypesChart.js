@@ -2,11 +2,9 @@ app.component('EncodingTypesChart', {
     template: /*html*/ `
         <box maximizable="false" label="Encoding Types">
             <template #body>
-                <div v-show="records.length" class="stats-chart">
-                    <canvas ref="canvas"></canvas>
-                </div>
-                <div v-if="!records.length" class="stats-chart d-flex align-items-center justify-content-center">
-                    <span class="h4">NO DATA</span>
+                <div class="stats-chart d-flex align-items-center justify-content-center">
+                    <canvas v-show="records.length" ref="canvas"></canvas>
+                    <span v-if="!records.length" class="h4">NO DATA</span>
                 </div>
             </template>
         </box>
