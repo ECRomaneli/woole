@@ -7,17 +7,17 @@
 ### Using a standalone server (provided by the client)
 
 ```sh
-./woole -http 80 -proxy https://github.com/ECRomaneli/woole
+./woole -http 8080 -proxy https://github.com/ECRomaneli/woole
 ```
 
 Output:
 ```
-===============
- HTTP URL:  http://localhost
- Proxying:  https://github.com/ECRomaneli/woole
-  Sniffer:  http://localhost:8000
-Expire At:  never
-===============
+╒════════════════════════════════════════════════╕
+│  HTTP URL: http://localhost:8080               │
+│  Proxying: https://github.com/ECRomaneli/woole │
+│   Sniffer: http://localhost:8000               │
+│ Expire At: never                               │
+╘════════════════════════════════════════════════╛
 ```
 *More about standalone config under the [Standalone Mode section](#standalone-mode).*
 
@@ -29,13 +29,13 @@ Expire At:  never
 
 Output:
 ```
-===============
- HTTP URL: http://x5ck9p8e.woole.me
-HTTPS URL: https://x5ck9p8e.woole.me
- Proxying: https://github.com/ECRomaneli/woole
-  Sniffer: http://localhost:8000
-Expire At: never
-===============
+╒════════════════════════════════════════════════╕
+│  HTTP URL: http://d123e384.woole.me            │
+│ HTTPS URL: https://d123e384.woole.me           │
+│  Proxying: https://github.com/ECRomaneli/woole │
+│   Sniffer: http://localhost:8000               │
+│ Expire At: 2025-04-29 05:05:32 AM -03          │
+╘════════════════════════════════════════════════╛
 ```
 
 *The HTTPS URL requires a certified Server. Otherwise, only the HTTP URL will be displayed.*

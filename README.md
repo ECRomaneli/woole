@@ -51,12 +51,12 @@ Working completely **offline**.
 
 **Output:**
 ```
-===============
- HTTP URL:  http://localhost:81
- Proxying:  http://localhost:8080
-  Sniffer:  http://localhost:8000
-Expire At:  never
-===============
+╒══════════════════════════════════╕
+│  HTTP URL: http://localhost:81   │
+│  Proxying: http://localhost:8080 │
+│   Sniffer: http://localhost:8000 │
+│ Expire At: never                 │
+╘══════════════════════════════════╛
 ```
 
 ### Proxying the `github.com` website and serving into the local port `81`:
@@ -69,12 +69,12 @@ Analyze the requests of any website.
 
 **Output:**
 ```
-===============
- HTTP URL:  http://localhost:81
- Proxying:  https://github.com
-  Sniffer:  http://localhost:8000
-Expire At:  never
-===============
+╒══════════════════════════════════╕
+│  HTTP URL: http://localhost:81   │
+│  Proxying: https://github.com    │
+│   Sniffer: http://localhost:8000 │
+│ Expire At: never                 │
+╘══════════════════════════════════╛
 ```
 
 ### Using the tunnel to connect with an external server
@@ -87,13 +87,13 @@ The server is only needed to receive requests from the internet and expose the r
 
 **Output:**
 ```
-===============
- HTTP URL: http://anything.woole.me
-HTTPS URL: https://anything.woole.me
- Proxying: https://github.com
-  Sniffer: http://localhost:8000
-Expire At: never
-===============
+╒════════════════════════════════════════════════╕
+│  HTTP URL: http://anything.woole.me            │
+│ HTTPS URL: https://anything.woole.me           │
+│  Proxying: https://github.com/ECRomaneli/woole │
+│   Sniffer: http://localhost:8000               │
+│ Expire At: never                               │
+╘════════════════════════════════════════════════╛
 ```
 
 ## Sniffer
