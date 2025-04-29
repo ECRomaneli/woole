@@ -10,7 +10,8 @@
 ./woole -http 8080 -proxy https://github.com/ECRomaneli/woole
 ```
 
-Output:
+**Output:**
+
 ```
 ╒════════════════════════════════════════════════╕
 │  HTTP URL: http://localhost:8080               │
@@ -27,18 +28,37 @@ Output:
 ./woole -proxy https://github.com/ECRomaneli/woole -tunnel woole.me
 ```
 
-Output:
+**Output:**
+
 ```
 ╒════════════════════════════════════════════════╕
 │  HTTP URL: http://d123e384.woole.me            │
 │ HTTPS URL: https://d123e384.woole.me           │
 │  Proxying: https://github.com/ECRomaneli/woole │
 │   Sniffer: http://localhost:8000               │
-│ Expire At: 2025-04-29 05:05:32 AM -03          │
+│ Expire At: never                               │
 ╘════════════════════════════════════════════════╛
 ```
 
-*The HTTPS URL requires a certified Server. Otherwise, only the HTTP URL will be displayed.*
+### External server with client name
+
+```sh
+./woole -proxy https://github.com/ECRomaneli/woole -tunnel woole.me -client anything-here
+```
+
+**Output:**
+
+```
+╒════════════════════════════════════════════════╕
+│  HTTP URL: http://anything-here.woole.me       │
+│ HTTPS URL: https://anything-here.woole.me      │
+│  Proxying: https://github.com/ECRomaneli/woole │
+│   Sniffer: http://localhost:8000               │
+│ Expire At: never                               │
+╘════════════════════════════════════════════════╛
+```
+
+*The HTTPS URL requires a [certified Server](server.md#using-https). Otherwise, only the HTTP URL will be displayed.*
 
 ## Available Options
 
