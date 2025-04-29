@@ -14,11 +14,11 @@ Please note that domains and hosting services are not included with Woole Server
 
 Output:
 ```
-===============
-   HTTP listening on http://{client}.mywebsite.com
-  HTTPS listening on https://{client}.mywebsite.com
- Tunnel listening on grpc://mywebsite.com:9653
-===============
+╒═════════════════════════════════════════════════════╕
+│   HTTP listening on: http://{client}.mywebsite.com  |
+│  HTTPS listening on: https://{client}.mywebsite.com |
+│ Tunnel listening on: grpc://mywebsite.com:9653      |
+╘═════════════════════════════════════════════════════╛
 ```
 
 *To provide an HTTPS server, the server must be certified. Consult the [Using HTTPS](#using-https) section for more details.*
