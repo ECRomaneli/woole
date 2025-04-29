@@ -175,7 +175,8 @@
             "program": "${workspaceFolder}/cmd/client",
             "args": [
                 "-proxy", "https://www.w3schools.com/",
-                "-tunnel", "woole.me"
+                "-tunnel", "woole.me",
+                "-log-remote-addr"
             ]
         },
         {
