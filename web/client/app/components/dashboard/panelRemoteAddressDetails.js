@@ -10,7 +10,8 @@ app.component('RemoteAddressDetails', {
                                 <th class="w-100">Paths</th>
                                 <th>Records</th>
                                 <th>Size</th>
-                                <th>Avg Time (ms)</th>
+                                <th>Avg Time</th>
+                                <th>Avg Server Time</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -19,7 +20,8 @@ app.component('RemoteAddressDetails', {
                                 <td class="paths-column">{{ data.paths }}</td>
                                 <td>{{ data.count }}</td>
                                 <td>{{ data.totalSize }}</td>
-                                <td>{{ data.avgResponseTime }}</td>
+                                <td>{{ data.avgResponseTime }}ms</td>
+                                <td>{{ data.avgServerTime }}ms</td>
                             </tr>
                         </tbody>
                     </table>
@@ -63,6 +65,7 @@ app.component('RemoteAddressDetails', {
                 const ip = this.$woole.parseAddress(record.request.remoteAddr)?.ip
                 const path = record.request.path
                 const responseTime = record.response.elapsed || 0
+                const serverTime = record.response.serverElapsed || 0
                 const contentLength = parseInt(record.response.getHeader('Content-Length', 0), 10)
 
                 data = ipData[ip]
@@ -71,6 +74,7 @@ app.component('RemoteAddressDetails', {
                     data = {
                         paths: [],
                         totalResponseTime: 0,
+                        totalServerTime: 0,
                         totalSize: 0,
                         count: 0
                     }
@@ -82,6 +86,7 @@ app.component('RemoteAddressDetails', {
                 }
 
                 data.totalResponseTime += responseTime
+                data.totalServerTime += serverTime
                 data.totalSize += contentLength
                 data.count += 1
             })
@@ -92,7 +97,8 @@ app.component('RemoteAddressDetails', {
                     paths: data.paths.join(', ').slice(0, 360),
                     count: data.count,
                     totalSize: this.$woole.parseSize(data.totalSize),
-                    avgResponseTime: Math.round(data.totalResponseTime / data.count)
+                    avgResponseTime: Math.round(data.totalResponseTime / data.count),
+                    avgServerTime: Math.round(data.totalServerTime / data.count)
                 }
             })
 
