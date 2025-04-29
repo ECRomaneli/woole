@@ -209,10 +209,8 @@ func (recs *Record) ToString(logRemoteAddr bool, maxPathLength int) string {
 	}
 
 	// Write elapsed time
-	sb.WriteString(" - c: ")
+	sb.WriteString(" - ")
 	sb.WriteString(strconv.FormatInt(int64(recs.Response.Elapsed), 10))
-	sb.WriteString("ms / s: ")
-	sb.WriteString(strconv.FormatInt(int64(recs.Response.ServerElapsed), 10))
 	sb.WriteString("ms")
 
 	return sb.String()
