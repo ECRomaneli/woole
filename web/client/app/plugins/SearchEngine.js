@@ -23,7 +23,7 @@ app.use({
             if (objList === void 0 || objList === null) { return [] }
             if (queryStr === void 0 || queryStr === null || queryStr.trim() === EMPTY_STR) { return objList.slice() }
 
-            return evaluateConditions(objList, extractConditionsFromQuery(queryStr.toLowerCase()), exclude)
+            return [...evaluateConditions(objList, extractConditionsFromQuery(queryStr.toLowerCase()), exclude)]
         }
 
         function findQuery(obj, query, nestedKeys, excludedKeys, keyFound) {
@@ -166,11 +166,9 @@ app.use({
                 
                 if (previousOperator && previousOperator === Operator.OR) {
                     const nextResults = evaluateCondition(objList, condition, exclude)
-                    currentResults = [...new Set([...currentResults, ...nextResults])]
-                } else if (condition.conditions) {
-                    currentResults = evaluateCondition(currentResults, condition, exclude)
+                    currentResults.add(...nextResults)
                 } else {
-                    currentResults = currentResults.filter(obj => condition.negated !== findQuery(obj, condition, EMPTY_STR, exclude))
+                    currentResults = evaluateCondition(currentResults, condition, exclude)
                 }
             }
             
@@ -179,7 +177,11 @@ app.use({
         
         function evaluateCondition(objList, condition, exclude) {
             if (condition.conditions) { return evaluateConditions(objList, condition, exclude) }
-            return objList.filter(obj => condition.negated !== findQuery(obj, condition, EMPTY_STR, exclude))
+            const resultSet = new Set()
+            objList.forEach(obj => {
+                condition.negated !== findQuery(obj, condition, EMPTY_STR, exclude) && resultSet.add(obj)
+            })
+            return resultSet
         }
         
 
