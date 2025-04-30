@@ -44,6 +44,10 @@
     --body-color: #8b949e;
 }
 
+#app[data-theme="dark"] .box {
+    --header-background-color: #12171e;
+}
+
 #app[data-theme="dark"] .badge {
     --background-color: #8885;
     --color: #fff;

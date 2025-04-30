@@ -1,9 +1,9 @@
-app.component('Top10Paths', {
+app.component('TopPathsList', {
     template: /*html*/ `
-        <box maximizable="false" label="Top Requested Paths">
+        <box maximizable="false" label="Top 10 Requested Paths">
             <template #body>
-                <div class="stats-table" style="max-height: 250px overflow-y: auto">
-                    <table class="table table-sm table-hover m-0">
+                <div class="stats-table">
+                    <table class="table table-sm table-striped table-hover m-0">
                         <thead>
                             <tr>
                                 <th>Path</th>

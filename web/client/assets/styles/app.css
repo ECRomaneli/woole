@@ -60,7 +60,16 @@
     z-index: 1000;
 }
 
-.box-body {
+.box .box-header {
+    background-color: var(--header-background-color);
+    border-bottom: 0 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* border-bottom-color: var(--divider-border-color) !important; */
+}
+
+.box .box-body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -70,10 +79,6 @@
 .box .maximize-btn,
 .box .redirect-btn {
     cursor: pointer;
-}
-
-.box .border-bottom {
-    border-bottom-color: var(--divider-border-color) !important;
 }
 
 /* Buttons & Badges ==================== */
@@ -547,11 +552,19 @@
 
 #dashboard .stats-card {
     height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 #dashboard .stats-chart,
 #dashboard .stats-table {
     height: 325px;
+}
+
+#dashboard .stats-table th {
+    padding-right: 15px;
 }
 
 #dashboard .remote-address-table tr,

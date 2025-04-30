@@ -1,9 +1,9 @@
-app.component('RemoteAddressDetails', {
+app.component('RemoteAddressList', {
     template: /*html*/ `
         <box maximizable="false" label="Remote Address Details">
             <template #body>
                 <div class="stats-table remote-address-table">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-sm table-striped table-hover m-0">
                         <thead>
                             <tr>
                                 <th>Address</th>
