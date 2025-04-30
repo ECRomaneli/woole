@@ -7,15 +7,15 @@ app.component('TopPathsList', {
                         <thead>
                             <tr>
                                 <th>Path</th>
-                                <th class="text-end">Count</th>
-                                <th class="text-end">Avg Time</th>
+                                <th style="width: 55px">Count</th>
+                                <th style="width: 85px">Avg Time</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="path in data" :key="path.path" @click="searchPath(path.path)">
                                 <td class="text-truncate" style="max-width: 200px" :title="path.path">{{ path.path }}</td>
-                                <td class="text-end">{{ path.count }}</td>
-                                <td class="text-end">{{ path.avgTime }}ms</td>
+                                <td>{{ path.count }}</td>
+                                <td>{{ path.avgTime }}ms</td>
                             </tr>
                         </tbody>
                     </table>
