@@ -78,7 +78,12 @@ app.component('CodeEditor', {
                 }
 
                 this.setEditorMode(this.type)
-                this.setCode(this.code)
+                if (this.code && this.code.length > 10000) {
+                    this.setCode(this.code.substring(0, 10000))
+                    setTimeout(() => { this.setCode(this.code) }, 1500)
+                } else {
+                    this.setCode(this.code)
+                }
             } catch (e) {
                 console.error('Error creating editor:', e)
             }
