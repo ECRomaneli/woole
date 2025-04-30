@@ -14,7 +14,8 @@ app.component('CodeEditor', {
         </div>
     `,
     inject: [ '$beautifier' ],
-    props: { type: String, code: String, readOnly: Boolean, 
+    props: { type: String, code: String, 
+            readOnly: { type: Boolean, default: false }, 
             minLines: { type: Number, default: 5 }, 
             maxLines: { type: Number, default: Infinity }
      },

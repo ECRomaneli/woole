@@ -2,10 +2,10 @@ app.component('Box', {
     template: /*html*/ `
         <div class="pe-2 pb-2">
             <div ref="box" class="box h-100" :class="{ 'maximized': maximized, 'transparent': transparent }">
-                <div class="d-flex justify-content-between align-items-center py-2 px-1 border-bottom">
+                <div class="box-header py-2 px-1">
                     <div class="d-inline-flex pe-none">
                         <img v-if="labelImg" class="svg-icon square-24 ms-2" :src="$image.src(labelImg)" :alt="label">
-                        <span class="h5 m-0 ms-2">{{ label }}</span>
+                        <span class="h6 align-content-center m-0 ms-2">{{ label }}</span>
                     </div>
                     <div class="btn-toolbar">
                         <slot name="buttons"></slot>

@@ -1,6 +1,6 @@
-app.component('Top10RemoteAddrs', {
+app.component('topRemoteAddrsChart', {
     template: /*html*/ `
-        <box maximizable="false" label="Top Remote Addresses">
+        <box maximizable="false" label="Top 10 Remote Addresses">
             <template #body>
                 <div class="stats-chart d-flex align-items-center justify-content-center">
                     <canvas v-show="records.length" ref="canvas"></canvas>
