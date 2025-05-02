@@ -16,14 +16,29 @@ The sniffing tool is accessible through the port configured using the `sniffer` 
 
 ## Features
 - Light/Dark Theme;
-- Fuzzy Search (status, host, url, name, headers, request body, cookies);
+- Deep Search (status, host, url, name, headers, request body, cookies);
 - Media preview (audio, video [chunks are not supported], and images);
 - Replay requests with or without changes (with editor);
 - Generate request cURLs;
 - ACE Editor as viewer for the request and response body;
 - Beautify XML, HTML, JSON, javascript, and CSS bodies.
 
-## Fuzzy Search
+## Search Engine
+
+Woole incorporates a powerful search engine available as the [woole-search](https://www.npmjs.com/package/woole-search) npm package. This engine enables complex querying capabilities including boolean operators, regex matching, and numeric range searches.
+
+### Basic Query Syntax
+
+- Simple search: `term` - Finds objects containing "term" in any field
+- Field-specific: `field:value` - Searches for "value" in the specified field
+- Boolean operations: `term1 and term2`, `term1 or term2`
+- Negation: `not term` - Excludes objects matching the term
+- Grouping: `(term1 or term2) and term3`
+
+For complete documentation, examples, and advanced usage:
+- [Search-Engine Repository](https://github.com/ECRomaneli/Search-Engine#readme)
+
+## Deep Search
 
 The search uses the pattern `root.parent.child: value` recursively where one or more levels can be used starting from the root parent or not. The value is optional. The root parent is not required, the search can start by any level.
 

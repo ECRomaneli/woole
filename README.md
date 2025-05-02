@@ -115,7 +115,7 @@ The sniffing tool is accessible through the port configured using the `sniffer` 
 
 #### Features
 - Light/Dark Theme;
-- Fuzzy Search (status, host, url, name, headers, request body, cookies);
+- Deep Search (status, host, url, name, headers, request body, cookies);
 - Media preview (audio, video [chunks are not supported], and images);
 - Replay requests with or without changes (with editor);
 - Generate request cURLs;
