@@ -42,7 +42,7 @@ app.component('Sidebar', {
             <request-editor ref="reqEditor"></request-editor>
         </nav>
     `,
-    inject: [ '$search', '$image', '$timer' ],
+    inject: [ '$image', '$timer' ],
     emits: [ 'item-selected', 'filter-records' ],
     props: { maxRecords: Number },
 
@@ -143,7 +143,7 @@ app.component('Sidebar', {
         },
 
         filterRecords(recordList) {
-            this.filteredRecordList = this.$search(recordList, this.inputSearch, this.excludeFromSearch)
+            this.filteredRecordList = SearchEngine.search(recordList, this.inputSearch, this.excludeFromSearch)
             this.postponeEmitFilterRecords()
         },
 
