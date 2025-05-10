@@ -59,25 +59,29 @@ Run one of the following commands to automatically download the latest Dockerfil
 #### Using curl
 
 Client:
+
 ```sh
-curl -s https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build -t woole -f - .
+curl -s https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build --no-cache -t woole -f - .
 ```
 
 Server:
+
 ```sh
-curl -s https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build -t woole-server --build-arg MODULE=server -f - .
+curl -s https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build --no-cache -t woole-server --build-arg MODULE=server -f - .
 ```
 
 #### Using wget
 
 Client:
+
 ```sh
-wget -4 -q -O - https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build -t woole -f - .
+wget -4 -q -O - https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build --no-cache -t woole -f - .
 ```
 
 Server:
+
 ```sh
-wget -4 -q -O - https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build -t woole-server --build-arg MODULE=server -f - . 
+wget -4 -q -O - https://raw.githubusercontent.com/ECRomaneli/woole/master/docker/Dockerfile | docker build --no-cache -t woole-server --build-arg MODULE=server -f - .
 ```
 
 ## How to use
