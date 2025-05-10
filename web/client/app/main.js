@@ -1,3 +1,10 @@
+window.addEventListener('load', async () => {
+    await loadScripts('app/providers')
+    await loadScripts('app/plugins')
+    await loadScripts('app/components')
+    app.mount('#app')
+})
+
 const app = Vue.createApp({
     template: /*html*/ `
         <sidebar ref='sidebar' :max-records="sessionDetails.maxRecords" @item-selected="onItemSelected" @filter-records="onFilterRecords"></sidebar>
