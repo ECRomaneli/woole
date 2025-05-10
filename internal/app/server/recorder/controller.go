@@ -7,6 +7,7 @@ import (
 	"woole/internal/pkg/tunnel"
 
 	"github.com/ecromaneli-golang/http/webserver"
+	"google.golang.org/grpc/peer"
 )
 
 // REST -> [ALL] /**
@@ -52,13 +53,13 @@ func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	}
 
 	// Recover client session if exists
-	client, err := getClient(hs.Handshake)
+	client, err := getClient(hs.Handshake, getContextIp(ctx))
 	if err != nil {
 		return err
 	}
 
 	client.Connect()
-	log.Info(client.Id, "- Tunnel Connected")
+	log.Info(client.LogPrefix(), "- Tunnel Connected")
 
 	var expireAt int64 = 0
 
@@ -87,10 +88,10 @@ func (_t *Tunnel) Tunnel(stream tunnel.Tunnel_TunnelServer) error {
 	<-ctx.Done()
 
 	if ctx.Err() != context.DeadlineExceeded {
-		log.Info(client.Id, "- Tunnel Disconnected")
+		log.Info(client.LogPrefix(), "- Tunnel Disconnected")
 		client.SetIdleTimeout(config.TunnelReconnectTimeout)
 	} else {
-		log.Info(client.Id, "- Tunnel Expired")
+		log.Info(client.LogPrefix(), "- Tunnel Expired")
 		client.SetIdleTimeout(0)
 	}
 
@@ -114,4 +115,15 @@ func hasClient(clientId string) bool {
 	}
 
 	return true
+}
+
+func getContextIp(ctx context.Context) string {
+	if config.LogRemoteAddr {
+		if p, ok := peer.FromContext(ctx); ok {
+			return p.Addr.String()
+		} else {
+			return "unknown"
+		}
+	}
+	return ""
 }

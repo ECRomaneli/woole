@@ -8,9 +8,9 @@ ARG ARGS=""
 
 WORKDIR /app
 
-RUN git clone --branch ${VERSION} https://github.com/ecromaneli/woole.git .
+RUN git clone --depth 1 --branch ${VERSION} https://github.com/ecromaneli/woole.git .
 
-RUN cd cmd/${MODULE} && go build -o ../../bin/woole .
+RUN cd cmd/${MODULE} && go build -a -o ../../bin/woole .
 
 FROM alpine:latest
 
