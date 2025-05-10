@@ -3,15 +3,15 @@ name: Build, Test and Release
 on:
   push:
     branches:
-      - main
-      - develop
+      - release/*
+      - hotfix/*
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
       - develop
-
+  workflow_dispatch:
 jobs:
   build:
     strategy:
@@ -72,5 +72,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: woole-${{ matrix.osName }}-${{ matrix.arch }}.zip
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref, '-nightly') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
