@@ -28,11 +28,11 @@ app.component('RequestEditor', {
 
                 <div class="tab-content overflow-auto h-100">
                     <div class="tab-pane" :class="{ active: tab === 'header' }">
-                        <map-table ref="headerEditor" :map="request.header" @update="updateHeader" @remove="removeHeader"></map-table>
+                        <map-table ref="headerEditor" :map="request.header" :read-only="false" @update="updateHeader" @remove="removeHeader"></map-table>
                     </div>
 
                     <div class="tab-pane" :class="{ active: tab === 'param' }">
-                        <map-table ref="queryParamsEditor" :map="request.queryParams" @update="updateQueryParams" @remove="updateQueryParams"></map-table>
+                        <map-table ref="queryParamsEditor" :map="request.queryParams" :read-only="false" @update="updateQueryParams" @remove="updateQueryParams"></map-table>
                     </div>
 
                     <div class="tab-pane h-100 pt-3" :class="{ active: tab === 'body' }">

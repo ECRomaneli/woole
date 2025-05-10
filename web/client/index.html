@@ -32,15 +32,5 @@
     <script src="assets/vendor/vue/vue.global.prod.js"></script>
     <script src="app/dynamicLoad.js"></script>
     <script src="app/main.js"></script>
-
-    <script>
-        async function mountApp() {
-            await loadScripts('app/providers')
-            await loadScripts('app/plugins')
-            await loadScripts('app/components')
-            app.mount('#app')
-        }
-        mountApp()
-    </script>
 </body>
 </html>
