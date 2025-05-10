@@ -11,6 +11,7 @@ type Client struct {
 	rw            sync.RWMutex
 	Bearer        []byte
 	Id            string
+	IpAddress     string
 	seq           sequence.Seq
 	records       map[string]*Record
 	RecordChannel chan *tunnel.Record
@@ -32,6 +33,14 @@ func NewClient(clientId string, bearer []byte) *Client {
 	}
 
 	return client
+}
+
+func (cl *Client) LogPrefix() string {
+	logPrefix := cl.Id
+	if len(cl.IpAddress) != 0 {
+		logPrefix += " - From: " + cl.IpAddress
+	}
+	return logPrefix
 }
 
 func (cl *Client) AddRecord(rec *Record) (id string) {

@@ -102,10 +102,15 @@ func createSession(client *adt.Client, expireAt int64) *tunnel.Session {
 	return auth
 }
 
-func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
+func getClient(hs *tunnel.Handshake, clientIp string) (*adt.Client, error) {
+	clientCandidate := &adt.Client{
+		Id:        hs.ClientId,
+		IpAddress: clientIp,
+	}
+
 	err := app.AuthClient(hs.SharedKey)
 	if err != nil {
-		log.Error(hs.ClientId, "-", err.Error())
+		log.Error(clientCandidate.LogPrefix(), "-", err.Error())
 		return nil, err
 	}
 
@@ -113,11 +118,12 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 	client, err := clientManager.RecoverSession(hs.ClientId, hs.Bearer)
 
 	if err != nil {
-		log.Error(hs.ClientId, "-", err.Error())
+		log.Error(clientCandidate.LogPrefix(), "-", err.Error())
 		return nil, err
 	}
 
 	if client != nil {
+		client.IpAddress = clientIp
 		return client, nil
 	}
 
@@ -125,12 +131,13 @@ func getClient(hs *tunnel.Handshake) (*adt.Client, error) {
 	client, err = clientManager.Register(hs.ClientId, hs.Bearer, app.GenerateBearer(hs.ClientKey))
 
 	if err != nil {
-		log.Error(hs.ClientId, "-", err.Error())
+		log.Error(clientCandidate.LogPrefix(), "-", err.Error())
 		return nil, err
 	}
 
-	log.Info(client.Id, "- Session Started")
-	clientManager.DeregisterOnTimeout(client.Id, func() { log.Info(client.Id, "- Session Finished") })
+	client.IpAddress = clientIp
+	log.Info(client.LogPrefix(), "- Session Started")
+	clientManager.DeregisterOnTimeout(client.Id, func() { log.Info(client.LogPrefix(), "- Session Finished") })
 	return client, nil
 }
 
